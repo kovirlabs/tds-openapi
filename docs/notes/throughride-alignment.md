@@ -103,6 +103,20 @@ Append under *Open*, one heading per mismatch:
 - **Why it matters:** An adapter written from ThroughRide's table would emit milestones the kit rejects.
 - **Suggested resolution:** change ThroughRide: hub arrival = the feeder leg's `ARRIVED_DROPOFF` (the driver button can still say "Arrived at transfer"); start the custody-gap timer there; map `rider` → `BOARDING`; map `car_seat` → `CHILD_SEAT`.
 
+- **ThroughRide status (2026-10-21):** changed as suggested. Hub arrival records the feeder's `ARRIVED_DROPOFF` and the custody-gap timer starts there; `rider` is sent as `BOARDING`; `car_seat` maps to `CHILD_SEAT`. (ThroughRide PRs for the driver page, the T1 adapter and funding source.)
+
+### No exception type for "a person has been asked to act"
+- **Where:** `profiles/transfer/exception.yaml` `type` enum, SPEC.md §10.6, `EXCEPTION_RAISED` / `EXCEPTION_RESOLVED` events  ↔  ThroughRide escalation ladder (`apps/transfers/services.py` `escalate`, spec §7.1)
+- **Mismatch:** The binding's exception types each describe a condition (`HOLD_UNANSWERED`, `CUSTODY_GAP`, …). ThroughRide's coordinator inbox also has `ESCALATED`: a condition was not handled in time, so the broker moved it up its ladder and on-duty staff are now being contacted. The binding has no way to say "escalated", so a broker that publishes `EXCEPTION_RAISED` to subscribers (an agency dashboard, the onward provider) can't tell them a human now owns the problem, or how urgent it has become.
+- **Why it matters:** Subscribers need to know that a broker is already acting, so they don't start a second, conflicting response (two dispatchers ringing the same driver). Agencies writing RFPs also want escalations to be counted and reported.
+- **Suggested resolution:** change the spec (transfer profile, additive):
+  - Add `ESCALATED` to the exception `type` enum, raised only by a broker, with `x-profile: transfer`.
+  - Add optional `escalates_exception_id` (the exception it escalates; required when `type` is `ESCALATED`) and optional `escalation_level` (integer ≥ 1, broker-defined steps).
+  - Severity is at least `AT_RISK`; a broker MAY raise it to `CRITICAL` at higher levels.
+  - It carries no names, phone numbers or roles of the people contacted. Who gets contacted stays broker-local, as agreed in #3.
+  - Resolving the escalated exception also resolves the `ESCALATED` one (`EXCEPTION_RESOLVED` for each).
+  - Add an example to `examples/exceptions`, and a check that `ESCALATED` never comes from a provider.
+
 ## v0.4.1 audit (2026-10-21)
 
 Each agreed item checked against `profiles/`, `spec/`, `examples/`, `tds-mock` and the kit.
