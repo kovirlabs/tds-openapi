@@ -186,3 +186,8 @@ New mismatches go under *Open* as before.
 - **Using the kit as a dependency** (v0.4.2): `tds_conform.examples` and `tds_conform.mock`
   are the public API (see `docs/demo.md`). `binding_version()` reports the last release
   (0.4.2) until 0.5.0 is cut, so vendor examples from a tag, not from `main`.
+- **Paratransit and NEMT drafts** (SPEC.md §11): a provider listing `PARATRANSIT` or `NEMT` on
+  `/health` accepts a `paratransit` or `nemt` object on `POST /trips`. ThroughRide's mobility
+  notes stay out of every payload; send needs as `service_requirements` only (a stretcher
+  trip now has `STRETCHER`), devices by size and weight, and Medicaid trips as an
+  authorization reference plus `level_of_service`. Drafts only: no conformance level yet.

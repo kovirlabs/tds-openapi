@@ -187,9 +187,23 @@ After-trip reconciliation of a linked journey, produced by the broker once every
 - No rider data: lines identify riders only through the trips they reference. `authorization_ref` is a reference, never clinical content.
 - Exchange is not yet an API operation (§7); the schema fixes the format so brokers and funders can exchange files now.
 
-## 11. Other profiles (placeholders)
-- **paratransit:** ADA eligibility attestation, mobility device dimensions/weight, PCA rules.
-- **nemt:** Medicaid authorization refs, level of service, HIPAA minimum-necessary guidance. Health data only via references, never inline.
+## 11. Other profiles (drafts)
+Both profiles extend `POST /trips`: the body is a core TripRequest plus one profile object (`paratransit` or `nemt`). A requester sends the object only to providers whose `/health` lists the profile; a provider that lists it validates the object and refuses (400 `INVALID_REQUEST`) a request that breaks the rules below. The core rules of §12 apply unchanged: needs are leg `service_requirements` (expressing what the vehicle and driver must do, never why), riders are pairwise references, eligibility and authorization are attestations or references, never evidence. No conformance scenarios yet; `tds-mock` validates both objects and `tds_conform.profiles.profile_problems()` holds the cross-field rules.
+
+### 11.1 Paratransit (`profiles/paratransit/`)
+`paratransit`: `eligibility_category` (`UNCONDITIONAL`, `CONDITIONAL`, `TEMPORARY`; ADA paratransit categories), `mobility_devices` (`mobility-device.yaml`: `type`, `width_cm`, `length_cm`, `occupied_weight_kg`, `rider_transfers_to_seat`), `pca_authorized`.
+- `rider_ref.eligibility` must include program `ADA_PARATRANSIT` (the attestation; core §6.5).
+- A wheeled device the rider stays in needs `WHEELCHAIR_LIFT` or `RAMP` on the leg.
+- `party.attendants` > 0 needs `pca_authorized: true`.
+- Conditional eligibility carries no conditions; a provider that must know whether a trip qualifies asks the attesting agency. TODO(crosswalk): compare with TDS 2020 eligibility elements.
+
+### 11.2 NEMT (`profiles/nemt/`)
+`nemt` (closed object, no free text): `authorization` (`authorization_ref`, `payer_ref`, `valid_from`, `valid_until`; closed, references constrained to `[A-Za-z0-9._:-]`), `level_of_service` (`AMBULATORY`, `WHEELCHAIR`, `STRETCHER`: the vehicle class the payer authorized), optional `mobility_devices`, `will_call`.
+- Minimum necessary: no diagnosis, condition, procedure, visit type, medication or member id anywhere in the request. The payer resolves what it needs from `authorization_ref`. Free-text core fields (`notes_to_driver`, `cancel-request.detail`) must not carry health information (§6, §7).
+- `level_of_service` and `service_requirements` must agree: `WHEELCHAIR` needs `WHEELCHAIR_LIFT` or `RAMP`; `STRETCHER` needs the core requirement `STRETCHER`, and only `STRETCHER` may have it. Size and weight go in `mobility_devices`, not in a level.
+- The leg's service date must fall within the authorization's validity; `fare_funding.authorization_ref`, if set, equals `nemt.authorization.authorization_ref` (use `funding_source: MEDICAID_NEMT` when Medicaid pays).
+- `will_call`: the pickup time is not fixed (typical for returns); the pickup window is the earliest expected one, not a commitment.
+- Values are a draft; payer vocabularies differ.
 
 ## 12. Security and privacy
 - OAuth 2.0 client credentials; mTLS optional. Scopes: `trips:write`, `trips:read`, `events:subscribe`, `tenders:write` (tenders are sent by brokers); holds use `trips:write`.

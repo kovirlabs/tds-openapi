@@ -1,0 +1,42 @@
+{
+  "trip_id": "tr-20261112-nm1",
+  "requester_id": "throughride-demo",
+  "provider_id": "county-connector",
+  "rider_ref": {
+    "rider_ref_id": "r-coun-4d10"
+  },
+  "legs": [
+    {
+      "leg_id": "leg-1",
+      "pickup": {
+        "lat": 42.4802,
+        "lon": -83.4755
+      },
+      "dropoff": {
+        "lat": 42.6064,
+        "lon": -83.1498,
+        "name": "Corewell Health Troy"
+      },
+      "dropoff_window": {
+        "earliest": "2026-11-12T10:15:00-05:00",
+        "latest": "2026-11-12T10:45:00-05:00"
+      },
+      "service_requirements": [
+        "WHEELCHAIR_LIFT"
+      ]
+    }
+  ],
+  "fare_funding": {
+    "funding_source": "MEDICAID_NEMT",
+    "authorization_ref": "PA-EXAMPLE-0001"
+  },
+  "nemt": {
+    "authorization": {
+      "authorization_ref": "PA-EXAMPLE-0001",
+      "payer_ref": "payer-example",
+      "valid_from": "2026-11-01",
+      "valid_until": "2026-11-30"
+    },
+    "level_of_service": "WHEELCHAIR"
+  }
+}

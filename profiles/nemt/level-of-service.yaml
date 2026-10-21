@@ -1,0 +1,15 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/nemt/level-of-service.yaml
+title: LevelOfService
+x-profile: nemt
+description: >-
+  The payer's authorized service level for a NEMT trip: the vehicle class it
+  pays for. It does not replace the leg's service_requirements, which say what
+  the vehicle and driver must do; the two must agree (WHEELCHAIR needs
+  WHEELCHAIR_LIFT or RAMP, STRETCHER needs STRETCHER). Device size and weight
+  go in paratransit mobility_devices, not in a level. Values are a draft;
+  payer vocabularies differ.
+type: string
+enum: [AMBULATORY, WHEELCHAIR, STRETCHER]
+examples:
+  - WHEELCHAIR

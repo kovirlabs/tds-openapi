@@ -13,7 +13,8 @@ Checks:
      milestone order and custody rules (SPEC.md §10.3, §10.7). Tender requests
      also follow the interchange rules (auto_hold_s ≤ max_hold_s; HAND_TO_HAND on a
      PROTECTED interchange needs supervision_required, SPEC.md §10.1); settlement
-     splits add up in one currency (SPEC.md §10.8).
+     splits add up in one currency (SPEC.md §10.8); paratransit and NEMT trip
+     requests follow their profile rules (SPEC.md §11).
   5. Manifest entries that name an `operation` are wired into spec/openapi.yaml at
      that operation and status (so the mock serves them), the operation declares
      the same schema, and every example the spec references has such an entry.
@@ -211,7 +212,15 @@ RULES = {
     f"{ID_BASE}transfer/tender-request.yaml": lambda t: interchange_problems(t["interchange"], t["trip"]["legs"]),
     f"{ID_BASE}transfer/interchange.yaml": lambda ix: interchange_problems(ix, []),
     f"{ID_BASE}transfer/settlement-split.yaml": lambda split: _settlement_problems(split),
+    f"{ID_BASE}paratransit/trip-request.yaml": lambda trip: _profile_problems(trip),
+    f"{ID_BASE}nemt/trip-request.yaml": lambda trip: _profile_problems(trip),
 }
+
+
+def _profile_problems(trip: dict) -> list[str]:
+    from tds_conform.profiles import profile_problems
+
+    return profile_problems(trip)
 
 
 def _settlement_problems(split: dict) -> list[str]:

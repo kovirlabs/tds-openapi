@@ -1,0 +1,37 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/paratransit/mobility-device.yaml
+title: MobilityDevice
+x-profile: paratransit
+description: >-
+  A mobility device the rider travels with, described by what the vehicle must
+  carry: type, size and occupied weight. Lets the provider check lift and
+  securement limits before accepting. Describes the device, never the rider's
+  condition.
+type: object
+required: [type]
+properties:
+  type:
+    description: Kind of device.
+    type: string
+    enum: [MANUAL_WHEELCHAIR, POWER_WHEELCHAIR, SCOOTER, WALKER, OTHER]
+  width_cm:
+    description: Overall width in whole centimetres.
+    type: integer
+    minimum: 1
+  length_cm:
+    description: Overall length in whole centimetres.
+    type: integer
+    minimum: 1
+  occupied_weight_kg:
+    description: Combined weight of device and rider in whole kilograms, for lift limits.
+    type: integer
+    minimum: 1
+  rider_transfers_to_seat:
+    description: The rider can move from the device to a vehicle seat; the device is then stowed.
+    type: boolean
+    default: false
+examples:
+  - type: "POWER_WHEELCHAIR"
+    width_cm: 66
+    length_cm: 112
+    occupied_weight_kg: 210

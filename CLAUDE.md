@@ -102,7 +102,7 @@ docker compose -f mock-server/docker-compose.yml up   # both mocks in Docker (st
 - Status: **v0.4 drafted** (2026-10-20): transfer profile schemas + operations, AsyncAPI events with signed delivery, multi-provider `tds-mock` with `/_sim`, `tds-demo`, five generated transfer examples (v0.4.1 adds `missed-connection-reprotect`), kit scenarios `webhook_delivery`/`tender_deadline`/`hold_request` and `check-events`. SPEC.md is Draft 2. Local git repo since v0.4.0 (no remote yet).
 - Open for Evan: fill TDS columns in the crosswalk from Report 210; confirm the licence split in README; pick the real `$id` domain.
 - v0.4.1 (alignment audit), v0.4.2 (`tds_conform.examples` public API) released 2026-10-21; v0.5 under way on `main` (CHANGELOG *Unreleased*): settlement split (§10.8) done.
-- **Next:** v0.5 per SPEC.md §15 (settlement split and `docs/for-agencies.md` done): paratransit/NEMT profiles, schemathesis fuzzing; a settlement API operation needs Evan's decision.
+- **Next:** v0.5 per SPEC.md §15 (settlement split, `docs/for-agencies.md`, paratransit/NEMT drafts done): schemathesis fuzzing, conformance scenarios for the draft profiles; a settlement API operation needs Evan's decision.
 
 ## Near-term demo target
 A SE Michigan pilot is being pitched (TheRide/AAATA + Oakland County transit + Jewish Family Services, supervised riders on cross-county medical trips). By v0.4 the mock server should simulate **two providers** so ThroughRide can demonstrate a protected transfer: tender → accept → milestones → ETA band → hold → handoff with custody record.
