@@ -51,7 +51,7 @@ pass, so give vendors a trip template their service area can serve.
 ## Sample clauses
 
 Replace the bracketed parts. "Binding" means the TDS OpenAPI binding published at
-[repository URL], version [0.4.2 or later].
+[repository URL], version [0.5.0 or later].
 
 **Interface.**
 > The Contractor shall provide an application programming interface that conforms to the

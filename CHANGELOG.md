@@ -4,7 +4,11 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
-Toward **0.5.0** (SPEC.md §15). Version fields stay at 0.4.2 until 0.5.0 is cut.
+## [0.5.0] - 2026-10-21
+
+Settlement split, draft paratransit and NEMT profiles with conformance levels, AsyncAPI
+completeness, schemathesis fuzzing and RFP guidance for agencies (SPEC.md §15 v0.5).
+Additive over 0.4.2: no field removed or renamed.
 
 ### Added
 - **Settlement split** (`profiles/transfer/settlement-split.yaml`, SPEC.md §10.8): after-trip

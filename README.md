@@ -14,7 +14,7 @@ It is not a new standard and does not replace TDS, GTFS-Flex or GTFS-Realtime. S
 
 ## Status
 
-**v0.4 (draft).** Core and transfer profiles: trip booking, plus tenders, hold requests, milestones, ETA bands and custody records for protected connections between providers, with signed webhook events (AsyncAPI). A conformance kit tests any endpoint at the Core or Core + Transfer level, and a stateful reference mock runs several providers for development and demos ([docs/demo.md](docs/demo.md)). Field names are proposed and are being checked against TDS 2020 in [the crosswalk](mappings/tds-2020-crosswalk.md). Expect changes before 1.0.
+**v0.5 (draft).** Core and transfer profiles: trip booking, plus tenders, hold requests, milestones, ETA bands and custody records for protected connections between providers, with signed webhook events (AsyncAPI) for every state change. Draft paratransit and NEMT profiles, and a settlement split format for after-trip reconciliation. A conformance kit tests any endpoint at the Core, Core + Transfer, Core + Paratransit or Core + NEMT level and can fuzz it against the OpenAPI document, and a stateful reference mock runs several providers for development and demos ([docs/demo.md](docs/demo.md)). Field names are proposed and are being checked against TDS 2020 in [the crosswalk](mappings/tds-2020-crosswalk.md). Expect changes before 1.0.
 
 | Version | Scope |
 |---|---|
@@ -22,6 +22,7 @@ It is not a new standard and does not replace TDS, GTFS-Flex or GTFS-Realtime. S
 | v0.2 | Core operations, first examples, mock server, CI |
 | v0.3 | `tds-conform` CLI running core scenarios against the mock |
 | v0.4 | Transfer profile: protected cross-provider connections |
+| v0.5 | Settlement split, paratransit/NEMT drafts and levels, complete events, fuzzing, RFP guidance |
 
 ## Layout
 
