@@ -4,6 +4,9 @@ Conformance kit and reference mock provider for the [TDS OpenAPI binding](../REA
 
 - `tds-conform run --url URL --token TOKEN --profile core` runs the conformance scenarios
   against a provider endpoint and writes a JSON and HTML report.
+- `tds-conform fuzz --url URL` (extra `tds-conform[fuzz]`) fuzzes every operation with
+  schemathesis against the bundled OpenAPI document and writes `fuzz.json`; it finds contract
+  breaks (5xx, undocumented statuses, bodies off-schema) but does not decide a level.
 - `tds-mock` runs a stateful reference provider (trips persist across calls, idempotency
   and the trip state machine are enforced) for developing requesters without a live partner.
 

@@ -34,3 +34,27 @@ jobs:
         with:
           name: conformance-report-${{ matrix.decision }}
           path: report/
+
+  fuzz-vs-reference-mock:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - uses: astral-sh/setup-uv@v6
+      - run: npm ci
+      - run: npm run bundle
+      - run: uv sync --frozen --package tds-conform --extra fuzz
+      - name: Start tds-mock
+        run: |
+          uv run --package tds-conform tds-mock --quiet &
+          for i in $(seq 1 30); do curl -sf localhost:4010/health && break; sleep 1; done
+      - name: Fuzz (schemathesis, positive and negative)
+        run: uv run --package tds-conform tds-conform fuzz --url http://localhost:4010 --max-examples 100 --report-dir report
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fuzz-report
+          path: report/

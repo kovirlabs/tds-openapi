@@ -48,6 +48,7 @@ npm run mock:static                  # Prism serving examples/ on :4011
 uv run tds-mock --demo               # three reference providers on :4010 (see docs/demo.md)
 uv run tds-demo run                  # narrate the five transfer scenarios against it
 uv run tds-conform run --url http://localhost:4010 --profile transfer   # conformance run → tds-conform-report/
+uv run tds-conform fuzz --url http://localhost:4010   # schemathesis fuzzing vs the bundle (npm run bundle first)
 uv run scripts/validate_examples.py  # schemas, conventions, examples, crosswalk coverage
 uv run --group dev pytest            # schema, tooling, mock and kit tests
 docker compose -f mock-server/docker-compose.yml up   # both mocks in Docker

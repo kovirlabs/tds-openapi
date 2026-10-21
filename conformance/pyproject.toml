@@ -14,6 +14,10 @@ dependencies = [
     "rfc3986-validator>=0.1.1",
 ]
 
+[project.optional-dependencies]
+# Property-based fuzzing of a provider endpoint against the OpenAPI document (`tds-conform fuzz`).
+fuzz = ["schemathesis>=4.0,<5"]
+
 [project.scripts]
 tds-conform = "tds_conform.cli:conform_main"
 tds-mock = "tds_conform.cli:mock_main"

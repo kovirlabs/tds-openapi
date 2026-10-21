@@ -73,6 +73,7 @@ npm run mock:static                             # Prism on :4011; Prefer: code=2
 uv run tds-mock [--demo] [--decision async]     # providers on :4010 at /p/<id>; Authorization: Bearer <requester_id>
 uv run tds-conform run --url http://localhost:4010 --profile transfer   # kit → tds-conform-report/report.{json,html}
 uv run tds-conform check-events events.json --interchange tender.json  # milestone/custody/heartbeat rules
+uv run tds-conform fuzz --url http://localhost:4010 --max-examples 100       # schemathesis vs dist/openapi.yaml (npm run bundle first)
 uv run tds-demo run                             # narrate the transfer scenarios against tds-mock --demo
 uv run tds-demo generate-examples               # REGENERATE the five transfer example folders
 uv run scripts/sync_crosswalk.py                # add TODO crosswalk rows for new core fields
@@ -85,7 +86,7 @@ uv run --group dev ruff check . && uv run --group dev ruff format .
 docker compose -f mock-server/docker-compose.yml up   # both mocks in Docker (static one needs npm run bundle first)
 ```
 
-`ruff` for lint/format, `pytest`. Scenarios are hand-written (`conformance/src/tds_conform/scenarios/`); `schemathesis` fuzzing is planned, not wired in.
+`ruff` for lint/format, `pytest`. Scenarios are hand-written (`conformance/src/tds_conform/scenarios/`). `tds-conform fuzz` (`tds_conform/fuzz.py`, extra `fuzz` = schemathesis) throws generated requests at every operation of the bundled `dist/openapi.yaml` and checks the answers stay in the contract; it does not decide a conformance level. `POST /subscriptions` is skipped by default (it would deliver webhooks to generated URLs). When fuzzing finds a mock or spec bug, fix it and add a regression test in `conformance/tests/test_fuzz.py`.
 
 **Public API for other projects.** `tds_conform.examples` (`binding_version`, `examples_dir`, `profiles_dir`, `scenarios`, `load_manifest`, `load_example`, `iter_examples`, `schema_errors`) and `tds_conform.mock` (`Provider`, `ProviderConfig`, `Network`, `make_server`) are what ThroughRide imports (editable path dependency). Keep them stable; additions are fine, renames need a CHANGELOG entry under *Changed* and a note in `docs/notes/throughride-alignment.md`. Every version declaration must agree (a test checks).
 
@@ -102,7 +103,7 @@ docker compose -f mock-server/docker-compose.yml up   # both mocks in Docker (st
 - Status: **v0.4 drafted** (2026-10-20): transfer profile schemas + operations, AsyncAPI events with signed delivery, multi-provider `tds-mock` with `/_sim`, `tds-demo`, five generated transfer examples (v0.4.1 adds `missed-connection-reprotect`), kit scenarios `webhook_delivery`/`tender_deadline`/`hold_request` and `check-events`. SPEC.md is Draft 2. Local git repo since v0.4.0 (no remote yet).
 - Open for Evan: fill TDS columns in the crosswalk from Report 210; confirm the licence split in README; pick the real `$id` domain.
 - v0.4.1 (alignment audit), v0.4.2 (`tds_conform.examples` public API) released 2026-10-21; v0.5 under way on `main` (CHANGELOG *Unreleased*): settlement split (§10.8) done.
-- **Next:** v0.5 per SPEC.md §15 (settlement split, `docs/for-agencies.md`, paratransit/NEMT drafts done): schemathesis fuzzing, conformance scenarios for the draft profiles; a settlement API operation needs Evan's decision.
+- **Next:** v0.5 per SPEC.md §15 (settlement split, `docs/for-agencies.md`, paratransit/NEMT drafts, schemathesis fuzzing done): conformance scenarios for the draft profiles, AsyncAPI completeness, steward outreach; a settlement API operation needs Evan's decision.
 
 ## Near-term demo target
 A SE Michigan pilot is being pitched (TheRide/AAATA + Oakland County transit + Jewish Family Services, supervised riders on cross-county medical trips). By v0.4 the mock server should simulate **two providers** so ThroughRide can demonstrate a protected transfer: tender → accept → milestones → ETA band → hold → handoff with custody record.

@@ -54,8 +54,21 @@ def conform_main(argv: list[str] | None = None) -> int:
         metavar="PROVIDER/TRIP/LEG",
         help="a leg that requires custody records (repeatable)",
     )
+    fz = sub.add_parser("fuzz", help="fuzz every operation against the OpenAPI document (needs tds-conform[fuzz])")
+    fz.add_argument("--url", required=True, help="base URL of the provider API")
+    fz.add_argument("--spec", type=Path, help="bundled OpenAPI document (default: dist/openapi.yaml in the checkout)")
+    fz.add_argument("--token", help="bearer token (default: the requester id, which is what tds-mock expects)")
+    fz.add_argument("--requester-id", default="throughride-demo", help="requester_id put into generated bodies")
+    fz.add_argument("--provider-id", default="aaata-a-ride", help="provider_id put into generated bodies")
+    fz.add_argument("--max-examples", type=int, default=25, help="generated requests per operation and mode")
+    fz.add_argument("--mode", choices=["positive", "negative"], action="append", help="default: both")
+    fz.add_argument("--operation", action="append", help='only this operation, e.g. "POST /trips" (repeatable)')
+    fz.add_argument("--seed", type=int, default=0, help="Hypothesis seed (default 0: reproducible runs)")
+    fz.add_argument("--report-dir", type=Path, default=Path("tds-conform-report"), help="where to write fuzz.json")
     args = parser.parse_args(argv)
 
+    if args.command == "fuzz":
+        return _fuzz(args)
     if args.command == "list":
         for sid, (profile, title, _) in SCENARIOS.items():
             print(f"{sid:24} {profile:9} {title}")
@@ -108,6 +121,34 @@ def conform_main(argv: list[str] | None = None) -> int:
     json_path, html_path = report.write(built, args.report_dir)
     print(f"\n{'CONFORMANT' if built['conformant'] else 'NOT CONFORMANT'} ({args.profile}) · {json_path} · {html_path}")
     return 0 if built["conformant"] else 1
+
+
+def _fuzz(args) -> int:
+    from tds_conform.fuzz import fuzz, write_report
+
+    try:
+        results = fuzz(
+            args.url.rstrip("/"),
+            args.token or args.requester_id,
+            args.requester_id,
+            args.provider_id,
+            spec=args.spec,
+            max_examples=args.max_examples,
+            modes=tuple(args.mode or ("positive", "negative")),
+            include=set(args.operation) if args.operation else None,
+            seed=args.seed,
+        )
+    except (RuntimeError, FileNotFoundError, ValueError) as exc:
+        print(exc, file=sys.stderr)
+        return 2
+    for r in results:
+        print(f"{r.status:8} {r.mode:9} {r.operation}")
+        if r.status in ("FAIL", "ERROR"):
+            print("         " + r.detail.replace("\n", "\n         "))
+    path = write_report(results, args.report_dir)
+    bad = [r for r in results if r.status in ("FAIL", "ERROR")]
+    print(f"\n{len(bad)} operation/mode pair(s) failed · {path}" if bad else f"\nno failures · {path}")
+    return 1 if bad else 0
 
 
 def _host_port(value: str) -> tuple[str, int]:

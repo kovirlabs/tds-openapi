@@ -19,6 +19,8 @@ post:
           examples:
             single_trip:
               externalValue: ../../examples/single-trip/02-confirm.response.json
+    "400":
+      $ref: ../components/responses.yaml#/BadRequest
     "401":
       $ref: ../components/responses.yaml#/Unauthorized
     "404":
