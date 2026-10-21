@@ -87,6 +87,8 @@ docker compose -f mock-server/docker-compose.yml up   # both mocks in Docker (st
 
 `ruff` for lint/format, `pytest`. Scenarios are hand-written (`conformance/src/tds_conform/scenarios/`); `schemathesis` fuzzing is planned, not wired in.
 
+**Public API for other projects.** `tds_conform.examples` (`binding_version`, `examples_dir`, `profiles_dir`, `scenarios`, `load_manifest`, `load_example`, `iter_examples`, `schema_errors`) and `tds_conform.mock` (`Provider`, `ProviderConfig`, `Network`, `make_server`) are what ThroughRide imports (editable path dependency). Keep them stable; additions are fine, renames need a CHANGELOG entry under *Changed* and a note in `docs/notes/throughride-alignment.md`. Every version declaration must agree (a test checks).
+
 **Kit internals worth knowing.** `Context.call(...)` checks status, problem+json media type and the response schema from `runner.RESPONSE_SCHEMAS`; a root test fails if that table drifts from `spec/openapi.yaml`, so update both. A new scenario = a function decorated `@scenario(id, profile, title)` in `scenarios/`, with an id from SPEC §13. `tds-mock` is the executable reading of the spec: when you change behaviour in SPEC.md, change `mock/provider.py` and add a scenario so the kit and the mock agree. Kit tests include faulty provider subclasses to prove each scenario can fail; add one for each new scenario.
 
 ## Definition of done (any change)

@@ -1,6 +1,6 @@
 [project]
 name = "tds-conform"
-version = "0.4.1"
+version = "0.4.2"
 description = "Conformance kit and reference mock provider for the TDS OpenAPI binding."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -27,6 +27,7 @@ build-backend = "hatchling.build"
 packages = ["src/tds_conform"]
 
 # Wheels carry a copy of the schemas and examples; editable installs read the repo.
+# Build wheels from the source tree (`uv build --wheel conformance`): the sdist has no data.
 [tool.hatch.build.targets.wheel.force-include]
 "../profiles" = "tds_conform/_data/profiles"
 "../examples" = "tds_conform/_data/examples"

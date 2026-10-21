@@ -101,3 +101,41 @@ uv run tds-conform check-events received.json --interchange tender-onward.reques
 ```
 
 It checks schemas, milestone order, custody records and heartbeat gaps.
+
+## Use tds-conform from another project
+
+Brokers can depend on the kit instead of copying it, for test fakes that replay
+`examples/`, payload validation against `profiles/`, or the mock in-process. With uv, as a
+dev-only path dependency (production images never need it):
+
+```toml
+[dependency-groups]
+dev = ["tds-conform"]
+
+[tool.uv.sources]
+tds-conform = { path = "../tds-openapi/conformance", editable = true }
+```
+
+Then use the public accessors rather than paths into this repo:
+
+```python
+from tds_conform.examples import (
+    binding_version,  # "0.4.2": the binding version these examples and schemas belong to
+    examples_dir,  # Path to examples/ (one folder per scenario)
+    profiles_dir,  # Path to profiles/ (JSON Schemas)
+    scenarios,  # ["cancellation", ..., "two-provider-transfer"]
+    load_manifest,  # load_manifest("late-first-leg-hold")["files"] -> {filename: {schema, operation?, status?}}
+    load_example,  # load_example("late-first-leg-hold", "06-hold-onward.response.json") -> parsed JSON
+    iter_examples,  # (filename, manifest entry, parsed JSON) for each file of a scenario
+    schema_errors,  # schema_errors(payload, "tender", "transfer") -> [] when valid
+)
+from tds_conform.mock import Network, Provider, ProviderConfig, make_server
+```
+
+The same calls work from an editable install (they read this checkout) and from a wheel
+(which carries its own copy of `profiles/` and `examples/` under `tds_conform/_data/`).
+Build wheels with `uv build --wheel conformance`; the sdist does not include the data.
+
+To vendor examples at a pinned version, copy `examples_dir()` and record
+`binding_version()`; a test comparing the recorded version with `binding_version()` then
+catches a stale copy after the sister repo moves on.
