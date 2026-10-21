@@ -24,6 +24,10 @@ jobs:
           for i in $(seq 1 30); do curl -sf localhost:4010/health && break; sleep 1; done
       - name: Run kit
         run: uv run --package tds-conform tds-conform run --url http://localhost:4010 --profile transfer --report-dir report
+      - name: Run kit (paratransit and NEMT levels)
+        run: |
+          uv run --package tds-conform tds-conform run --url http://localhost:4010 --profile paratransit --report-dir report-paratransit
+          uv run --package tds-conform tds-conform run --url http://localhost:4010 --profile nemt --report-dir report-nemt
       - name: Check example event streams
         run: |
           for f in examples/*/events.json; do
@@ -33,7 +37,10 @@ jobs:
         if: always()
         with:
           name: conformance-report-${{ matrix.decision }}
-          path: report/
+          path: |
+            report/
+            report-paratransit/
+            report-nemt/
 
   fuzz-vs-reference-mock:
     runs-on: ubuntu-latest
