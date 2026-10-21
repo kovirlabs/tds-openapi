@@ -174,3 +174,17 @@ def test_kit_response_schemas_match_spec():
         if slot != "request" and (schema := wired["schema"]) and not slot.startswith(("4", "5"))
     }
     assert RESPONSE_SCHEMAS == declared
+
+
+def test_event_coverage_reports_missing_states():
+    manifests = ve.load_manifests()
+    events = [
+        e
+        for e in ve.collect_events(manifests)
+        if not (e["event_type"] == "TRIP_STATUS_CHANGED" and e["payload"]["status"] == "NO_SHOW")
+        and e["event_type"] != "EXCEPTION_RESOLVED"
+    ]
+    problems = ve.check_event_coverage(manifests, REGISTRY, events=events)
+    assert any("TRIP_STATUS_CHANGED" in p and "NO_SHOW" in p for p in problems)
+    assert any(p.startswith("EXCEPTION_RESOLVED: no example event") for p in problems)
+    assert ve.check_event_coverage(manifests, REGISTRY) == []

@@ -191,3 +191,10 @@ New mismatches go under *Open* as before.
   notes stay out of every payload; send needs as `service_requirements` only (a stretcher
   trip now has `STRETCHER`), devices by size and weight, and Medicaid trips as an
   authorization reference plus `level_of_service`. Drafts only: no conformance level yet.
+- **Exceptions as events** (v0.5): ThroughRide's outbound webhooks (its spec §8.1 decision 7)
+  can send `EXCEPTION_RAISED` / `EXCEPTION_RESOLVED` with the binding's `exception` payload;
+  `provider_id` is ThroughRide's broker id. `ESCALATED` (ThroughRide's ladder) is still not a
+  binding exception type; propose it here if subscribers need it.
+- **Offers that lapse:** a provider may set `offer_expires_at` on an `OFFERED` trip; ThroughRide
+  should confirm before it or treat the leg as `EXPIRED`. Provider-side cancellations arrive as
+  `TRIP_CANCELLED` with `cancelled_by: PROVIDER`.

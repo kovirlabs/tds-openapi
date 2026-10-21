@@ -29,6 +29,8 @@ POLICY_FIELDS = {
     "tender_decision": str,
     "reject_reason": str,
     "hold_decision": str,
+    "offer_ttl_s": int,
+    "unsupported_requirements": frozenset,
     "max_hold_s": int,
     "max_auto_hold_s": int,
     "heartbeat_s": int,
@@ -287,6 +289,18 @@ class TransferMixin:
                 self._set_status(trip, "FAILED")
             return 200, {"trip": copy.deepcopy(trip.body), "emitted": [e["event"] for e in self.events[start:]]}
 
+    def sim_cancel(self, trip_id: str, body: dict | None) -> Response:
+        """The provider cancels a trip it can no longer serve ({"reason": "PROVIDER_UNABLE"})."""
+        with self._lock:
+            trip = self.sim_trip(trip_id)
+            if not trip:
+                return _not_found("trip", trip_id)
+            if trip.body["status"] in TERMINAL or trip.body["status"] == "IN_PROGRESS":
+                return problem(409, "INVALID_STATE", f"Trip is {trip.body['status']}.")
+            start = len(self.events)
+            self._cancel_trip(trip, (body or {}).get("reason", "PROVIDER_UNABLE"), "PROVIDER")
+            return 200, {"trip": copy.deepcopy(trip.body), "emitted": [e["event"] for e in self.events[start:]]}
+
     def sim_policy(self, body: dict | None) -> Response:
         """Change how this provider answers, e.g. {"tender_decision": "IGNORE", "hold_decision": "PARTIAL"}."""
         with self._lock:
@@ -294,7 +308,8 @@ class TransferMixin:
                 if key not in POLICY_FIELDS:
                     return problem(400, "INVALID_REQUEST", f"Unknown policy {key!r}; one of {sorted(POLICY_FIELDS)}.")
                 setattr(self.config, key, None if value is None else POLICY_FIELDS[key](value))
-            return 200, {k: getattr(self.config, k) for k in POLICY_FIELDS}
+            values = {k: getattr(self.config, k) for k in POLICY_FIELDS}
+            return 200, {k: sorted(v) if isinstance(v, frozenset) else v for k, v in values.items()}
 
     def sim_events(self, trip_id: str | None = None) -> Response:
         with self._lock:

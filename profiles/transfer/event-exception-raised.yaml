@@ -1,0 +1,35 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/transfer/event-exception-raised.yaml
+title: ExceptionRaisedEvent
+description: >-
+  Emitted by a broker when it raises an exception for coordinators (SPEC.md §10.6): a connection at risk, an unanswered tender or hold, a stale heartbeat, a missing custody record. Broker events go to the broker's own subscribers (coordinator tools, agency dashboards); providers never send them. provider_id is the broker's id. Payloads carry codes and ids only, no rider data.
+x-profile: transfer
+allOf:
+  - $ref: ../core/event.yaml
+type: object
+properties:
+  event_type:
+    description: Always EXCEPTION_RAISED.
+    const: EXCEPTION_RAISED
+  payload:
+    description: An exception as raised.
+    type: object
+    required: [exception]
+    properties:
+      exception:
+        description: The exception.
+        $ref: ./exception.yaml
+examples:
+  - event_id: "evt-exception-raised-1"
+    event_type: "EXCEPTION_RAISED"
+    occurred_at: "2026-11-10T09:09:00-05:00"
+    provider_id: "throughride-demo"
+    schema_version: "0.5.0"
+    payload:
+      exception:
+        exception_id: "ex-2"
+        severity: "CRITICAL"
+        type: "HOLD_UNANSWERED"
+        interchange_id: "ix-20261110-1"
+        detected_at: "2026-11-10T09:09:00-05:00"
+        suggested_actions: [CALL_PROVIDER, REPROTECT]

@@ -1,0 +1,278 @@
+[
+  {
+    "event_id": "evt-ex-rt-1-raised",
+    "event_type": "EXCEPTION_RAISED",
+    "occurred_at": "2026-11-10T08:00:00-05:00",
+    "provider_id": "throughride-demo",
+    "schema_version": "0.5.0",
+    "payload": {
+      "exception": {
+        "exception_id": "ex-rt-1",
+        "severity": "AT_RISK",
+        "type": "TENDER_EXPIRED",
+        "interchange_id": "ix-rt",
+        "detected_at": "2026-11-10T08:00:00-05:00",
+        "suggested_actions": [
+          "REPROTECT",
+          "CALL_PROVIDER"
+        ]
+      }
+    }
+  },
+  {
+    "event_id": "evt-ex-rt-1-resolved",
+    "event_type": "EXCEPTION_RESOLVED",
+    "occurred_at": "2026-11-10T08:02:00-05:00",
+    "provider_id": "throughride-demo",
+    "schema_version": "0.5.0",
+    "payload": {
+      "exception": {
+        "exception_id": "ex-rt-1",
+        "severity": "AT_RISK",
+        "type": "TENDER_EXPIRED",
+        "interchange_id": "ix-rt",
+        "detected_at": "2026-11-10T08:00:00-05:00",
+        "suggested_actions": [
+          "REPROTECT",
+          "CALL_PROVIDER"
+        ],
+        "resolved_at": "2026-11-10T08:02:00-05:00"
+      }
+    }
+  },
+  {
+    "event_id": "evt-ex-rf-1-raised",
+    "event_type": "EXCEPTION_RAISED",
+    "occurred_at": "2026-11-10T08:06:00-05:00",
+    "provider_id": "throughride-demo",
+    "schema_version": "0.5.0",
+    "payload": {
+      "exception": {
+        "exception_id": "ex-rf-1",
+        "severity": "AT_RISK",
+        "type": "HOLD_DENIED",
+        "interchange_id": "ix-rf-2",
+        "detected_at": "2026-11-10T08:06:00-05:00",
+        "suggested_actions": [
+          "REPROTECT"
+        ]
+      }
+    }
+  },
+  {
+    "event_id": "evt-ex-rt-2-raised",
+    "event_type": "EXCEPTION_RAISED",
+    "occurred_at": "2026-11-10T08:20:00-05:00",
+    "provider_id": "throughride-demo",
+    "schema_version": "0.5.0",
+    "payload": {
+      "exception": {
+        "exception_id": "ex-rt-2",
+        "severity": "CRITICAL",
+        "type": "TENDER_EXHAUSTED",
+        "interchange_id": "ix-rt-2",
+        "detected_at": "2026-11-10T08:20:00-05:00",
+        "suggested_actions": [
+          "CALL_PROVIDER"
+        ]
+      }
+    }
+  },
+  {
+    "event_id": "evt-ex-hold-1-raised",
+    "event_type": "EXCEPTION_RAISED",
+    "occurred_at": "2026-11-10T09:05:00-05:00",
+    "provider_id": "throughride-demo",
+    "schema_version": "0.5.0",
+    "payload": {
+      "exception": {
+        "exception_id": "ex-hold-1",
+        "severity": "AT_RISK",
+        "type": "LOW_CONNECTION_PROBABILITY",
+        "interchange_id": "ix-hold",
+        "detected_at": "2026-11-10T09:05:00-05:00",
+        "suggested_actions": [
+          "HOLD"
+        ]
+      }
+    }
+  },
+  {
+    "event_id": "evt-ex-hold-1-resolved",
+    "event_type": "EXCEPTION_RESOLVED",
+    "occurred_at": "2026-11-10T09:06:00-05:00",
+    "provider_id": "throughride-demo",
+    "schema_version": "0.5.0",
+    "payload": {
+      "exception": {
+        "exception_id": "ex-hold-1",
+        "severity": "AT_RISK",
+        "type": "LOW_CONNECTION_PROBABILITY",
+        "interchange_id": "ix-hold",
+        "detected_at": "2026-11-10T09:05:00-05:00",
+        "suggested_actions": [
+          "HOLD"
+        ],
+        "resolved_at": "2026-11-10T09:06:00-05:00"
+      }
+    }
+  },
+  {
+    "event_id": "evt-ex-rp-1-raised",
+    "event_type": "EXCEPTION_RAISED",
+    "occurred_at": "2026-11-10T09:09:00-05:00",
+    "provider_id": "throughride-demo",
+    "schema_version": "0.5.0",
+    "payload": {
+      "exception": {
+        "exception_id": "ex-rp-1",
+        "severity": "CRITICAL",
+        "type": "HOLD_UNANSWERED",
+        "interchange_id": "ix-rp",
+        "detected_at": "2026-11-10T09:09:00-05:00",
+        "suggested_actions": [
+          "CALL_PROVIDER",
+          "REPROTECT"
+        ]
+      }
+    }
+  },
+  {
+    "event_id": "evt-ex-rp-1-resolved",
+    "event_type": "EXCEPTION_RESOLVED",
+    "occurred_at": "2026-11-10T09:10:00-05:00",
+    "provider_id": "throughride-demo",
+    "schema_version": "0.5.0",
+    "payload": {
+      "exception": {
+        "exception_id": "ex-rp-1",
+        "severity": "CRITICAL",
+        "type": "HOLD_UNANSWERED",
+        "interchange_id": "ix-rp",
+        "detected_at": "2026-11-10T09:09:00-05:00",
+        "suggested_actions": [
+          "CALL_PROVIDER",
+          "REPROTECT"
+        ],
+        "resolved_at": "2026-11-10T09:10:00-05:00"
+      }
+    }
+  },
+  {
+    "event_id": "evt-ex-tpt-1-raised",
+    "event_type": "EXCEPTION_RAISED",
+    "occurred_at": "2026-11-10T09:20:00-05:00",
+    "provider_id": "throughride-demo",
+    "schema_version": "0.5.0",
+    "payload": {
+      "exception": {
+        "exception_id": "ex-tpt-1",
+        "severity": "AT_RISK",
+        "type": "STALE_HEARTBEAT",
+        "interchange_id": "ix-tpt",
+        "detected_at": "2026-11-10T09:20:00-05:00",
+        "suggested_actions": [
+          "CALL_PROVIDER"
+        ]
+      }
+    }
+  },
+  {
+    "event_id": "evt-ex-tpt-1-resolved",
+    "event_type": "EXCEPTION_RESOLVED",
+    "occurred_at": "2026-11-10T09:21:00-05:00",
+    "provider_id": "throughride-demo",
+    "schema_version": "0.5.0",
+    "payload": {
+      "exception": {
+        "exception_id": "ex-tpt-1",
+        "severity": "AT_RISK",
+        "type": "STALE_HEARTBEAT",
+        "interchange_id": "ix-tpt",
+        "detected_at": "2026-11-10T09:20:00-05:00",
+        "suggested_actions": [
+          "CALL_PROVIDER"
+        ],
+        "resolved_at": "2026-11-10T09:21:00-05:00"
+      }
+    }
+  },
+  {
+    "event_id": "evt-ex-tpt-2-raised",
+    "event_type": "EXCEPTION_RAISED",
+    "occurred_at": "2026-11-10T09:40:00-05:00",
+    "provider_id": "throughride-demo",
+    "schema_version": "0.5.0",
+    "payload": {
+      "exception": {
+        "exception_id": "ex-tpt-2",
+        "severity": "INFO",
+        "type": "MISSED_MILESTONE",
+        "interchange_id": "ix-tpt",
+        "detected_at": "2026-11-10T09:40:00-05:00",
+        "suggested_actions": [
+          "CALL_PROVIDER"
+        ]
+      }
+    }
+  },
+  {
+    "event_id": "evt-ex-tpt-2-resolved",
+    "event_type": "EXCEPTION_RESOLVED",
+    "occurred_at": "2026-11-10T09:41:00-05:00",
+    "provider_id": "throughride-demo",
+    "schema_version": "0.5.0",
+    "payload": {
+      "exception": {
+        "exception_id": "ex-tpt-2",
+        "severity": "INFO",
+        "type": "MISSED_MILESTONE",
+        "interchange_id": "ix-tpt",
+        "detected_at": "2026-11-10T09:40:00-05:00",
+        "suggested_actions": [
+          "CALL_PROVIDER"
+        ],
+        "resolved_at": "2026-11-10T09:41:00-05:00"
+      }
+    }
+  },
+  {
+    "event_id": "evt-ex-sup-1-raised",
+    "event_type": "EXCEPTION_RAISED",
+    "occurred_at": "2026-11-10T09:42:00-05:00",
+    "provider_id": "throughride-demo",
+    "schema_version": "0.5.0",
+    "payload": {
+      "exception": {
+        "exception_id": "ex-sup-1",
+        "severity": "CRITICAL",
+        "type": "CUSTODY_GAP",
+        "interchange_id": "ix-sup",
+        "detected_at": "2026-11-10T09:42:00-05:00",
+        "suggested_actions": [
+          "CALL_PROVIDER"
+        ]
+      }
+    }
+  },
+  {
+    "event_id": "evt-ex-sup-1-resolved",
+    "event_type": "EXCEPTION_RESOLVED",
+    "occurred_at": "2026-11-10T09:43:00-05:00",
+    "provider_id": "throughride-demo",
+    "schema_version": "0.5.0",
+    "payload": {
+      "exception": {
+        "exception_id": "ex-sup-1",
+        "severity": "CRITICAL",
+        "type": "CUSTODY_GAP",
+        "interchange_id": "ix-sup",
+        "detected_at": "2026-11-10T09:42:00-05:00",
+        "suggested_actions": [
+          "CALL_PROVIDER"
+        ],
+        "resolved_at": "2026-11-10T09:43:00-05:00"
+      }
+    }
+  }
+]

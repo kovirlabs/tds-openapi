@@ -1,0 +1,37 @@
+{
+  "trip_id": "tr-rf-ox",
+  "requester_id": "throughride-demo",
+  "provider_id": "oakland-go",
+  "rider_ref": {
+    "rider_ref_id": "r-oakl-55e1",
+    "display_name": "Dana K.",
+    "language": "en"
+  },
+  "legs": [
+    {
+      "leg_id": "leg-1",
+      "pickup": {
+        "lat": 42.4802,
+        "lon": -83.4755,
+        "name": "County-line transfer hub",
+        "access_notes": "Covered bay 2"
+      },
+      "dropoff": {
+        "lat": 42.6064,
+        "lon": -83.1498,
+        "name": "Corewell Health Troy",
+        "access_notes": "Main entrance"
+      },
+      "pickup_window": {
+        "earliest": "2026-11-10T11:30:00-05:00",
+        "latest": "2026-11-10T11:45:00-05:00"
+      },
+      "scheduled_pickup": "2026-11-10T11:30:00-05:00"
+    }
+  ],
+  "status": "EXPIRED",
+  "created_at": "2026-11-10T07:55:00-05:00",
+  "updated_at": "2026-11-10T08:06:00-05:00",
+  "provider_trip_id": "oakland-go-0004",
+  "offer_expires_at": "2026-11-10T08:05:00-05:00"
+}

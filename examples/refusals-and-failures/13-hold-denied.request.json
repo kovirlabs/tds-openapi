@@ -1,0 +1,7 @@
+{
+  "hold_id": "hd-rf-1",
+  "interchange_id": "ix-rf-2",
+  "action": "HOLD",
+  "requested_until": "2026-11-10T09:55:00-05:00",
+  "respond_by": "2026-11-10T08:11:00-05:00"
+}

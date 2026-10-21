@@ -458,6 +458,118 @@ def missed_connection_reprotect(d: Demo, day: date) -> None:
     d.say(f"Rider reached the clinic on {C}; {B}'s trip CANCELLED with MISSED_CONNECTION")
 
 
+def refusals_and_failures(d: Demo, day: date) -> None:
+    """Everything that can go wrong short of a late feeder, so every state change has an event
+    on record: a trip refused for an unsupported requirement (REJECTED), an offer left
+    unconfirmed (EXPIRED), a tender rejected for capacity, a hold denied, a rider no-show on the
+    feeder (the broker cancels the onward leg), a leg failed by a breakdown, and a trip the
+    provider cancels itself."""
+    code = d.code("rf")
+
+    def at(hhmm: str) -> datetime:
+        hour, minute = map(int, hhmm.split(":"))
+        return datetime(day.year, day.month, day.day, hour, minute, tzinfo=EASTERN)
+
+    def book(label: str, trip: dict, provider: str) -> None:
+        d.trips.add((provider, trip["trip_id"]))
+        offered = d.api(f"request-{label}", provider, "POST", "/trips", body=trip, expect=(201,))
+        d.api(f"confirm-{label}", provider, "POST", "/trips/{trip_id}/confirm", trip_id=trip["trip_id"], expect=(200,))
+        d.say(f"{trip['trip_id']} at {provider}: {offered['status']} → CONFIRMED")
+
+    d.sim(A, "policy", body={"unsupported_requirements": ["STRETCHER"]})
+    d.sim(B, "policy", body={"offer_ttl_s": 600})
+    d.sim(C, "policy", body={"tender_decision": "REJECT"})
+    try:
+        refused = _trip(code, "st", A, HOME, CLINIC, at("11:00"), ("STRETCHER",))
+        d.trips.add((A, refused["trip_id"]))
+        error = d.api("request-unsupported", A, "POST", "/trips", body=refused, expect=(422,))
+        d.say(f"{A} refuses {refused['trip_id']}: {error['code']} (trip REJECTED)")
+
+        unconfirmed = _trip(code, "ox", B, HUB, CLINIC, at("11:30"))
+        d.trips.add((B, unconfirmed["trip_id"]))
+        offer = d.api("request-offer", B, "POST", "/trips", body=unconfirmed, expect=(201,))
+        d.say(f"{B} offers {unconfirmed['trip_id']} until {offer['offer_expires_at'][11:16]}; nobody confirms")
+        d.wait_minutes(11)
+        expired = d.api(
+            "read-expired-offer", B, "GET", "/trips/{trip_id}", trip_id=unconfirmed["trip_id"], expect=(200,)
+        )
+        d.say(f"{unconfirmed['trip_id']} is {expired['status']}")
+
+        feeder = _trip(code, "a", A, HOME, HUB, at("08:50"), ("WHEELCHAIR_LIFT",))
+        onward_c = _trip(code, "b", C, HUB, CLINIC, at("09:45"), ("WHEELCHAIR_LIFT",))
+        ix_c = _interchange(code, feeder, onward_c, supervised=False, heartbeat_s=300)
+        d.tender("tender-feeder", feeder, ix_c, respond_in_min=15)
+        rejected = d.tender("tender-onward-rejected", onward_c, ix_c, respond_in_min=15)
+        d.say(f"{C} rejects the onward leg: {rejected['reason']}; coordinator picks {B}")
+        onward = _trip(code, "b2", B, HUB, CLINIC, at("09:45"), ("WHEELCHAIR_LIFT",))
+        ix = _interchange(f"{code}-2", feeder, onward, supervised=False, heartbeat_s=300)
+        d.tender("tender-onward", onward, ix, respond_in_min=15)
+
+        d.sim(B, "policy", body={"hold_decision": "DENY"})
+        pickup = datetime.fromisoformat(
+            d.api("read-onward", B, "GET", "/trips/{trip_id}", trip_id=onward["trip_id"], expect=(200,))["legs"][0][
+                "scheduled_pickup"
+            ]
+        )
+        hold = d.api(
+            "hold-denied",
+            B,
+            "POST",
+            "/trips/{trip_id}/hold",
+            trip_id=onward["trip_id"],
+            body={
+                "hold_id": f"hd-{code}-1",
+                "interchange_id": ix["interchange_id"],
+                "action": "HOLD",
+                "requested_until": _iso(pickup + timedelta(minutes=10)),
+                "respond_by": _iso(d.after(5)),
+            },
+            expect=(201,),
+        )
+        d.say(f"Precautionary hold at {B}: {hold['status']} ({hold['reason']})")
+
+        breakdown = _trip(code, "f", C, CLINIC, HOME, at("10:30"))
+        own_cancel = _trip(code, "pc", B, CLINIC, HOME, at("13:00"))
+        book("breakdown", breakdown, C)
+        book("provider-cancel", own_cancel, B)
+
+        def no_show() -> None:
+            d.sim(A, "no-show", feeder["trip_id"])
+            d.say(f"Rider not at home: {A} records RIDER_NO_SHOW; broker cancels the onward leg")
+            d.api(
+                "cancel-onward",
+                B,
+                "POST",
+                "/trips/{trip_id}/cancel",
+                trip_id=onward["trip_id"],
+                body={"reason": "RIDER_REQUEST"},
+                expect=(200,),
+            )
+
+        def fail() -> None:
+            d.sim(C, "fail", breakdown["trip_id"], {"cause": "VEHICLE"})
+            d.say(f"{C}'s vehicle breaks down on the way: LEG_FAILED (VEHICLE)")
+
+        def provider_cancel() -> None:
+            d.sim(B, "cancel", own_cancel["trip_id"], {"reason": "PROVIDER_UNABLE"})
+            d.say(f"{B} cancels {own_cancel['trip_id']} itself: PROVIDER_UNABLE")
+
+        d.play(
+            [
+                ("08:40", (A, feeder["trip_id"])),
+                ("08:50", (A, feeder["trip_id"])),
+                ("08:58", no_show),
+                ("10:00", (C, breakdown["trip_id"])),
+                ("10:10", fail),
+                ("10:15", provider_cancel),
+            ]
+        )
+    finally:
+        d.sim(A, "policy", body={"unsupported_requirements": []})
+        d.sim(B, "policy", body={"offer_ttl_s": None, "hold_decision": "AUTO"})
+        d.sim(C, "policy", body={"tender_decision": "ACCEPT"})
+
+
 def supervised_rider_custody_handoff(d: Demo, day: date) -> None:
     """A rider who must not be left alone (HAND_TO_HAND, supervision_required). Custody passes
     caregiver → feeder driver → onward driver → clinic staff, with a record at each handoff."""
@@ -471,6 +583,7 @@ SCENARIOS = {
     "late-first-leg-hold": late_first_leg_hold,
     "tender-expired-retender": tender_expired_retender,
     "missed-connection-reprotect": missed_connection_reprotect,
+    "refusals-and-failures": refusals_and_failures,
     "supervised-rider-custody-handoff": supervised_rider_custody_handoff,
 }
 

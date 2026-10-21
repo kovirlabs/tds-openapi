@@ -182,3 +182,38 @@ def test_events_have_strictly_increasing_times(onward):
     onward.sim_advance("tr-tpt-b", {"until": "LEG_COMPLETED"})
     times = [e["event"]["occurred_at"] for e in onward.events]
     assert times == sorted(times) and len(set(times)) == len(times)
+
+
+def test_offers_expire_when_a_ttl_is_set(clock):
+    clock.now = clock.now.replace(year=2026, month=11, day=10, hour=12)
+    provider = Provider(ProviderConfig(provider_id="oakland-go", offer_ttl_s=600), clock=clock)
+    trip = example("refusals-and-failures", "03-request-offer.request.json")
+    status, offered = provider.request_trip(REQ, "k1", trip)
+    assert (status, offered["status"]) == (201, "OFFERED") and "offer_expires_at" in offered
+    clock.advance(601)
+    provider.tick()
+    assert provider.get_trip(REQ, trip["trip_id"])[1]["status"] == "EXPIRED"
+    assert provider.confirm_trip(REQ, "k2", trip["trip_id"])[0] == 409
+
+
+def test_confirming_clears_the_offer_deadline(clock):
+    clock.now = clock.now.replace(year=2026, month=11, day=10, hour=12)
+    provider = Provider(ProviderConfig(provider_id="oakland-go", offer_ttl_s=600), clock=clock)
+    trip = example("refusals-and-failures", "03-request-offer.request.json")
+    provider.request_trip(REQ, "k1", trip)
+    status, confirmed = provider.confirm_trip(REQ, "k2", trip["trip_id"])
+    assert status == 200 and "offer_expires_at" not in confirmed
+    clock.advance(601)
+    provider.tick()
+    assert provider.get_trip(REQ, trip["trip_id"])[1]["status"] in ("CONFIRMED", "SCHEDULED")
+
+
+def test_provider_cancel_and_runtime_policies(onward):
+    status, policy = onward.sim_policy({"unsupported_requirements": ["STRETCHER"], "offer_ttl_s": 60})
+    assert status == 200 and policy["unsupported_requirements"] == ["STRETCHER"]
+    status, tender = onward.create_tender(REQ, "k1", tender_body())
+    status, result = onward.sim_cancel(tender["trip_id"], {"reason": "PROVIDER_UNABLE"})
+    assert status == 200 and result["trip"]["cancellation"]["cancelled_by"] == "PROVIDER"
+    assert [e["event_type"] for e in result["emitted"]] == ["TRIP_STATUS_CHANGED", "TRIP_CANCELLED"]
+    assert onward.sim_cancel(tender["trip_id"], None)[0] == 409
+    assert all_events_valid(onward) == []

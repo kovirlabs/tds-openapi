@@ -1,0 +1,38 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/transfer/event-exception-resolved.yaml
+title: ExceptionResolvedEvent
+description: >-
+  Emitted by a broker when an exception it raised is resolved (SPEC.md §10.6), e.g. the hold was answered, the leg re-protected or the custody record arrived. Same exception_id as the EXCEPTION_RAISED it closes; resolved_at is set.
+x-profile: transfer
+allOf:
+  - $ref: ../core/event.yaml
+type: object
+properties:
+  event_type:
+    description: Always EXCEPTION_RESOLVED.
+    const: EXCEPTION_RESOLVED
+  payload:
+    description: The exception, with resolved_at.
+    type: object
+    required: [exception]
+    properties:
+      exception:
+        description: The exception, resolved.
+        allOf:
+          - $ref: ./exception.yaml
+          - required: [resolved_at]
+examples:
+  - event_id: "evt-exception-resolved-1"
+    event_type: "EXCEPTION_RESOLVED"
+    occurred_at: "2026-11-10T09:10:00-05:00"
+    provider_id: "throughride-demo"
+    schema_version: "0.5.0"
+    payload:
+      exception:
+        exception_id: "ex-2"
+        severity: "CRITICAL"
+        type: "HOLD_UNANSWERED"
+        interchange_id: "ix-20261110-1"
+        detected_at: "2026-11-10T09:09:00-05:00"
+        suggested_actions: [CALL_PROVIDER, REPROTECT]
+        resolved_at: "2026-11-10T09:10:00-05:00"
