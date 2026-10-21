@@ -77,6 +77,19 @@ def test_bad_interchanges_are_refused(onward, change, fragment):
     assert status == 400 and fragment in body["detail"]
 
 
+@pytest.mark.parametrize(
+    ("protection", "supervised", "expected"),
+    [("PROTECTED", False, 400), ("PROTECTED", True, 201), ("BEST_EFFORT", False, 201)],
+)
+def test_hand_to_hand_on_protected_interchange_needs_supervision(onward, protection, supervised, expected):
+    body = tender_body(protection=protection, supervision_required=supervised)
+    body["trip"]["legs"][0]["service_requirements"] = ["HAND_TO_HAND"]
+    status, result = onward.create_tender(REQ, "k1", body)
+    assert status == expected
+    if status == 400:
+        assert "supervision_required" in result["detail"]
+
+
 def hold(onward, minutes: int, key: str = "h1", hold_id: str = "hd-1") -> dict:
     trip = onward.get_trip(REQ, "tr-tpt-b")[1]
     from datetime import datetime, timedelta

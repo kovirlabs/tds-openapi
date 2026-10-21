@@ -4,6 +4,30 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-10-21
+
+Audit of the ThroughRide alignment items (`docs/notes/throughride-alignment.md` #1–12) against
+schemas, examples, mock and kit. All were already in the schemas; this release fills the gaps
+in examples, mock behaviour and validation. Additive only.
+
+### Added
+- Generated example `missed-connection-reprotect`: a hold answered `PARTIAL` (provider
+  counter-offer with `scheduled_pickup`/`held_until`), a `RETIME` left unanswered until it is
+  `EXPIRED` (broker raises `HOLD_UNANSWERED`), cancel with `MISSED_CONNECTION`, and a re-tender
+  to another provider. Wired into `POST /trips/{trip_id}/hold` (201, 202),
+  `GET /trips/{trip_id}/holds/{hold_id}` (200) and `POST /trips/{trip_id}/cancel`.
+- `exception` schema example for `HOLD_UNANSWERED`.
+- Validator: tender-request and interchange examples must follow the interchange rules
+  (`auto_hold_s` ≤ `max_hold_s`; `HAND_TO_HAND` on a `PROTECTED` interchange needs
+  `supervision_required`).
+
+### Changed
+- `tds-mock` refuses (400 `INVALID_REQUEST`) a tender whose leg has `HAND_TO_HAND` on a
+  `PROTECTED` interchange without `supervision_required: true` (SPEC.md §10.1 already said MUST).
+- SPEC.md §10: section headings name the actual schema files; §10.6 uses `interchange_id`
+  (as the schema does), not `interchange_ref`.
+- Generated event streams carry `schema_version: "0.4.1"`.
+
 ## [0.4.0] - 2026-10-20
 
 ### Added

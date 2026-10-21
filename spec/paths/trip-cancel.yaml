@@ -20,6 +20,9 @@ post:
         examples:
           cancellation:
             externalValue: ../../examples/cancellation/02-cancel.request.json
+          missed_connection:
+            summary: Re-protecting a leg after a missed connection
+            externalValue: ../../examples/missed-connection-reprotect/10-cancel-onward.request.json
   responses:
     "200":
       description: The trip is CANCELLED.
@@ -30,6 +33,8 @@ post:
           examples:
             cancellation:
               externalValue: ../../examples/cancellation/02-cancel.response.json
+            missed_connection:
+              externalValue: ../../examples/missed-connection-reprotect/11-cancel-onward.response.json
     "400":
       $ref: ../components/responses.yaml#/BadRequest
     "401":

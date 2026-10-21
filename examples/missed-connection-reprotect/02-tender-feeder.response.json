@@ -1,0 +1,14 @@
+{
+  "tender_id": "tn-rp-a",
+  "trip_id": "tr-rp-a",
+  "interchange_id": "ix-rp",
+  "respond_by": "2026-11-10T08:10:00-05:00",
+  "status": "ACCEPTED",
+  "created_at": "2026-11-10T07:55:00-05:00",
+  "accepted_terms": {
+    "auto_hold_s": 300,
+    "max_hold_s": 900
+  },
+  "provider_trip_id": "aaata-a-ride-0002",
+  "responded_at": "2026-11-10T07:55:00-05:00"
+}

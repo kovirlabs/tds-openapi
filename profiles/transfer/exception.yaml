@@ -53,3 +53,9 @@ examples:
     interchange_id: "ix-20261110-1"
     detected_at: "2026-11-10T09:48:30-05:00"
     suggested_actions: [HOLD]
+  - exception_id: "ex-2"
+    severity: "CRITICAL"
+    type: "HOLD_UNANSWERED"
+    interchange_id: "ix-20261110-1"
+    detected_at: "2026-11-10T09:09:00-05:00"
+    suggested_actions: [CALL_PROVIDER, REPROTECT]

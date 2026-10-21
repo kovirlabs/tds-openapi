@@ -20,6 +20,9 @@ get:
             granted:
               summary: A granted hold
               externalValue: ../../examples/late-first-leg-hold/07-read-hold.response.json
+            expired:
+              summary: Unanswered by respond_by (the broker raises HOLD_UNANSWERED)
+              externalValue: ../../examples/missed-connection-reprotect/09-read-unanswered-hold.response.json
     "401":
       $ref: ../components/responses.yaml#/Unauthorized
     "404":

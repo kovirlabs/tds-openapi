@@ -97,6 +97,31 @@ Append under *Open*, one heading per mismatch:
 - **Why it matters:** This is how most providers would join early on. Conformance timing (synchronous decisions, short deadlines) should not exclude them.
 - **Suggested resolution:** Needs a decision. Possibly have `/health` declare `operated_via: BROKER_PROXY` and `typical_response_s`, and have conformance accept asynchronous `202 REQUESTED` → later `OFFERED`/`REJECTED` as fully conformant.
 
+### ThroughRide spec still names pre-v0.4 values
+- **Where:** SPEC.md §10.3, §10.4, `leg.service_requirements`  ↔  ThroughRide `spec.md` §8.1 decisions 3, 5 and 10 and the mapping table
+- **Mismatch:** ThroughRide's milestone table still lists `EN_ROUTE_TO_TRANSFER` / `ARRIVED_TRANSFER`, the custody-gap timer starts at `ARRIVED_TRANSFER`, the delay causes include `rider`, and the mapping says car seats have no value. The binding dropped the transfer milestones (#5), merged `RIDER` into `BOARDING` (#8) and has `CHILD_SEAT` (#6).
+- **Why it matters:** An adapter written from ThroughRide's table would emit milestones the kit rejects.
+- **Suggested resolution:** change ThroughRide: hub arrival = the feeder leg's `ARRIVED_DROPOFF` (the driver button can still say "Arrived at transfer"); start the custody-gap timer there; map `rider` → `BOARDING`; map `car_seat` → `CHILD_SEAT`.
+
+## v0.4.1 audit (2026-10-21)
+
+Each agreed item checked against `profiles/`, `spec/`, `examples/`, `tds-mock` and the kit.
+
+| # | Where it lives now | Gap found → fixed in 0.4.1 |
+|---|---|---|
+| 1 | `transfer/fallback-policy.approval`; `tender-expired-retender` and `missed-connection-reprotect` narrate a coordinator approval; §13 `tender_deadline` tests the provider side only | Fallback policy is broker-side and not on the wire, so the kit does not check it (by design). |
+| 2 | `interchange.auto_hold_s`; `accepted-terms` (required in `ACCEPTED` tenders); mock caps it; `tender_deadline` checks accepted ≤ requested | none |
+| 3 | `hold-request.respond_by`; hold `EXPIRED`; exception `HOLD_UNANSWERED`; mock expires holds | No example of an expired hold or `HOLD_UNANSWERED` → `missed-connection-reprotect`, exception schema example |
+| 4 | hold `GRANTED`/`PARTIAL` carry `scheduled_pickup`, `held_until`; mock counter-offers; kit checks `scheduled_pickup` | No `PARTIAL` example → `missed-connection-reprotect` `06-hold-onward.response.json` |
+| 5 | `transfer/milestone` has no transfer-specific values; kit `milestone_sequence` | none |
+| 6 | `HAND_TO_HAND`, `CHILD_SEAT` in core; mock treats `HAND_TO_HAND` as supervised | The §10.1 MUST (`HAND_TO_HAND` + `PROTECTED` ⇒ `supervision_required`) was not enforced → mock refuses such tenders (400); validator checks examples |
+| 7 | `eta-band.source`; mock sets it | none |
+| 8 | `transfer/delay-cause` (no `RIDER`) on `ETA_UPDATE` and `LEG_FAILED` | none |
+| 9 | `interchange.accessibility_buffer_s` description | none |
+| 10 | `rider.rider_ref_id` description; demo uses pairwise ids | none |
+| 11 | `core/cancel-reason`; `cancel-request.detail` (no health data) | No `MISSED_CONNECTION` example → `missed-connection-reprotect` `10-cancel-onward.request.json` |
+| 12 | `health.operated_via`, `typical_response_s`; kit timing uses `typical_response_s` | none |
+
 ## tds-openapi response (2026-10-20)
 
 Status: **applied** = in the schemas now · **agree** = fold into SPEC.md when that section is drafted · **decide** = Evan's call, recommendation given.
