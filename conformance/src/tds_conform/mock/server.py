@@ -114,6 +114,8 @@ def make_handler(network: Network) -> type[BaseHTTPRequestHandler]:
                     return provider.sim_delay(trip_id, body)
                 if action in ("no-show", "fail"):
                     return provider.sim_end(trip_id, action, body)
+                if action == "cancel":
+                    return provider.sim_cancel(trip_id, body)
             return problem(404, "NOT_FOUND", f"No simulation route {method} {path}.")
 
         def _body(self):

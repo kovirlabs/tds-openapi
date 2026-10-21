@@ -1,0 +1,36 @@
+{
+  "trip_id": "tr-rf-f",
+  "requester_id": "throughride-demo",
+  "provider_id": "county-connector",
+  "rider_ref": {
+    "rider_ref_id": "r-coun-55e1",
+    "display_name": "Dana K.",
+    "language": "en"
+  },
+  "legs": [
+    {
+      "leg_id": "leg-1",
+      "pickup": {
+        "lat": 42.6064,
+        "lon": -83.1498,
+        "name": "Corewell Health Troy",
+        "access_notes": "Main entrance"
+      },
+      "dropoff": {
+        "lat": 42.2459,
+        "lon": -83.6157,
+        "name": "Rider's home (Ypsilanti)",
+        "access_notes": "Side door, ramp"
+      },
+      "pickup_window": {
+        "earliest": "2026-11-10T10:30:00-05:00",
+        "latest": "2026-11-10T10:45:00-05:00"
+      },
+      "scheduled_pickup": "2026-11-10T10:30:00-05:00"
+    }
+  ],
+  "status": "CONFIRMED",
+  "created_at": "2026-11-10T08:06:00-05:00",
+  "updated_at": "2026-11-10T08:06:00-05:00",
+  "provider_trip_id": "county-connector-0020"
+}

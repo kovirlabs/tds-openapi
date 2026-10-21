@@ -114,13 +114,15 @@ REQUESTED → OFFERED → CONFIRMED → SCHEDULED → IN_PROGRESS → COMPLETED
      │          │          │            │             └→ FAILED
      └→ REJECTED└→ EXPIRED └────────────┴→ CANCELLED
 ```
-`NO_SHOW` is terminal from `SCHEDULED`. Providers that confirm synchronously may skip `OFFERED`.
+`NO_SHOW` is terminal from `SCHEDULED` or, once the vehicle is at the pickup, `IN_PROGRESS`. Providers that confirm synchronously may skip `OFFERED`. A provider whose offers lapse sets `offer_expires_at` on the `OFFERED` trip; unconfirmed by then, the trip is `EXPIRED`. A provider may cancel a trip itself (`cancellation.cancelled_by: PROVIDER`, e.g. `PROVIDER_UNABLE`).
 
 ## 9. Events (AsyncAPI)
 Defined in `spec/asyncapi.yaml`; payload schemas in `profiles/*/event-*.yaml`.
 Envelope: `event_id`, `event_type`, `occurred_at`, `trip_id`, `leg_id`, `provider_id`, `payload`, `schema_version`.
 Core event types: `TRIP_STATUS_CHANGED` (every status change), `TRIP_SCHEDULED` (committed times or vehicle set or changed), `TRIP_CANCELLED` (sent with the status change, carries who cancelled and why).
 Transfer event types: `TENDER_RESPONSE`, `HOLD_RESPONSE`, `MILESTONE`, `ETA_UPDATE`, `CUSTODY_HANDOFF`.
+Broker event types: `EXCEPTION_RAISED`, `EXCEPTION_RESOLVED` (§10.6), sent by a broker to its own subscribers (coordinator tools, agency systems), never by providers; `provider_id` is then the broker's id.
+- **Completeness.** Every state change has a typed event: trip status (`TRIP_STATUS_CHANGED`, all statuses), schedule and vehicle (`TRIP_SCHEDULED`), cancellation by either side (`TRIP_CANCELLED`), tender and hold outcomes, milestones, ETA bands, custody, and exceptions. The example validator fails unless every event type and every state those events report appears in an example event stream.
 - Providers emit an event for **every** change, including changes the requester already saw in a synchronous response, so a receiver's event log is complete.
 - Delivery: one event per HTTPS POST to the subscription's `callback_url`; at least once, retries with exponential backoff; receivers return 2xx and dedupe on `event_id`; order by `occurred_at`. Plain `http://` callbacks are allowed only for loopback addresses (development and the conformance kit).
 
@@ -172,6 +174,7 @@ Only the outbound leg of the named interchange can be held, and only before `RID
 Broker-generated alerts for coordinators (manage by exception). Not required of providers; defined so broker UIs and integrations share vocabulary.
 `exception_id`, `severity` (`INFO`/`AT_RISK`/`CRITICAL`), `type` (`LOW_CONNECTION_PROBABILITY`, `TENDER_EXPIRED`, `TENDER_EXHAUSTED`, `STALE_HEARTBEAT`, `MISSED_MILESTONE`, `HOLD_DENIED`, `HOLD_UNANSWERED`, `CUSTODY_GAP`), `interchange_id`, `detected_at`, `suggested_actions`, `resolved_at`.
 Default trigger: connection probability < 0.8 → `AT_RISK`; < 0.5 → `CRITICAL`.
+A broker that offers webhooks to its own subscribers sends `EXCEPTION_RAISED` when it raises one and `EXCEPTION_RESOLVED` (same `exception_id`, `resolved_at` set) when it closes; example `examples/exceptions/`.
 
 ### 10.7 Custody (`custody-handoff.yaml`, `custody-party.yaml`)
 Required when `supervision_required: true`.
@@ -233,7 +236,7 @@ Both profiles extend `POST /trips`: the body is a core TripRequest plus one prof
 | **v0.1** | Crosswalk template; core schemas: trip, leg, location, time-window, error; Spectral config; example validator script; README/licenses/CONTRIBUTING. |
 | **v0.2** | Core paths (§7); 2 examples (`single-trip`, `cancellation`); Prism mock server; CI lint + validate. |
 | **v0.3** | `tds-conform` CLI running `book_confirm_cancel` + `idempotency` against mock; report output. |
-| **v0.4** | Transfer profile (§10) draft; examples `two-provider-transfer`, `late-first-leg-hold`, `tender-expired-retender`, `supervised-rider-custody-handoff` (v0.4.1 adds `missed-connection-reprotect`); mock simulating two providers; ThroughRide adapters pointed at mock. **SE Michigan pilot demo target.** |
+| **v0.4** | Transfer profile (§10) draft; examples `two-provider-transfer`, `late-first-leg-hold`, `tender-expired-retender`, `supervised-rider-custody-handoff` (v0.4.1 adds `missed-connection-reprotect`, v0.5 `refusals-and-failures`); mock simulating two providers; ThroughRide adapters pointed at mock. **SE Michigan pilot demo target.** |
 | v0.5+ | AsyncAPI completeness, settlement, paratransit/NEMT profiles, `for-agencies.md` RFP language, outreach to MobilityData/OMF. |
 
 ## 16. Open questions

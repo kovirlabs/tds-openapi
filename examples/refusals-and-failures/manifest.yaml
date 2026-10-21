@@ -1,0 +1,66 @@
+description: 'Everything that can go wrong short of a late feeder, so every state change has an event
+  on record: a trip refused for an unsupported requirement (REJECTED), an offer left unconfirmed (EXPIRED),
+  a tender rejected for capacity, a hold denied, a rider no-show on the feeder (the broker cancels the
+  onward leg), a leg failed by a breakdown, and a trip the provider cancels itself.'
+generated_by: tds-demo generate-examples (do not edit by hand; change tds_conform/demo.py and regenerate)
+narrative:
+- 'aaata-a-ride refuses tr-rf-st: UNSUPPORTED_REQUIREMENT (trip REJECTED)'
+- oakland-go offers tr-rf-ox until 08:05; nobody confirms
+- tr-rf-ox is EXPIRED
+- 'Tender to aaata-a-ride for tr-rf-a: ACCEPTED'
+- 'Tender to county-connector for tr-rf-b: REJECTED'
+- 'county-connector rejects the onward leg: NO_CAPACITY; coordinator picks oakland-go'
+- 'Tender to oakland-go for tr-rf-b2: ACCEPTED'
+- 'Precautionary hold at oakland-go: DENIED (DOWNSTREAM_COMMITMENT)'
+- 'tr-rf-f at county-connector: OFFERED → CONFIRMED'
+- 'tr-rf-pc at oakland-go: OFFERED → CONFIRMED'
+- 'Rider not at home: aaata-a-ride records RIDER_NO_SHOW; broker cancels the onward leg'
+- 'county-connector''s vehicle breaks down on the way: LEG_FAILED (VEHICLE)'
+- 'oakland-go cancels tr-rf-pc itself: PROVIDER_UNABLE'
+files:
+  01-request-unsupported.request.json:
+    schema: https://tds-openapi.org/schemas/core/trip-request.yaml
+  02-request-unsupported.response.json:
+    schema: https://tds-openapi.org/schemas/core/error.yaml
+  03-request-offer.request.json:
+    schema: https://tds-openapi.org/schemas/core/trip-request.yaml
+  04-request-offer.response.json:
+    schema: https://tds-openapi.org/schemas/core/trip.yaml
+  05-read-expired-offer.response.json:
+    schema: https://tds-openapi.org/schemas/core/trip.yaml
+  06-tender-feeder.request.json:
+    schema: https://tds-openapi.org/schemas/transfer/tender-request.yaml
+  07-tender-feeder.response.json:
+    schema: https://tds-openapi.org/schemas/transfer/tender.yaml
+  08-tender-onward-rejected.request.json:
+    schema: https://tds-openapi.org/schemas/transfer/tender-request.yaml
+  09-tender-onward-rejected.response.json:
+    schema: https://tds-openapi.org/schemas/transfer/tender.yaml
+  10-tender-onward.request.json:
+    schema: https://tds-openapi.org/schemas/transfer/tender-request.yaml
+  11-tender-onward.response.json:
+    schema: https://tds-openapi.org/schemas/transfer/tender.yaml
+  12-read-onward.response.json:
+    schema: https://tds-openapi.org/schemas/core/trip.yaml
+  13-hold-denied.request.json:
+    schema: https://tds-openapi.org/schemas/transfer/hold-request.yaml
+  14-hold-denied.response.json:
+    schema: https://tds-openapi.org/schemas/transfer/hold.yaml
+  15-request-breakdown.request.json:
+    schema: https://tds-openapi.org/schemas/core/trip-request.yaml
+  16-request-breakdown.response.json:
+    schema: https://tds-openapi.org/schemas/core/trip.yaml
+  17-confirm-breakdown.response.json:
+    schema: https://tds-openapi.org/schemas/core/trip.yaml
+  18-request-provider-cancel.request.json:
+    schema: https://tds-openapi.org/schemas/core/trip-request.yaml
+  19-request-provider-cancel.response.json:
+    schema: https://tds-openapi.org/schemas/core/trip.yaml
+  20-confirm-provider-cancel.response.json:
+    schema: https://tds-openapi.org/schemas/core/trip.yaml
+  21-cancel-onward.request.json:
+    schema: https://tds-openapi.org/schemas/core/cancel-request.yaml
+  22-cancel-onward.response.json:
+    schema: https://tds-openapi.org/schemas/core/trip.yaml
+  events.json:
+    kind: event-stream

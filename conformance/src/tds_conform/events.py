@@ -21,6 +21,8 @@ EVENT_SCHEMAS = {
     "MILESTONE": "transfer/event-milestone",
     "ETA_UPDATE": "transfer/event-eta-update",
     "CUSTODY_HANDOFF": "transfer/event-custody-handoff",
+    "EXCEPTION_RAISED": "transfer/event-exception-raised",
+    "EXCEPTION_RESOLVED": "transfer/event-exception-resolved",
 }
 
 # Allowed next milestones (SPEC.md §10.3). None = no milestone yet.

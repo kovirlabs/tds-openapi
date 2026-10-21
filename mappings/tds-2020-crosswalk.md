@@ -268,6 +268,7 @@ cite; don't paste definitions (reuse terms not yet confirmed, see SPEC.md §16 Q
 | `trip.legs` | TODO(crosswalk) | | TODO | Core restricts to exactly one leg |
 | `trip.fare_funding` | TODO(crosswalk) | | TODO |  |
 | `trip.notes_to_driver` | TODO(crosswalk) | | TODO |  |
+| `trip.offer_expires_at` | TODO(crosswalk) | | TODO |  |
 | `trip.cancellation` | TODO(crosswalk) | | TODO |  |
 | `trip.created_at` | TODO(crosswalk) | | TODO |  |
 | `trip.updated_at` | TODO(crosswalk) | | TODO |  |

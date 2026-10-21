@@ -1,0 +1,7 @@
+{
+  "type": "about:blank",
+  "title": "Refused",
+  "status": 422,
+  "detail": "Cannot provide: STRETCHER.",
+  "code": "UNSUPPORTED_REQUIREMENT"
+}

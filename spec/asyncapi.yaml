@@ -3,7 +3,8 @@ info:
   title: TDS events binding
   version: 0.4.2
   description: >-
-    Events a provider delivers to a requester's webhook (SPEC.md §9, §12). The
+    Events a provider delivers to a requester's webhook (SPEC.md §9, §12),
+    and the exception events a broker delivers to its own subscribers. The
     requester registers a callback URL with `POST /subscriptions` (see
     openapi.yaml) and receives the signing secret once.
 
@@ -54,6 +55,10 @@ channels:
         $ref: '#/components/messages/EtaUpdate'
       CustodyHandoff:
         $ref: '#/components/messages/CustodyHandoff'
+      ExceptionRaised:
+        $ref: '#/components/messages/ExceptionRaised'
+      ExceptionResolved:
+        $ref: '#/components/messages/ExceptionResolved'
 operations:
   deliverTripStatusChanged:
     action: send
@@ -119,6 +124,22 @@ operations:
       $ref: '#/channels/subscriberCallback'
     messages:
       - $ref: '#/channels/subscriberCallback/messages/CustodyHandoff'
+  deliverExceptionRaised:
+    action: send
+    title: Deliver EXCEPTION_RAISED
+    description: A broker POSTs an EXCEPTION_RAISED event to its own subscriber's callback URL.
+    channel:
+      $ref: '#/channels/subscriberCallback'
+    messages:
+      - $ref: '#/channels/subscriberCallback/messages/ExceptionRaised'
+  deliverExceptionResolved:
+    action: send
+    title: Deliver EXCEPTION_RESOLVED
+    description: A broker POSTs an EXCEPTION_RESOLVED event to its own subscriber's callback URL.
+    channel:
+      $ref: '#/channels/subscriberCallback'
+    messages:
+      - $ref: '#/channels/subscriberCallback/messages/ExceptionResolved'
 components:
   messageTraits:
     signed:
@@ -220,3 +241,25 @@ components:
         schemaFormat: application/schema+json;version=draft-2020-12
         schema:
           $ref: ../profiles/transfer/event-custody-handoff.yaml
+    ExceptionRaised:
+      name: EXCEPTION_RAISED
+      title: Exception raised
+      summary: A broker raised an exception for coordinators (SPEC.md §10.6). Sent by brokers, not providers.
+      x-profile: transfer
+      traits:
+        - $ref: '#/components/messageTraits/signed'
+      payload:
+        schemaFormat: application/schema+json;version=draft-2020-12
+        schema:
+          $ref: ../profiles/transfer/event-exception-raised.yaml
+    ExceptionResolved:
+      name: EXCEPTION_RESOLVED
+      title: Exception resolved
+      summary: An exception a broker raised was resolved. Sent by brokers, not providers.
+      x-profile: transfer
+      traits:
+        - $ref: '#/components/messageTraits/signed'
+      payload:
+        schemaFormat: application/schema+json;version=draft-2020-12
+        schema:
+          $ref: ../profiles/transfer/event-exception-resolved.yaml

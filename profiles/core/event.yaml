@@ -21,7 +21,9 @@ properties:
     type: string
     format: date-time
   provider_id:
-    description: Provider that emitted the event.
+    description: >-
+      Party that emitted the event: the provider, or for broker events
+      (EXCEPTION_RAISED, EXCEPTION_RESOLVED) the broker.
     type: string
   trip_id:
     description: Requester-assigned trip id the event concerns, if any.

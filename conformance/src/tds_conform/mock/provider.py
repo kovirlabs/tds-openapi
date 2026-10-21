@@ -38,6 +38,7 @@ class ProviderConfig:
     operated_via: str = "DIRECT"
     unsupported_requirements: frozenset[str] = frozenset()
     profiles: tuple[str, ...] = ("CORE", "TRANSFER", "PARATRANSIT", "NEMT")  # declared on /health
+    offer_ttl_s: int | None = None  # set: offers carry offer_expires_at and EXPIRE if not confirmed
     # Transfer profile policies; adjustable at runtime through the /_sim API.
     tender_decision: str = "ACCEPT"  # ACCEPT | REJECT | IGNORE
     reject_reason: str = "NO_CAPACITY"
@@ -222,6 +223,7 @@ class Provider(TransferMixin):
         return 200, copy.deepcopy(trip.body)
 
     def _mark_confirmed(self, trip: _Trip) -> None:
+        trip.body.pop("offer_expires_at", None)
         self._set_status(trip, "CONFIRMED")
         trip.schedule_at = self.clock() + timedelta(seconds=self.config.schedule_delay_s)
 
@@ -298,6 +300,9 @@ class Provider(TransferMixin):
         if trip.decide_at and now >= trip.decide_at and trip.body["status"] == "REQUESTED":
             trip.decide_at = None
             self._offer(trip)
+        expires = trip.body.get("offer_expires_at")
+        if trip.body["status"] == "OFFERED" and expires and now > datetime.fromisoformat(expires):
+            self._set_status(trip, "EXPIRED")
         if trip.schedule_at and now >= trip.schedule_at and trip.body["status"] == "CONFIRMED":
             trip.schedule_at = None
             self._schedule(trip)
@@ -313,6 +318,8 @@ class Provider(TransferMixin):
             leg["scheduled_dropoff"] = _ts(dropoff)
             leg["scheduled_pickup"] = _ts(dropoff - timedelta(minutes=45))
         trip.body.setdefault("provider_trip_id", self.new_id(self.provider_id))
+        if self.config.offer_ttl_s:
+            trip.body["offer_expires_at"] = _ts(self.clock() + timedelta(seconds=self.config.offer_ttl_s))
         self._set_status(trip, "OFFERED")
 
     def _schedule(self, trip: _Trip) -> None:

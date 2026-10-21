@@ -53,6 +53,12 @@ properties:
       health or diagnosis information.
     type: string
     maxLength: 500
+  offer_expires_at:
+    description: >-
+      While the trip is OFFERED: the offer lapses (status EXPIRED) unless the
+      requester confirms by then. Absent when offers don't expire.
+    type: string
+    format: date-time
   cancellation:
     description: Present when status is CANCELLED.
     $ref: ./cancellation.yaml

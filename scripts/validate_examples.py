@@ -22,6 +22,10 @@ Checks:
      that message.
   6. Every profiles/core property appears in mappings/tds-2020-crosswalk.md or
      is marked `x-tds-extension: true`.
+  7. AsyncAPI completeness: every event type is declared in core/event-types, sent by
+     an operation and shown in an example event stream, and every state an event reports
+     (trip statuses, who cancelled, tender and hold outcomes, milestones, exception types)
+     appears in some example.
 
 Exit status is non-zero if any check fails.
 """
@@ -320,6 +324,61 @@ def check_wiring(manifests: dict[Path, dict], wiring: dict[tuple[str, str], dict
     return results
 
 
+def collect_events(manifests: dict[Path, dict]) -> list[dict]:
+    """Every event in every example event stream."""
+    events = []
+    for scenario, files in manifests.items():
+        for name, entry in files.items():
+            path = scenario / name
+            if entry.get("kind") == "event-stream" and path.exists():
+                events += [e for e in json.loads(path.read_text()) if isinstance(e, dict)]
+    return events
+
+
+# What each event type must show across the examples: (how to read the value, schema $id, path to its enum, skipped).
+COVERAGE = {
+    "TRIP_STATUS_CHANGED": (lambda p: p["status"], "core/trip-status.yaml", (), set()),
+    "TRIP_CANCELLED": (lambda p: p["cancellation"]["cancelled_by"], "core/cancellation.yaml", ("cancelled_by",), set()),
+    "TENDER_RESPONSE": (lambda p: p["tender"]["status"], "transfer/tender.yaml", ("status",), {"OFFERED"}),
+    "HOLD_RESPONSE": (lambda p: p["hold"]["status"], "transfer/hold.yaml", ("status",), {"PENDING"}),
+    "MILESTONE": (lambda p: p["milestone"], "transfer/milestone.yaml", (), set()),
+    "EXCEPTION_RAISED": (lambda p: p["exception"]["type"], "transfer/exception.yaml", ("type",), set()),
+}
+
+
+def check_event_coverage(
+    manifests: dict[Path, dict], registry: Registry, asyncapi: Path = ASYNCAPI, events: list[dict] | None = None
+) -> list[str]:
+    """AsyncAPI completeness (SPEC.md §9): every event type is declared, deliverable and shown in an example,
+    and every state an event reports (trip status, tender and hold outcomes, milestones, who cancelled,
+    exception types) appears in some example event."""
+    spec = yaml.safe_load(asyncapi.read_text())
+    messages = {key: m["name"] for key, m in spec["components"]["messages"].items()}
+    errors = []
+    declared = set(registry.contents(ID_BASE + "core/event-types.yaml")["items"]["enum"])
+    if declared != set(messages.values()):
+        errors.append(
+            f"core/event-types enum and AsyncAPI messages differ: {sorted(declared ^ set(messages.values()))}"
+        )
+    in_channel = set(spec["channels"]["subscriberCallback"]["messages"])
+    sent = {ref["$ref"].rsplit("/", 1)[-1] for op in spec["operations"].values() for ref in op["messages"]}
+    for key, name in messages.items():
+        if key not in in_channel or key not in sent:
+            errors.append(f"{name}: message not on the subscriber channel or not sent by any operation")
+    events = collect_events(manifests) if events is None else events
+    seen = {e.get("event_type") for e in events}
+    errors += [f"{name}: no example event" for name in sorted(set(messages.values()) - seen)]
+    for event_type, (read, schema, path, skipped) in COVERAGE.items():
+        node = registry.contents(ID_BASE + schema)
+        for key in path:
+            node = node["properties"][key]
+        wanted = set(node["enum"]) - skipped
+        shown = {read(e["payload"]) for e in events if e.get("event_type") == event_type}
+        if missing := wanted - shown:
+            errors.append(f"{event_type}: no example event for {sorted(missing)}")
+    return errors
+
+
 def format_error(error) -> str:
     where = "/".join(str(p) for p in error.absolute_path) or "(root)"
     return f"at {where}: {error.message}"
@@ -349,6 +408,7 @@ def main() -> int:
         report(path.relative_to(ROOT).as_posix() + " (spec wiring)", errors)
     for path, errors in check_events(manifests, event_wiring()).items():
         report(path.relative_to(ROOT).as_posix() + " (event wiring)", errors)
+    report("event coverage (AsyncAPI completeness)", check_event_coverage(manifests, registry))
     report(CROSSWALK.relative_to(ROOT).as_posix() + " coverage", check_crosswalk(schemas))
 
     print(f"\n{failures} problem(s)" if failures else "\nall checks passed")

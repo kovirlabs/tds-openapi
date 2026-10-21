@@ -31,6 +31,18 @@ Toward **0.5.0** (SPEC.md §15). Version fields stay at 0.4.2 until 0.5.0 is cut
   scenarios `paratransit_booking`, `paratransit_rules`, `nemt_booking`, `nemt_rules`; kit tests
   include a faulty provider for each. `tds-mock` declares `PARATRANSIT` and `NEMT` on `/health`
   (configurable with `ProviderConfig.profiles`) and refuses profile objects it doesn't declare.
+- **AsyncAPI completeness** (SPEC.md §9): broker events `EXCEPTION_RAISED` and
+  `EXCEPTION_RESOLVED` (`transfer/event-exception-*.yaml`, payload `exception`), added to the
+  AsyncAPI channel, operations and `core/event-types`. The example validator now checks that
+  every event type and every state an event reports (all trip statuses, cancellation by
+  requester and provider, tender and hold outcomes, all milestones, all exception types) appears
+  in an example event stream.
+- `trip.offer_expires_at`: when an `OFFERED` trip lapses to `EXPIRED`.
+- Generated example `refusals-and-failures` (trip `REJECTED`, offer `EXPIRED`, tender `REJECTED`,
+  hold `DENIED`, `RIDER_NO_SHOW`, `LEG_FAILED`, cancellation by the provider) and hand-written
+  `exceptions` (one `EXCEPTION_RAISED` per type, with resolutions).
+- `tds-mock`: `offer_ttl_s` and `unsupported_requirements` as runtime policies;
+  `POST /_sim/{provider}/trips/{trip_id}/cancel` (provider cancels).
 - `tds-conform fuzz` (extra `tds-conform[fuzz]`, schemathesis 4): positive and negative
   generated requests to every operation of `dist/openapi.yaml`; checks no 5xx, documented
   status codes and media types, response schemas and headers, and rejection of invalid input.
@@ -39,6 +51,8 @@ Toward **0.5.0** (SPEC.md §15). Version fields stay at 0.4.2 until 0.5.0 is cut
 
 ### Changed
 - `fare-funding.funding_source` references `core/funding-source.yaml` (same values).
+- `core/event.provider_id` is the emitting party (the broker, for broker events).
+- SPEC.md §8.1: `NO_SHOW` may follow `IN_PROGRESS` (vehicle at the pickup), as the mock does.
 - `POST /trips/{trip_id}/confirm` documents 400 (e.g. missing `Idempotency-Key`); found by fuzzing.
 
 ### Fixed

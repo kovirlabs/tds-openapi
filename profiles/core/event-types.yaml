@@ -3,8 +3,10 @@ $id: https://tds-openapi.org/schemas/core/event-types.yaml
 title: EventTypes
 description: >-
   A set of event types a subscriber wants delivered (SPEC.md §9). Lists every
-  event type in this binding; the last five belong to the transfer profile and
-  are only delivered by providers that implement it.
+  event type in this binding. TENDER_RESPONSE through CUSTODY_HANDOFF belong to
+  the transfer profile and are delivered only by providers that implement it;
+  EXCEPTION_RAISED and EXCEPTION_RESOLVED are delivered by brokers to their own
+  subscribers, never by providers.
 type: array
 minItems: 1
 uniqueItems: true
@@ -19,5 +21,7 @@ items:
     - MILESTONE
     - ETA_UPDATE
     - CUSTODY_HANDOFF
+    - EXCEPTION_RAISED
+    - EXCEPTION_RESOLVED
 examples:
   - [TRIP_STATUS_CHANGED]
