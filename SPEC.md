@@ -1,6 +1,6 @@
 # SPEC.md — tds-openapi
 
-Status: **Draft 3 (v0.5.0 in progress; last release v0.4.2)** · Owner: Evan / Kovir Labs · Date: 2026-10-20
+Status: **Draft 3 (v0.5.0)** · Owner: Evan / Kovir Labs · Date: 2026-10-20
 
 Field lists below are **proposed**. Names for `profiles/core` must be reconciled with TDS 2020 (TCRP Report 210) in `mappings/tds-2020-crosswalk.md`; anything marked `TODO(crosswalk)` is unverified.
 
@@ -237,7 +237,8 @@ Both profiles extend `POST /trips`: the body is a core TripRequest plus one prof
 | **v0.2** | Core paths (§7); 2 examples (`single-trip`, `cancellation`); Prism mock server; CI lint + validate. |
 | **v0.3** | `tds-conform` CLI running `book_confirm_cancel` + `idempotency` against mock; report output. |
 | **v0.4** | Transfer profile (§10) draft; examples `two-provider-transfer`, `late-first-leg-hold`, `tender-expired-retender`, `supervised-rider-custody-handoff` (v0.4.1 adds `missed-connection-reprotect`, v0.5 `refusals-and-failures`); mock simulating two providers; ThroughRide adapters pointed at mock. **SE Michigan pilot demo target.** |
-| v0.5+ | AsyncAPI completeness, settlement, paratransit/NEMT profiles, `for-agencies.md` RFP language, outreach to MobilityData/OMF. |
+| **v0.5** | Settlement split (§10.8); paratransit and NEMT drafts with conformance levels (§11); AsyncAPI completeness incl. broker exception events (§9); `tds-conform fuzz`; `docs/for-agencies.md` RFP language. |
+| v0.6+ | Settlement exchange (API operation or events, undecided), profile vocabularies checked against TDS 2020 and payers, outreach to MobilityData/OMF. |
 
 ## 16. Open questions
 1. Do DRCOG or NEORide already have TDS API schemas? (Ask before v0.2 to avoid divergence.)

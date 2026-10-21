@@ -100,10 +100,10 @@ docker compose -f mock-server/docker-compose.yml up   # both mocks in Docker (st
 5. If behavior changed: example added/updated and a conformance scenario covers it.
 
 ## Current status and next task
-- Status: **v0.4 drafted** (2026-10-20): transfer profile schemas + operations, AsyncAPI events with signed delivery, multi-provider `tds-mock` with `/_sim`, `tds-demo`, five generated transfer examples (v0.4.1 adds `missed-connection-reprotect`), kit scenarios `webhook_delivery`/`tender_deadline`/`hold_request` and `check-events`. SPEC.md is Draft 2. Local git repo since v0.4.0 (no remote yet).
+- Status: **v0.5.0** (2026-10-21): core, transfer, draft paratransit and NEMT profiles; settlement split; AsyncAPI events for every state change incl. broker exception events; multi-provider `tds-mock` with `/_sim`; `tds-demo` with six generated examples; kit levels core|transfer|paratransit|nemt, `check-events`, `fuzz`. SPEC.md is Draft 3.
 - Open for Evan: fill TDS columns in the crosswalk from Report 210; confirm the licence split in README; pick the real `$id` domain.
-- v0.4.1 (alignment audit), v0.4.2 (`tds_conform.examples` public API) released 2026-10-21; v0.5 under way on `main` (CHANGELOG *Unreleased*): settlement split (§10.8) done.
-- **Next:** v0.5 per SPEC.md §15 (settlement split, `docs/for-agencies.md`, paratransit/NEMT drafts and levels, schemathesis fuzzing, AsyncAPI completeness done): steward outreach; a settlement API operation needs Evan's decision.
+- v0.4.1 (alignment audit), v0.4.2 (`tds_conform.examples` public API) and **v0.5.0** (settlement split, paratransit/NEMT drafts and levels, AsyncAPI completeness, fuzzing, for-agencies) released locally 2026-10-21; tags `v0.4.0`…`v0.5.0`, no remote yet.
+- **Next:** v0.6 per SPEC.md §15: settlement exchange (API operation or events) needs Evan's decision; check profile vocabularies against TDS 2020; steward outreach.
 
 ## Near-term demo target
 A SE Michigan pilot is being pitched (TheRide/AAATA + Oakland County transit + Jewish Family Services, supervised riders on cross-county medical trips). By v0.4 the mock server should simulate **two providers** so ThroughRide can demonstrate a protected transfer: tender → accept → milestones → ETA band → hold → handoff with custody record.

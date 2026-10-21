@@ -4,7 +4,7 @@
     "event_type": "TRIP_STATUS_CHANGED",
     "occurred_at": "2026-11-10T07:55:00.000-05:00",
     "provider_id": "aaata-a-ride",
-    "schema_version": "0.4.2",
+    "schema_version": "0.5.0",
     "payload": {
       "status": "REQUESTED"
     },
@@ -16,7 +16,7 @@
     "event_type": "TRIP_STATUS_CHANGED",
     "occurred_at": "2026-11-10T07:55:00.000-05:00",
     "provider_id": "oakland-go",
-    "schema_version": "0.4.2",
+    "schema_version": "0.5.0",
     "payload": {
       "status": "REQUESTED"
     },
@@ -28,7 +28,7 @@
     "event_type": "TRIP_STATUS_CHANGED",
     "occurred_at": "2026-11-10T07:55:00.001-05:00",
     "provider_id": "aaata-a-ride",
-    "schema_version": "0.4.2",
+    "schema_version": "0.5.0",
     "payload": {
       "status": "REJECTED",
       "previous_status": "REQUESTED"
@@ -41,7 +41,7 @@
     "event_type": "TRIP_STATUS_CHANGED",
     "occurred_at": "2026-11-10T07:55:00.001-05:00",
     "provider_id": "oakland-go",
-    "schema_version": "0.4.2",
+    "schema_version": "0.5.0",
     "payload": {
       "status": "OFFERED",
       "previous_status": "REQUESTED"
@@ -54,7 +54,7 @@
     "event_type": "TRIP_STATUS_CHANGED",
     "occurred_at": "2026-11-10T08:06:00.000-05:00",
     "provider_id": "aaata-a-ride",
-    "schema_version": "0.4.2",
+    "schema_version": "0.5.0",
     "payload": {
       "status": "REQUESTED"
     },
@@ -66,7 +66,7 @@
     "event_type": "TENDER_RESPONSE",
     "occurred_at": "2026-11-10T08:06:00.000-05:00",
     "provider_id": "county-connector",
-    "schema_version": "0.4.2",
+    "schema_version": "0.5.0",
     "payload": {
       "tender": {
         "tender_id": "tn-rf-b",
@@ -86,7 +86,7 @@
     "event_type": "TRIP_STATUS_CHANGED",
     "occurred_at": "2026-11-10T08:06:00.000-05:00",
     "provider_id": "oakland-go",
-    "schema_version": "0.4.2",
+    "schema_version": "0.5.0",
     "payload": {
       "status": "EXPIRED",
       "previous_status": "OFFERED"
@@ -99,7 +99,7 @@
     "event_type": "TRIP_STATUS_CHANGED",
     "occurred_at": "2026-11-10T08:06:00.001-05:00",
     "provider_id": "aaata-a-ride",
-    "schema_version": "0.4.2",
+    "schema_version": "0.5.0",
     "payload": {
       "status": "OFFERED",
       "previous_status": "REQUESTED"
@@ -112,7 +112,7 @@
     "event_type": "TRIP_STATUS_CHANGED",
     "occurred_at": "2026-11-10T08:06:00.001-05:00",
     "provider_id": "county-connector",
-    "schema_version": "0.4.2",
+    "schema_version": "0.5.0",
     "payload": {
       "status": "REQUESTED"
     },
@@ -124,7 +124,7 @@
     "event_type": "TRIP_STATUS_CHANGED",
     "occurred_at": "2026-11-10T08:06:00.001-05:00",
     "provider_id": "oakland-go",
-    "schema_version": "0.4.2",
+    "schema_version": "0.5.0",
     "payload": {
       "status": "REQUESTED"
     },
@@ -136,7 +136,7 @@
     "event_type": "TRIP_STATUS_CHANGED",
     "occurred_at": "2026-11-10T08:06:00.002-05:00",
     "provider_id": "aaata-a-ride",
-    "schema_version": "0.4.2",
+    "schema_version": "0.5.0",
     "payload": {
       "status": "CONFIRMED",
       "previous_status": "OFFERED"
@@ -149,7 +149,7 @@
     "event_type": "TRIP_STATUS_CHANGED",
     "occurred_at": "2026-11-10T08:06:00.002-05:00",
     "provider_id": "county-connector",
-    "schema_version": "0.4.2",
+    "schema_version": "0.5.0",
     "payload": {
       "status": "OFFERED",
       "previous_status": "REQUESTED"
@@ -162,7 +162,7 @@
     "event_type": "TRIP_STATUS_CHANGED",
     "occurred_at": "2026-11-10T08:06:00.002-05:00",
     "provider_id": "oakland-go",
-    "schema_version": "0.4.2",
+    "schema_version": "0.5.0",
     "payload": {
       "status": "OFFERED",
       "previous_status": "REQUESTED"
@@ -175,7 +175,7 @@
     "event_type": "TENDER_RESPONSE",
     "occurred_at": "2026-11-10T08:06:00.003-05:00",
     "provider_id": "aaata-a-ride",
-    "schema_version": "0.4.2",
+    "schema_version": "0.5.0",
     "payload": {
       "tender": {
         "tender_id": "tn-rf-a",
@@ -199,7 +199,7 @@
     "event_type": "TRIP_STATUS_CHANGED",
     "occurred_at": "2026-11-10T08:06:00.003-05:00",
     "provider_id": "county-connector",
-    "schema_version": "0.4.2",
+    "schema_version": "0.5.0",
     "payload": {
       "status": "CONFIRMED",
       "previous_status": "OFFERED"
@@ -212,7 +212,7 @@
     "event_type": "TRIP_STATUS_CHANGED",
     "occurred_at": "2026-11-10T08:06:00.003-05:00",
     "provider_id": "oakland-go",
-    "schema_version": "0.4.2",
+    "schema_version": "0.5.0",
     "payload": {
       "status": "CONFIRMED",
       "previous_status": "OFFERED"
@@ -225,7 +225,7 @@
     "event_type": "TENDER_RESPONSE",
     "occurred_at": "2026-11-10T08:06:00.004-05:00",
     "provider_id": "oakland-go",
-    "schema_version": "0.4.2",
+    "schema_version": "0.5.0",
     "payload": {
       "tender": {
         "tender_id": "tn-rf-b2",
@@ -249,7 +249,7 @@
     "event_type": "HOLD_RESPONSE",
     "occurred_at": "2026-11-10T08:06:00.005-05:00",
     "provider_id": "oakland-go",
-    "schema_version": "0.4.2",
+    "schema_version": "0.5.0",
     "payload": {
       "hold": {
         "hold_id": "hd-rf-1",
@@ -272,7 +272,7 @@
     "event_type": "TRIP_STATUS_CHANGED",
     "occurred_at": "2026-11-10T08:06:00.006-05:00",
     "provider_id": "oakland-go",
-    "schema_version": "0.4.2",
+    "schema_version": "0.5.0",
     "payload": {
       "status": "REQUESTED"
     },
@@ -284,7 +284,7 @@
     "event_type": "TRIP_STATUS_CHANGED",
     "occurred_at": "2026-11-10T08:06:00.007-05:00",
     "provider_id": "oakland-go",
-    "schema_version": "0.4.2",
+    "schema_version": "0.5.0",
     "payload": {
       "status": "OFFERED",
       "previous_status": "REQUESTED"
@@ -297,7 +297,7 @@
     "event_type": "TRIP_STATUS_CHANGED",
     "occurred_at": "2026-11-10T08:06:00.008-05:00",
     "provider_id": "oakland-go",
-    "schema_version": "0.4.2",
+    "schema_version": "0.5.0",
     "payload": {
       "status": "CONFIRMED",
       "previous_status": "OFFERED"
@@ -310,7 +310,7 @@
     "event_type": "TRIP_STATUS_CHANGED",
     "occurred_at": "2026-11-10T08:07:00.000-05:00",
     "provider_id": "aaata-a-ride",
-    "schema_version": "0.4.2",
+    "schema_version": "0.5.0",
     "payload": {
       "status": "SCHEDULED",
       "previous_status": "CONFIRMED"
@@ -323,7 +323,7 @@
     "event_type": "TRIP_STATUS_CHANGED",
     "occurred_at": "2026-11-10T08:07:00.000-05:00",
     "provider_id": "county-connector",
-    "schema_version": "0.4.2",
+    "schema_version": "0.5.0",
     "payload": {
       "status": "SCHEDULED",
       "previous_status": "CONFIRMED"
@@ -336,7 +336,7 @@
     "event_type": "TRIP_STATUS_CHANGED",
     "occurred_at": "2026-11-10T08:07:00.000-05:00",
     "provider_id": "oakland-go",
-    "schema_version": "0.4.2",
+    "schema_version": "0.5.0",
     "payload": {
       "status": "SCHEDULED",
       "previous_status": "CONFIRMED"
@@ -349,7 +349,7 @@
     "event_type": "TRIP_SCHEDULED",
     "occurred_at": "2026-11-10T08:07:00.001-05:00",
     "provider_id": "aaata-a-ride",
-    "schema_version": "0.4.2",
+    "schema_version": "0.5.0",
     "payload": {
       "scheduled_pickup": "2026-11-10T08:50:00-05:00",
       "vehicle_ref": {
@@ -365,7 +365,7 @@
     "event_type": "TRIP_SCHEDULED",
     "occurred_at": "2026-11-10T08:07:00.001-05:00",
     "provider_id": "county-connector",
-    "schema_version": "0.4.2",
+    "schema_version": "0.5.0",
     "payload": {
       "scheduled_pickup": "2026-11-10T10:30:00-05:00",
       "vehicle_ref": {
@@ -381,7 +381,7 @@
     "event_type": "TRIP_SCHEDULED",
     "occurred_at": "2026-11-10T08:07:00.001-05:00",
     "provider_id": "oakland-go",
-    "schema_version": "0.4.2",
+    "schema_version": "0.5.0",
     "payload": {
       "scheduled_pickup": "2026-11-10T09:45:00-05:00",
       "vehicle_ref": {
@@ -397,7 +397,7 @@
     "event_type": "TRIP_STATUS_CHANGED",
     "occurred_at": "2026-11-10T08:07:00.002-05:00",
     "provider_id": "oakland-go",
-    "schema_version": "0.4.2",
+    "schema_version": "0.5.0",
     "payload": {
       "status": "SCHEDULED",
       "previous_status": "CONFIRMED"
@@ -410,7 +410,7 @@
     "event_type": "TRIP_SCHEDULED",
     "occurred_at": "2026-11-10T08:07:00.003-05:00",
     "provider_id": "oakland-go",
-    "schema_version": "0.4.2",
+    "schema_version": "0.5.0",
     "payload": {
       "scheduled_pickup": "2026-11-10T13:00:00-05:00",
       "vehicle_ref": {
@@ -426,7 +426,7 @@
     "event_type": "TRIP_STATUS_CHANGED",
     "occurred_at": "2026-11-10T08:40:00.000-05:00",
     "provider_id": "aaata-a-ride",
-    "schema_version": "0.4.2",
+    "schema_version": "0.5.0",
     "payload": {
       "status": "IN_PROGRESS",
       "previous_status": "SCHEDULED"
@@ -439,7 +439,7 @@
     "event_type": "MILESTONE",
     "occurred_at": "2026-11-10T08:40:00.001-05:00",
     "provider_id": "aaata-a-ride",
-    "schema_version": "0.4.2",
+    "schema_version": "0.5.0",
     "payload": {
       "milestone": "EN_ROUTE_TO_PICKUP"
     },
@@ -451,7 +451,7 @@
     "event_type": "ETA_UPDATE",
     "occurred_at": "2026-11-10T08:40:00.002-05:00",
     "provider_id": "aaata-a-ride",
-    "schema_version": "0.4.2",
+    "schema_version": "0.5.0",
     "payload": {
       "eta": {
         "target": "PICKUP",
@@ -471,7 +471,7 @@
     "event_type": "ETA_UPDATE",
     "occurred_at": "2026-11-10T08:45:00.000-05:00",
     "provider_id": "aaata-a-ride",
-    "schema_version": "0.4.2",
+    "schema_version": "0.5.0",
     "payload": {
       "eta": {
         "target": "PICKUP",
@@ -491,7 +491,7 @@
     "event_type": "ETA_UPDATE",
     "occurred_at": "2026-11-10T08:50:00.000-05:00",
     "provider_id": "aaata-a-ride",
-    "schema_version": "0.4.2",
+    "schema_version": "0.5.0",
     "payload": {
       "eta": {
         "target": "PICKUP",
@@ -511,7 +511,7 @@
     "event_type": "MILESTONE",
     "occurred_at": "2026-11-10T08:50:00.001-05:00",
     "provider_id": "aaata-a-ride",
-    "schema_version": "0.4.2",
+    "schema_version": "0.5.0",
     "payload": {
       "milestone": "ARRIVED_PICKUP",
       "location": {
@@ -529,7 +529,7 @@
     "event_type": "ETA_UPDATE",
     "occurred_at": "2026-11-10T08:55:00.000-05:00",
     "provider_id": "aaata-a-ride",
-    "schema_version": "0.4.2",
+    "schema_version": "0.5.0",
     "payload": {
       "eta": {
         "target": "PICKUP",
@@ -549,7 +549,7 @@
     "event_type": "MILESTONE",
     "occurred_at": "2026-11-10T08:58:00.000-05:00",
     "provider_id": "aaata-a-ride",
-    "schema_version": "0.4.2",
+    "schema_version": "0.5.0",
     "payload": {
       "milestone": "RIDER_NO_SHOW",
       "location": {
@@ -567,7 +567,7 @@
     "event_type": "TRIP_STATUS_CHANGED",
     "occurred_at": "2026-11-10T08:58:00.000-05:00",
     "provider_id": "oakland-go",
-    "schema_version": "0.4.2",
+    "schema_version": "0.5.0",
     "payload": {
       "status": "CANCELLED",
       "previous_status": "SCHEDULED"
@@ -580,7 +580,7 @@
     "event_type": "TRIP_STATUS_CHANGED",
     "occurred_at": "2026-11-10T08:58:00.001-05:00",
     "provider_id": "aaata-a-ride",
-    "schema_version": "0.4.2",
+    "schema_version": "0.5.0",
     "payload": {
       "status": "NO_SHOW",
       "previous_status": "IN_PROGRESS"
@@ -593,7 +593,7 @@
     "event_type": "TRIP_CANCELLED",
     "occurred_at": "2026-11-10T08:58:00.001-05:00",
     "provider_id": "oakland-go",
-    "schema_version": "0.4.2",
+    "schema_version": "0.5.0",
     "payload": {
       "cancellation": {
         "reason": "RIDER_REQUEST",
@@ -609,7 +609,7 @@
     "event_type": "TRIP_STATUS_CHANGED",
     "occurred_at": "2026-11-10T10:00:00.000-05:00",
     "provider_id": "county-connector",
-    "schema_version": "0.4.2",
+    "schema_version": "0.5.0",
     "payload": {
       "status": "IN_PROGRESS",
       "previous_status": "SCHEDULED"
@@ -622,7 +622,7 @@
     "event_type": "MILESTONE",
     "occurred_at": "2026-11-10T10:00:00.001-05:00",
     "provider_id": "county-connector",
-    "schema_version": "0.4.2",
+    "schema_version": "0.5.0",
     "payload": {
       "milestone": "EN_ROUTE_TO_PICKUP"
     },
@@ -634,7 +634,7 @@
     "event_type": "ETA_UPDATE",
     "occurred_at": "2026-11-10T10:00:00.002-05:00",
     "provider_id": "county-connector",
-    "schema_version": "0.4.2",
+    "schema_version": "0.5.0",
     "payload": {
       "eta": {
         "target": "PICKUP",
@@ -654,7 +654,7 @@
     "event_type": "MILESTONE",
     "occurred_at": "2026-11-10T10:10:00.000-05:00",
     "provider_id": "county-connector",
-    "schema_version": "0.4.2",
+    "schema_version": "0.5.0",
     "payload": {
       "milestone": "LEG_FAILED",
       "delay_cause": "VEHICLE"
@@ -667,7 +667,7 @@
     "event_type": "TRIP_STATUS_CHANGED",
     "occurred_at": "2026-11-10T10:10:00.001-05:00",
     "provider_id": "county-connector",
-    "schema_version": "0.4.2",
+    "schema_version": "0.5.0",
     "payload": {
       "status": "FAILED",
       "previous_status": "IN_PROGRESS"
@@ -680,7 +680,7 @@
     "event_type": "TRIP_STATUS_CHANGED",
     "occurred_at": "2026-11-10T10:15:00.000-05:00",
     "provider_id": "oakland-go",
-    "schema_version": "0.4.2",
+    "schema_version": "0.5.0",
     "payload": {
       "status": "CANCELLED",
       "previous_status": "SCHEDULED"
@@ -693,7 +693,7 @@
     "event_type": "TRIP_CANCELLED",
     "occurred_at": "2026-11-10T10:15:00.001-05:00",
     "provider_id": "oakland-go",
-    "schema_version": "0.4.2",
+    "schema_version": "0.5.0",
     "payload": {
       "cancellation": {
         "reason": "PROVIDER_UNABLE",

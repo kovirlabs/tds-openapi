@@ -198,3 +198,10 @@ New mismatches go under *Open* as before.
 - **Offers that lapse:** a provider may set `offer_expires_at` on an `OFFERED` trip; ThroughRide
   should confirm before it or treat the leg as `EXPIRED`. Provider-side cancellations arrive as
   `TRIP_CANCELLED` with `cancelled_by: PROVIDER`.
+
+## v0.5.0 released (2026-10-21, local tag `v0.5.0`)
+
+Re-vendor examples from tag `v0.5.0`; `binding_version()` now returns `0.5.0`. Everything
+above marked "v0.5" is in it. New since the v0.4.2 vendoring: `settlement-split/`,
+`paratransit-trip/`, `nemt-trip/`, `refusals-and-failures/` (generated), `exceptions/`, and
+`schema_version: "0.5.0"` in every generated event stream.
