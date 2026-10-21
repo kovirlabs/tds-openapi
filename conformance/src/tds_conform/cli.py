@@ -15,7 +15,13 @@ from tds_conform import SPEC_VERSION, __version__, report
 from tds_conform.receiver import Receiver
 from tds_conform.runner import SCENARIOS, Settings, default_trip_template, run_scenario
 
-PROFILE_SCENARIOS = {"core": ("core",), "transfer": ("core", "transfer")}  # transfer level = core + transfer
+# Each level is Core plus its profile's scenarios.
+PROFILE_SCENARIOS = {
+    "core": ("core",),
+    "transfer": ("core", "transfer"),
+    "paratransit": ("core", "paratransit"),
+    "nemt": ("core", "nemt"),
+}
 
 
 def conform_main(argv: list[str] | None = None) -> int:
@@ -71,7 +77,7 @@ def conform_main(argv: list[str] | None = None) -> int:
         return _fuzz(args)
     if args.command == "list":
         for sid, (profile, title, _) in SCENARIOS.items():
-            print(f"{sid:24} {profile:9} {title}")
+            print(f"{sid:24} {profile:12} {title}")
         return 0
     if args.command == "check-events":
         return _check_events(args)

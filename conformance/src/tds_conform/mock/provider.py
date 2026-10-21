@@ -37,6 +37,7 @@ class ProviderConfig:
     schedule_delay_s: float = 1.0
     operated_via: str = "DIRECT"
     unsupported_requirements: frozenset[str] = frozenset()
+    profiles: tuple[str, ...] = ("CORE", "TRANSFER", "PARATRANSIT", "NEMT")  # declared on /health
     # Transfer profile policies; adjustable at runtime through the /_sim API.
     tender_decision: str = "ACCEPT"  # ACCEPT | REJECT | IGNORE
     reject_reason: str = "NO_CAPACITY"
@@ -99,7 +100,7 @@ class Provider(TransferMixin):
         body = {
             "status": "OK",
             "spec_versions": [SPEC_VERSION],
-            "profiles": ["CORE", "TRANSFER"],
+            "profiles": list(self.config.profiles),
             "operated_via": self.config.operated_via,
         }
         if self.config.decision == "async":
@@ -183,17 +184,25 @@ class Provider(TransferMixin):
     def _check_trip_request(self, requester: str, body) -> Response | None:
         if errors := schema_errors(body, "trip-request"):
             return problem(400, "INVALID_REQUEST", "; ".join(errors))
-        for profile in ("paratransit", "nemt"):  # draft profiles (SPEC.md §11): validated when present
-            if profile in body:
-                errors = schema_errors(body, f"{profile}/trip-request") or profile_problems(body)
-                if errors:
-                    return problem(400, "INVALID_REQUEST", "; ".join(errors))
+        if refusal := self._check_profiles(body):
+            return refusal
         if body["requester_id"] != requester:
             return problem(400, "INVALID_REQUEST", "requester_id does not match the authenticated client.")
         if self.config.provider_id and body["provider_id"] != self.config.provider_id:
             return problem(400, "INVALID_REQUEST", f"This endpoint serves provider {self.config.provider_id!r}.")
         if (requester, body["trip_id"]) in self._trips:
             return problem(409, "TRIP_ID_IN_USE", f"trip_id {body['trip_id']!r} already exists.")
+        return None
+
+    def _check_profiles(self, body: dict) -> Response | None:
+        """Paratransit and NEMT objects (SPEC.md §11): schema and cross-field rules, when present."""
+        for profile in ("paratransit", "nemt"):
+            if profile in body:
+                if profile.upper() not in self.config.profiles:
+                    return problem(400, "INVALID_REQUEST", f"This endpoint does not implement the {profile} profile.")
+                errors = schema_errors(body, f"{profile}/trip-request") or profile_problems(body)
+                if errors:
+                    return problem(400, "INVALID_REQUEST", "; ".join(errors))
         return None
 
     def _create_trip(self, requester: str, body: dict) -> _Trip:

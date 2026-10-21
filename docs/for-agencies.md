@@ -131,6 +131,7 @@ Replace the bracketed parts. "Binding" means the TDS OpenAPI binding published a
 Trip planning and discovery (use GTFS-Flex), scheduling algorithms, payment processing
 and rider identity are out of scope (SPEC.md §3). Settlement records are data for
 reconciliation; who pays for what stays in your agreements. The paratransit and NEMT
-profiles are early drafts (SPEC.md §11) with no conformance scenarios yet, so don't make
-them a pass/fail requirement; you can ask vendors to comment on them. In both, eligibility
+profiles are drafts (SPEC.md §11). They have conformance levels (Core + Paratransit,
+Core + NEMT), but their fields may still change, so ask for them as "preferred" rather than
+pass/fail for now. In both, eligibility
 and authorization are references only, and no diagnosis or health data is exchanged.

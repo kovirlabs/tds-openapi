@@ -27,6 +27,10 @@ Toward **0.5.0** (SPEC.md §15). Version fields stay at 0.4.2 until 0.5.0 is cut
   holds the cross-field rules; `tds-mock` validates both objects when present. Examples
   `paratransit-trip` and `nemt-trip`.
 - `leg.service_requirements`: `STRETCHER`.
+- Conformance levels **Core + Paratransit** and **Core + NEMT** (`--profile paratransit|nemt`) with
+  scenarios `paratransit_booking`, `paratransit_rules`, `nemt_booking`, `nemt_rules`; kit tests
+  include a faulty provider for each. `tds-mock` declares `PARATRANSIT` and `NEMT` on `/health`
+  (configurable with `ProviderConfig.profiles`) and refuses profile objects it doesn't declare.
 - `tds-conform fuzz` (extra `tds-conform[fuzz]`, schemathesis 4): positive and negative
   generated requests to every operation of `dist/openapi.yaml`; checks no 5xx, documented
   status codes and media types, response schemas and headers, and rejection of invalid input.
