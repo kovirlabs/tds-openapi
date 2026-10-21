@@ -4,6 +4,25 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-10-21
+
+ThroughRide alignment proposal "No exception type for 'a person has been asked to act'". Additive.
+
+### Added
+- Exception type `ESCALATED` (transfer profile, SPEC.md §10.6) with `escalates_exception_id` and
+  `escalation_level`. The schema requires `escalates_exception_id` and severity `AT_RISK` or
+  `CRITICAL` for `ESCALATED`, and refuses the escalation fields on other types. No crosswalk row:
+  transfer-profile fields are not mapped to TDS 2020.
+- `tds_conform.events.broker_event_problems` (exception events only from brokers) and
+  `escalation_problems` (escalations name an earlier condition from the same broker, rise in
+  level and are resolved with it); applied by the example validator and `tds-conform
+  check-events`.
+- Kit: `webhook_delivery` fails a provider that delivers `EXCEPTION_RAISED` or
+  `EXCEPTION_RESOLVED`; faulty-provider test included.
+- `examples/exceptions`: an exhausted tender escalated to levels 1 and 2, and an unanswered hold
+  escalated and resolved with its condition. `exception` schema example for `ESCALATED`.
+- `docs/for-agencies.md`: ask for escalation events.
+
 ## [0.5.0] - 2026-10-21
 
 Settlement split, draft paratransit and NEMT profiles with conformance levels, AsyncAPI

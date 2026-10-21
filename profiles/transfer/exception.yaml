@@ -6,7 +6,11 @@ description: >-
   Broker-generated alert for coordinators (manage by exception, SPEC.md §10.6).
   Not sent by providers; defined so broker UIs and integrations share
   vocabulary. Default triggers: connection probability below 0.8 is AT_RISK,
-  below 0.5 CRITICAL.
+  below 0.5 CRITICAL. ESCALATED is different from the other types: it says the
+  broker has moved an unhandled condition up its own escalation ladder and a
+  person is now acting on it, so subscribers don't start a second response. It
+  names the condition (escalates_exception_id), is at least AT_RISK, and is
+  resolved together with that condition.
 type: object
 required: [exception_id, severity, type, detected_at]
 properties:
@@ -29,6 +33,20 @@ properties:
       - HOLD_DENIED
       - HOLD_UNANSWERED
       - CUSTODY_GAP
+      - ESCALATED
+  escalates_exception_id:
+    description: >-
+      For ESCALATED: the condition exception being escalated (never another
+      ESCALATED one). Further escalation raises a new ESCALATED exception for the
+      same condition with a higher escalation_level.
+    type: string
+  escalation_level:
+    description: >-
+      For ESCALATED: step on the broker's own escalation ladder, 1 being the
+      first. Steps and who is contacted at each are broker-local; no names, phone
+      numbers or roles of the people contacted are carried.
+    type: integer
+    minimum: 1
   interchange_id:
     description: The affected interchange, if any.
     type: string
@@ -46,6 +64,22 @@ properties:
     description: When it was resolved, if it has been.
     type: string
     format: date-time
+allOf:
+  - if:
+      properties:
+        type:
+          const: ESCALATED
+      required: [type]
+    then:
+      required: [escalates_exception_id]
+      properties:
+        severity:
+          enum: [AT_RISK, CRITICAL]
+    else:
+      not:
+        anyOf:
+          - required: [escalates_exception_id]
+          - required: [escalation_level]
 examples:
   - exception_id: "ex-1"
     severity: "AT_RISK"
@@ -59,3 +93,11 @@ examples:
     interchange_id: "ix-20261110-1"
     detected_at: "2026-11-10T09:09:00-05:00"
     suggested_actions: [CALL_PROVIDER, REPROTECT]
+  - exception_id: "ex-3"
+    severity: "CRITICAL"
+    type: "ESCALATED"
+    escalates_exception_id: "ex-2"
+    escalation_level: 2
+    interchange_id: "ix-20261110-1"
+    detected_at: "2026-11-10T09:14:00-05:00"
+    suggested_actions: [CALL_PROVIDER]
