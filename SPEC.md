@@ -192,8 +192,7 @@ After-trip reconciliation of a linked journey, produced by the broker once every
 - **nemt:** Medicaid authorization refs, level of service, HIPAA minimum-necessary guidance. Health data only via references, never inline.
 
 ## 12. Security and privacy
-- OAuth 2.0 client credentials; mTLS optional (`security/auth.yaml`). Scopes: `trips:write`, `trips:read`, `events:subscribe`, `tenders:respond`.
-- OAuth scope for tenders is `tenders:write` (sent by brokers); holds use `trips:write`.
+- OAuth 2.0 client credentials; mTLS optional. Scopes: `trips:write`, `trips:read`, `events:subscribe`, `tenders:write` (tenders are sent by brokers); holds use `trips:write`.
 - Webhook signing: `X-TDS-Timestamp` is Unix seconds; `X-TDS-Signature` is `sha256=` + lowercase hex HMAC-SHA256, keyed with the subscription's `signing_secret`, of `<timestamp>.<raw body>`. Receivers reject a bad signature or more than 5 min skew.
 - Data minimization: share only what the receiving provider needs for that leg. Rider contact shared only with `contact_consent: true`.
 - Retention guidance in docs (not enforced by spec).

@@ -7,7 +7,7 @@ TDS describes what a trip-booking exchange should contain. This project makes it
 - **JSON Schema 2020-12** for the data model (`profiles/`)
 - **OpenAPI 3.1** for request/response operations (`spec/openapi.yaml`)
 - **AsyncAPI 3.0** for status, milestone, ETA and custody events (`spec/asyncapi.yaml`)
-- A **conformance kit** (`tds-conform`) vendors can run and agencies can cite in RFPs
+- A **conformance kit** (`tds-conform`) vendors can run and agencies can cite in RFPs ([docs/for-agencies.md](docs/for-agencies.md))
 - A **reference provider** (`tds-mock`) and a static example mock for building without a live partner
 
 It is not a new standard and does not replace TDS, GTFS-Flex or GTFS-Realtime. See [SPEC.md](SPEC.md) for scope and design.

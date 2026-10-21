@@ -15,12 +15,16 @@ Toward **0.5.0** (SPEC.md §15). Version fields stay at 0.4.2 until 0.5.0 is cut
   `MEDICAID_NEMT`, `AGENCY`, `SPONSOR`, `OTHER`), now shared by `fare_funding` and the split.
 - `tds_conform.settlement.settlement_problems()`: one currency, total = sum of lines, each leg
   once, terminal statuses only; the example validator applies it.
+- `docs/for-agencies.md`: what to ask for in RFPs and contracts, sample clauses, how to check
+  conformance reports.
 - Example `settlement-split` with splits for the `two-provider-transfer` and
   `missed-connection-reprotect` journeys (a test checks they match the generated trips).
 
 ### Changed
 - `fare-funding.funding_source` references `core/funding-source.yaml` (same values).
 - SPEC.md Draft 3: §10.8 written out; §7 notes settlement endpoints stay deferred.
+- SPEC.md §12: one scope list (`tenders:write`, not `tenders:respond`); dropped the reference to a
+  nonexistent `security/auth.yaml`.
 
 ## [0.4.2] - 2026-10-21
 
