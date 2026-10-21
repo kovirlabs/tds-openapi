@@ -163,7 +163,15 @@ def _host_port(value: str) -> tuple[str, int]:
 
 
 def _check_events(args) -> int:
-    from tds_conform.events import custody_problems, dedupe, event_errors, heartbeat_problems, milestone_problems
+    from tds_conform.events import (
+        broker_event_problems,
+        custody_problems,
+        dedupe,
+        escalation_problems,
+        event_errors,
+        heartbeat_problems,
+        milestone_problems,
+    )
 
     events = json.loads(args.file.read_text())
     supervised = {tuple(s.split("/")) for s in args.supervised}
@@ -181,6 +189,8 @@ def _check_events(args) -> int:
         "milestone_sequence": milestone_problems(events),
         "custody_required": custody_problems(events, supervised),
         "eta_heartbeat_staleness": heartbeat_problems(events, feeders),
+        "exception events only from brokers": broker_event_problems(events),
+        "escalations": escalation_problems(events),
     }
     for name, problems in checks.items():
         print(f"{'PASS' if not problems else 'FAIL':5} {name}")

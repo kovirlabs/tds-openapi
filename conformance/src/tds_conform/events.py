@@ -105,6 +105,57 @@ def milestone_problems(events: list[dict]) -> list[str]:
     return problems
 
 
+BROKER_EVENTS = {"EXCEPTION_RAISED", "EXCEPTION_RESOLVED"}
+
+
+def broker_event_problems(events: list[dict]) -> list[str]:
+    """Exception events (ESCALATED included) come only from brokers: no party sends both them and provider events."""
+    providers = {e.get("provider_id") for e in events if e.get("event_type") not in BROKER_EVENTS}
+    return sorted(
+        {
+            f"{e.get('provider_id')} sends provider events and {e['event_type']} "
+            f"({e['payload']['exception'].get('type')}); exception events come only from brokers"
+            for e in events
+            if e.get("event_type") in BROKER_EVENTS and e.get("provider_id") in providers
+        }
+    )
+
+
+def escalation_problems(events: list[dict]) -> list[str]:
+    """ESCALATED exceptions (SPEC.md §10.6) name an earlier condition exception from the same broker, climb
+    in level, and are resolved whenever their condition is."""
+    problems = []
+    raised: dict[tuple, dict] = {}
+    resolved: set[tuple] = set()
+    levels: dict[tuple, int] = {}
+    for event in dedupe(events):
+        if event.get("event_type") not in BROKER_EVENTS:
+            continue
+        exception = event["payload"]["exception"]
+        key = (event.get("provider_id"), exception["exception_id"])
+        if event["event_type"] == "EXCEPTION_RESOLVED":
+            resolved.add(key)
+            continue
+        raised[key] = exception
+        if exception["type"] != "ESCALATED":
+            continue
+        target = (event.get("provider_id"), exception["escalates_exception_id"])
+        if target not in raised:
+            problems.append(f"{key[1]}: escalates {target[1]}, which this broker has not raised before")
+        elif raised[target]["type"] == "ESCALATED":
+            problems.append(f"{key[1]}: escalates another ESCALATED exception ({target[1]}); name the condition")
+        level = exception.get("escalation_level", 1)
+        if level <= levels.get(target, 0):
+            problems.append(f"{key[1]}: escalation_level {level} does not rise above {levels[target]}")
+        levels[target] = max(level, levels.get(target, 0))
+    for key, exception in raised.items():
+        if exception["type"] == "ESCALATED":
+            target = (key[0], exception["escalates_exception_id"])
+            if target in resolved and key not in resolved:
+                problems.append(f"{key[1]}: {target[1]} was resolved but its escalation was not")
+    return problems
+
+
 def custody_problems(events: list[dict], supervised: set[tuple]) -> list[str]:
     """custody_required: a supervised leg that completes has a handoff at pickup and at dropoff.
 

@@ -10,7 +10,9 @@ Checks:
      and validates against the schema the manifest names. An entry with
      `kind: event-stream` is a JSON array of events: each validates against the
      schema spec/asyncapi.yaml gives its event_type, and the stream follows the
-     milestone order and custody rules (SPEC.md §10.3, §10.7). Tender requests
+     milestone order and custody rules (SPEC.md §10.3, §10.7); exception events
+     (ESCALATED included) come only from brokers, and escalations name an earlier
+     condition, climb in level and are resolved with it (§10.6). Tender requests
      also follow the interchange rules (auto_hold_s ≤ max_hold_s; HAND_TO_HAND on a
      PROTECTED interchange needs supervision_required, SPEC.md §10.1); settlement
      splits add up in one currency (SPEC.md §10.8); paratransit and NEMT trip
@@ -166,10 +168,15 @@ def check_event_stream(events, registry: Registry, wiring: dict[str, str]) -> li
         errors += [f"[{i}] {event['event_type']} {format_error(e)}" for e in validator.iter_errors(event)]
     if errors:
         return errors
-    from tds_conform.events import custody_problems, milestone_problems
+    from tds_conform.events import broker_event_problems, custody_problems, escalation_problems, milestone_problems
 
     supervised = {(e["provider_id"], e["trip_id"], e["leg_id"]) for e in events if e["event_type"] == "CUSTODY_HANDOFF"}
-    return milestone_problems(events) + custody_problems(events, supervised)
+    return (
+        milestone_problems(events)
+        + custody_problems(events, supervised)
+        + broker_event_problems(events)
+        + escalation_problems(events)
+    )
 
 
 def check_examples(registry: Registry, examples_root: Path = EXAMPLES, events: dict | None = None):

@@ -1,6 +1,6 @@
 [project]
 name = "tds-openapi-tools"
-version = "0.5.0"
+version = "0.5.1"
 description = "Repo tooling for tds-openapi: schema and example validation."
 requires-python = ">=3.12"
 license = "Apache-2.0"

@@ -4,7 +4,7 @@
     "event_type": "EXCEPTION_RAISED",
     "occurred_at": "2026-11-10T08:00:00-05:00",
     "provider_id": "throughride-demo",
-    "schema_version": "0.5.0",
+    "schema_version": "0.5.1",
     "payload": {
       "exception": {
         "exception_id": "ex-rt-1",
@@ -24,7 +24,7 @@
     "event_type": "EXCEPTION_RESOLVED",
     "occurred_at": "2026-11-10T08:02:00-05:00",
     "provider_id": "throughride-demo",
-    "schema_version": "0.5.0",
+    "schema_version": "0.5.1",
     "payload": {
       "exception": {
         "exception_id": "ex-rt-1",
@@ -45,7 +45,7 @@
     "event_type": "EXCEPTION_RAISED",
     "occurred_at": "2026-11-10T08:06:00-05:00",
     "provider_id": "throughride-demo",
-    "schema_version": "0.5.0",
+    "schema_version": "0.5.1",
     "payload": {
       "exception": {
         "exception_id": "ex-rf-1",
@@ -64,7 +64,7 @@
     "event_type": "EXCEPTION_RAISED",
     "occurred_at": "2026-11-10T08:20:00-05:00",
     "provider_id": "throughride-demo",
-    "schema_version": "0.5.0",
+    "schema_version": "0.5.1",
     "payload": {
       "exception": {
         "exception_id": "ex-rt-2",
@@ -79,11 +79,53 @@
     }
   },
   {
+    "event_id": "evt-ex-rt-2-esc-1-raised",
+    "event_type": "EXCEPTION_RAISED",
+    "occurred_at": "2026-11-10T08:25:00-05:00",
+    "provider_id": "throughride-demo",
+    "schema_version": "0.5.1",
+    "payload": {
+      "exception": {
+        "exception_id": "ex-rt-2-esc-1",
+        "severity": "AT_RISK",
+        "type": "ESCALATED",
+        "interchange_id": "ix-rt-2",
+        "detected_at": "2026-11-10T08:25:00-05:00",
+        "suggested_actions": [
+          "CALL_PROVIDER"
+        ],
+        "escalates_exception_id": "ex-rt-2",
+        "escalation_level": 1
+      }
+    }
+  },
+  {
+    "event_id": "evt-ex-rt-2-esc-2-raised",
+    "event_type": "EXCEPTION_RAISED",
+    "occurred_at": "2026-11-10T08:35:00-05:00",
+    "provider_id": "throughride-demo",
+    "schema_version": "0.5.1",
+    "payload": {
+      "exception": {
+        "exception_id": "ex-rt-2-esc-2",
+        "severity": "CRITICAL",
+        "type": "ESCALATED",
+        "interchange_id": "ix-rt-2",
+        "detected_at": "2026-11-10T08:35:00-05:00",
+        "suggested_actions": [
+          "CALL_PROVIDER"
+        ],
+        "escalates_exception_id": "ex-rt-2",
+        "escalation_level": 2
+      }
+    }
+  },
+  {
     "event_id": "evt-ex-hold-1-raised",
     "event_type": "EXCEPTION_RAISED",
     "occurred_at": "2026-11-10T09:05:00-05:00",
     "provider_id": "throughride-demo",
-    "schema_version": "0.5.0",
+    "schema_version": "0.5.1",
     "payload": {
       "exception": {
         "exception_id": "ex-hold-1",
@@ -102,7 +144,7 @@
     "event_type": "EXCEPTION_RESOLVED",
     "occurred_at": "2026-11-10T09:06:00-05:00",
     "provider_id": "throughride-demo",
-    "schema_version": "0.5.0",
+    "schema_version": "0.5.1",
     "payload": {
       "exception": {
         "exception_id": "ex-hold-1",
@@ -122,7 +164,7 @@
     "event_type": "EXCEPTION_RAISED",
     "occurred_at": "2026-11-10T09:09:00-05:00",
     "provider_id": "throughride-demo",
-    "schema_version": "0.5.0",
+    "schema_version": "0.5.1",
     "payload": {
       "exception": {
         "exception_id": "ex-rp-1",
@@ -138,11 +180,54 @@
     }
   },
   {
-    "event_id": "evt-ex-rp-1-resolved",
-    "event_type": "EXCEPTION_RESOLVED",
+    "event_id": "evt-ex-rp-1-esc-1-raised",
+    "event_type": "EXCEPTION_RAISED",
     "occurred_at": "2026-11-10T09:10:00-05:00",
     "provider_id": "throughride-demo",
-    "schema_version": "0.5.0",
+    "schema_version": "0.5.1",
+    "payload": {
+      "exception": {
+        "exception_id": "ex-rp-1-esc-1",
+        "severity": "CRITICAL",
+        "type": "ESCALATED",
+        "interchange_id": "ix-rp",
+        "detected_at": "2026-11-10T09:10:00-05:00",
+        "suggested_actions": [
+          "CALL_PROVIDER"
+        ],
+        "escalates_exception_id": "ex-rp-1",
+        "escalation_level": 1
+      }
+    }
+  },
+  {
+    "event_id": "evt-ex-rp-1-esc-1-resolved",
+    "event_type": "EXCEPTION_RESOLVED",
+    "occurred_at": "2026-11-10T09:12:00-05:00",
+    "provider_id": "throughride-demo",
+    "schema_version": "0.5.1",
+    "payload": {
+      "exception": {
+        "exception_id": "ex-rp-1-esc-1",
+        "severity": "CRITICAL",
+        "type": "ESCALATED",
+        "interchange_id": "ix-rp",
+        "detected_at": "2026-11-10T09:10:00-05:00",
+        "suggested_actions": [
+          "CALL_PROVIDER"
+        ],
+        "escalates_exception_id": "ex-rp-1",
+        "escalation_level": 1,
+        "resolved_at": "2026-11-10T09:12:00-05:00"
+      }
+    }
+  },
+  {
+    "event_id": "evt-ex-rp-1-resolved",
+    "event_type": "EXCEPTION_RESOLVED",
+    "occurred_at": "2026-11-10T09:12:00-05:00",
+    "provider_id": "throughride-demo",
+    "schema_version": "0.5.1",
     "payload": {
       "exception": {
         "exception_id": "ex-rp-1",
@@ -154,7 +239,7 @@
           "CALL_PROVIDER",
           "REPROTECT"
         ],
-        "resolved_at": "2026-11-10T09:10:00-05:00"
+        "resolved_at": "2026-11-10T09:12:00-05:00"
       }
     }
   },
@@ -163,7 +248,7 @@
     "event_type": "EXCEPTION_RAISED",
     "occurred_at": "2026-11-10T09:20:00-05:00",
     "provider_id": "throughride-demo",
-    "schema_version": "0.5.0",
+    "schema_version": "0.5.1",
     "payload": {
       "exception": {
         "exception_id": "ex-tpt-1",
@@ -182,7 +267,7 @@
     "event_type": "EXCEPTION_RESOLVED",
     "occurred_at": "2026-11-10T09:21:00-05:00",
     "provider_id": "throughride-demo",
-    "schema_version": "0.5.0",
+    "schema_version": "0.5.1",
     "payload": {
       "exception": {
         "exception_id": "ex-tpt-1",
@@ -202,7 +287,7 @@
     "event_type": "EXCEPTION_RAISED",
     "occurred_at": "2026-11-10T09:40:00-05:00",
     "provider_id": "throughride-demo",
-    "schema_version": "0.5.0",
+    "schema_version": "0.5.1",
     "payload": {
       "exception": {
         "exception_id": "ex-tpt-2",
@@ -221,7 +306,7 @@
     "event_type": "EXCEPTION_RESOLVED",
     "occurred_at": "2026-11-10T09:41:00-05:00",
     "provider_id": "throughride-demo",
-    "schema_version": "0.5.0",
+    "schema_version": "0.5.1",
     "payload": {
       "exception": {
         "exception_id": "ex-tpt-2",
@@ -241,7 +326,7 @@
     "event_type": "EXCEPTION_RAISED",
     "occurred_at": "2026-11-10T09:42:00-05:00",
     "provider_id": "throughride-demo",
-    "schema_version": "0.5.0",
+    "schema_version": "0.5.1",
     "payload": {
       "exception": {
         "exception_id": "ex-sup-1",
@@ -260,7 +345,7 @@
     "event_type": "EXCEPTION_RESOLVED",
     "occurred_at": "2026-11-10T09:43:00-05:00",
     "provider_id": "throughride-demo",
-    "schema_version": "0.5.0",
+    "schema_version": "0.5.1",
     "payload": {
       "exception": {
         "exception_id": "ex-sup-1",

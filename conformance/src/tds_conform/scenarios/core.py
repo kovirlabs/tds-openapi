@@ -117,7 +117,7 @@ def _code(body) -> str | None:
 
 @scenario("webhook_delivery", "core", "Signed, schema-valid events are delivered for every change, including sync ones")
 def webhook_delivery(ctx: Context) -> None:
-    from tds_conform.events import event_errors, verify
+    from tds_conform.events import BROKER_EVENTS, event_errors, verify
 
     receiver = ctx.settings.receiver
     if receiver is None:
@@ -152,6 +152,13 @@ def webhook_delivery(ctx: Context) -> None:
     )
     bad_sig = [problem for d in deliveries if (problem := verify(secret, d.headers, d.body))]
     step.check(not bad_sig, "every delivery is signed (X-TDS-Signature, X-TDS-Timestamp)", "; ".join(bad_sig[:3]))
+    every = [d for d in receiver.deliveries if isinstance(d.event, dict)]
+    broker_only = sorted({d.event["event_type"] for d in every if d.event.get("event_type") in BROKER_EVENTS})
+    step.check(
+        not broker_only,
+        "provider sends no broker events (EXCEPTION_RAISED, EXCEPTION_RESOLVED)",
+        f"got {broker_only}",
+    )
     bad_schema = [f"{d.event.get('event_type')}: {e}" for d in deliveries for e in event_errors(d.event)]
     step.check(not bad_schema, "every event matches its schema", "; ".join(bad_schema[:3]))
     by_id = {}

@@ -1,6 +1,6 @@
 # SPEC.md — tds-openapi
 
-Status: **Draft 3 (v0.5.0)** · Owner: Evan / Kovir Labs · Date: 2026-10-20
+Status: **Draft 3 (v0.5.1)** · Owner: Evan / Kovir Labs · Date: 2026-10-20
 
 Field lists below are **proposed**. Names for `profiles/core` must be reconciled with TDS 2020 (TCRP Report 210) in `mappings/tds-2020-crosswalk.md`; anything marked `TODO(crosswalk)` is unverified.
 
@@ -172,7 +172,8 @@ Only the outbound leg of the named interchange can be held, and only before `RID
 
 ### 10.6 Exceptions (`exception.yaml`)
 Broker-generated alerts for coordinators (manage by exception). Not required of providers; defined so broker UIs and integrations share vocabulary.
-`exception_id`, `severity` (`INFO`/`AT_RISK`/`CRITICAL`), `type` (`LOW_CONNECTION_PROBABILITY`, `TENDER_EXPIRED`, `TENDER_EXHAUSTED`, `STALE_HEARTBEAT`, `MISSED_MILESTONE`, `HOLD_DENIED`, `HOLD_UNANSWERED`, `CUSTODY_GAP`), `interchange_id`, `detected_at`, `suggested_actions`, `resolved_at`.
+`exception_id`, `severity` (`INFO`/`AT_RISK`/`CRITICAL`), `type` (`LOW_CONNECTION_PROBABILITY`, `TENDER_EXPIRED`, `TENDER_EXHAUSTED`, `STALE_HEARTBEAT`, `MISSED_MILESTONE`, `HOLD_DENIED`, `HOLD_UNANSWERED`, `CUSTODY_GAP`, `ESCALATED`), `interchange_id`, `detected_at`, `suggested_actions`, `resolved_at`, and for `ESCALATED` `escalates_exception_id` and `escalation_level`.
+`ESCALATED` (v0.5.1) says a condition was not handled in time and the broker has moved it up its own escalation ladder: a person is now acting, so subscribers should not start a second response. It names the condition exception it escalates (never another `ESCALATED` one), has severity `AT_RISK` or higher, and carries the ladder step (`escalation_level` ≥ 1, broker-defined) but never who was contacted. Escalating further raises a new `ESCALATED` for the same condition with a higher level. Resolving the condition resolves its escalations (`EXCEPTION_RESOLVED` for each). Only brokers raise exceptions; a provider that sends `EXCEPTION_*` events fails `webhook_delivery`.
 Default trigger: connection probability < 0.8 → `AT_RISK`; < 0.5 → `CRITICAL`.
 A broker that offers webhooks to its own subscribers sends `EXCEPTION_RAISED` when it raises one and `EXCEPTION_RESOLVED` (same `exception_id`, `resolved_at` set) when it closes; example `examples/exceptions/`.
 

@@ -35,6 +35,7 @@ open API", and it can be checked before contract award.
 | Protected transfers between providers | Core + Transfer, as a provider; as a broker if the vendor coordinates transfers | Conformance report, Core + Transfer; captured event log checked with `tds-conform check-events` |
 | Small providers without software can take part | Acceptance of providers answered through a broker proxy | `/health` reports `operated_via: BROKER_PROXY`; asynchronous answers are conformant |
 | Cost allocation across funders | Settlement split records per leg (SPEC.md §10.8) | Sample export validated against `settlement-split.yaml` |
+| Escalations visible to partners | Broker exception events, including `ESCALATED` (who is already acting on a problem) | Sample `EXCEPTION_RAISED` / `EXCEPTION_RESOLVED` events; counts in the vendor's reports |
 | Privacy | Data minimization as specified, no health data on the wire | Review of sample payloads and the vendor's data-handling statement |
 
 A conformance report comes from running the open-source kit against the vendor's endpoint:

@@ -2,7 +2,8 @@
 description: >-
   One EXCEPTION_RAISED per exception type a broker can raise, tied to the interchanges of
   the generated transfer scenarios, and an EXCEPTION_RESOLVED for each one that was
-  resolved. provider_id is the broker's id; payloads carry codes and ids only.
+  resolved. ESCALATED shows the broker's ladder: an exhausted tender escalated to level 1,
+  then 2, and an unanswered hold escalated and resolved together with it. provider_id is the broker's id; payloads carry codes and ids only.
 files:
   events.json:
     kind: event-stream

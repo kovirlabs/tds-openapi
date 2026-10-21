@@ -100,9 +100,9 @@ docker compose -f mock-server/docker-compose.yml up   # both mocks in Docker (st
 5. If behavior changed: example added/updated and a conformance scenario covers it.
 
 ## Current status and next task
-- Status: **v0.5.0** (2026-10-21): core, transfer, draft paratransit and NEMT profiles; settlement split; AsyncAPI events for every state change incl. broker exception events; multi-provider `tds-mock` with `/_sim`; `tds-demo` with six generated examples; kit levels core|transfer|paratransit|nemt, `check-events`, `fuzz`. SPEC.md is Draft 3.
+- Status: **v0.5.1** (2026-10-21; adds exception type `ESCALATED`): core, transfer, draft paratransit and NEMT profiles; settlement split; AsyncAPI events for every state change incl. broker exception events; multi-provider `tds-mock` with `/_sim`; `tds-demo` with six generated examples; kit levels core|transfer|paratransit|nemt, `check-events`, `fuzz`. SPEC.md is Draft 3.
 - Open for Evan: fill TDS columns in the crosswalk from Report 210; confirm the licence split in README; pick the real `$id` domain.
-- v0.4.1 (alignment audit), v0.4.2 (`tds_conform.examples` public API) and **v0.5.0** (settlement split, paratransit/NEMT drafts and levels, AsyncAPI completeness, fuzzing, for-agencies) released locally 2026-10-21; tags `v0.4.0`…`v0.5.0`, no remote yet.
+- v0.4.1 (alignment audit), v0.4.2 (`tds_conform.examples` public API) and **v0.5.0** (settlement split, paratransit/NEMT drafts and levels, AsyncAPI completeness, fuzzing, for-agencies) released locally 2026-10-21; v0.5.1 adds `ESCALATED`; tags `v0.4.0`…`v0.5.1`, no remote yet.
 - **Next:** v0.6 per SPEC.md §15: settlement exchange (API operation or events) needs Evan's decision; check profile vocabularies against TDS 2020; steward outreach.
 
 ## Near-term demo target

@@ -97,14 +97,6 @@ Append under *Open*, one heading per mismatch:
 - **Why it matters:** This is how most providers would join early on. Conformance timing (synchronous decisions, short deadlines) should not exclude them.
 - **Suggested resolution:** Needs a decision. Possibly have `/health` declare `operated_via: BROKER_PROXY` and `typical_response_s`, and have conformance accept asynchronous `202 REQUESTED` → later `OFFERED`/`REJECTED` as fully conformant.
 
-### ThroughRide spec still names pre-v0.4 values
-- **Where:** SPEC.md §10.3, §10.4, `leg.service_requirements`  ↔  ThroughRide `spec.md` §8.1 decisions 3, 5 and 10 and the mapping table
-- **Mismatch:** ThroughRide's milestone table still lists `EN_ROUTE_TO_TRANSFER` / `ARRIVED_TRANSFER`, the custody-gap timer starts at `ARRIVED_TRANSFER`, the delay causes include `rider`, and the mapping says car seats have no value. The binding dropped the transfer milestones (#5), merged `RIDER` into `BOARDING` (#8) and has `CHILD_SEAT` (#6).
-- **Why it matters:** An adapter written from ThroughRide's table would emit milestones the kit rejects.
-- **Suggested resolution:** change ThroughRide: hub arrival = the feeder leg's `ARRIVED_DROPOFF` (the driver button can still say "Arrived at transfer"); start the custody-gap timer there; map `rider` → `BOARDING`; map `car_seat` → `CHILD_SEAT`.
-
-- **ThroughRide status (2026-10-21):** changed as suggested. Hub arrival records the feeder's `ARRIVED_DROPOFF` and the custody-gap timer starts there; `rider` is sent as `BOARDING`; `car_seat` maps to `CHILD_SEAT`. (ThroughRide PRs for the driver page, the T1 adapter and funding source.)
-
 ### No exception type for "a person has been asked to act"
 - **Where:** `profiles/transfer/exception.yaml` `type` enum, SPEC.md §10.6, `EXCEPTION_RAISED` / `EXCEPTION_RESOLVED` events  ↔  ThroughRide escalation ladder (`apps/transfers/services.py` `escalate`, spec §7.1)
 - **Mismatch:** The binding's exception types each describe a condition (`HOLD_UNANSWERED`, `CUSTODY_GAP`, …). ThroughRide's coordinator inbox also has `ESCALATED`: a condition was not handled in time, so the broker moved it up its ladder and on-duty staff are now being contacted. The binding has no way to say "escalated", so a broker that publishes `EXCEPTION_RAISED` to subscribers (an agency dashboard, the onward provider) can't tell them a human now owns the problem, or how urgent it has become.
@@ -116,6 +108,23 @@ Append under *Open*, one heading per mismatch:
   - It carries no names, phone numbers or roles of the people contacted. Who gets contacted stays broker-local, as agreed in #3.
   - Resolving the escalated exception also resolves the `ESCALATED` one (`EXCEPTION_RESOLVED` for each).
   - Add an example to `examples/exceptions`, and a check that `ESCALATED` never comes from a provider.
+- **tds-openapi response (2026-10-21): agree, applied in v0.5.1.** Implemented as proposed, with
+  three tightenings:
+  - `escalates_exception_id` names the *condition* exception, never another `ESCALATED` one.
+    Climbing the ladder raises a new `ESCALATED` for the same condition with a higher
+    `escalation_level`, so subscribers can count steps without walking a chain.
+  - The schema enforces the shape: `ESCALATED` requires `escalates_exception_id` and severity
+    `AT_RISK` or `CRITICAL`; the escalation fields are refused on any other type. The level stays
+    optional (read as 1), as proposed.
+  - "Never from a provider" is checked as: no party in an event stream sends both provider events
+    and exception events (`tds_conform.events.broker_event_problems`, used by the example
+    validator and `tds-conform check-events`), and the kit's `webhook_delivery` fails a provider
+    that delivers any `EXCEPTION_*` event. Escalation rules (earlier condition from the same
+    broker, rising levels, resolved together with the condition) are in
+    `escalation_problems`. Example: `examples/exceptions/`.
+  - **For Evan:** `exception` stays an open object, as every schema here is, so nothing stops a
+    broker from adding a person's name to it. Closing it (as `nemt` is) would be a breaking
+    change; worth an RFP before 1.0.
 
 ## v0.4.1 audit (2026-10-21)
 
@@ -157,6 +166,11 @@ Status: **applied** = in the schemas now · **agree** = fold into SPEC.md when t
 
 ## Resolved
 
+- **ThroughRide spec still names pre-v0.4 values** (2026-10-21): ThroughRide now records the feeder's
+  `ARRIVED_DROPOFF` at the hub and starts the custody-gap timer there, sends `rider` as `BOARDING`
+  and maps `car_seat` to `CHILD_SEAT`.
+- **No exception type for "a person has been asked to act"** (2026-10-21): `ESCALATED` with
+  `escalates_exception_id` and `escalation_level`, v0.5.1 (see the response under the item above).
 - **#6 Supervision vs service requirements:** `HAND_TO_HAND`, `CHILD_SEAT` added to core (2026-10-20). Interchange implication pending v0.4.
 - **#10 Pairwise rider ids:** guidance added to `rider.yaml` (2026-10-20).
 - **#1–5, 7–9, 11, 12:** folded into SPEC.md Draft 1 (2026-10-20) as recommended in the table above; Evan approved the #5 and #12 recommendations. Sections: §4 (broker proxy), §7 (`/health`, cancel reasons, async decisions), §10.1 (`auto_hold_s`, buffer scope, `HAND_TO_HAND` → supervision), §10.2 (`approval`, ACCEPT echoes terms), §10.3 (milestones without transfer-specific values), §10.4 (`source`, `delay_cause`; ETA `target` is now `PICKUP`/`DROPOFF` only, following #5), §10.5 (`respond_by`, `EXPIRED`, counter-offers), §10.6 (`HOLD_UNANSWERED`), §13 (timing and tender conformance). Schemas follow in v0.2 (core) and v0.4 (transfer).
@@ -219,3 +233,11 @@ Re-vendor examples from tag `v0.5.0`; `binding_version()` now returns `0.5.0`. E
 above marked "v0.5" is in it. New since the v0.4.2 vendoring: `settlement-split/`,
 `paratransit-trip/`, `nemt-trip/`, `refusals-and-failures/` (generated), `exceptions/`, and
 `schema_version: "0.5.0"` in every generated event stream.
+
+## v0.5.1 released (2026-10-21, local tag `v0.5.1`)
+
+Adds exception type `ESCALATED`. Re-vendor from tag `v0.5.1` (`binding_version()` = `0.5.1`).
+ThroughRide's outbound `EXCEPTION_RAISED` for its ladder: `type: ESCALATED`,
+`escalates_exception_id` = the condition exception (`HOLD_UNANSWERED`, …), `escalation_level` =
+ladder step, severity `AT_RISK` or `CRITICAL`, nothing about who was contacted; send
+`EXCEPTION_RESOLVED` for each escalation when the condition resolves.
