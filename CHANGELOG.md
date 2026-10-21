@@ -4,6 +4,20 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-10-21
+
+### Added
+- `tds_conform.examples`: public accessors so other projects can use the published examples
+  and schemas without hard-coding the repo layout: `binding_version()`, `examples_dir()`,
+  `profiles_dir()`, `scenarios()`, `load_manifest(scenario)` (file entries always dicts),
+  `load_example(scenario, filename)`, `iter_examples(scenario)`, `schema_errors(...)`. Works
+  from a checkout, an editable path install and a wheel.
+- `tds_conform.mock` re-exports `Provider`, `ProviderConfig`, `Network`, `make_server`.
+- `tds_conform` ships `py.typed`.
+- docs/demo.md: using tds-conform as a path dependency.
+- Test that every version declaration (package.json, both pyprojects, OpenAPI, AsyncAPI,
+  `tds_conform.__version__`) agrees.
+
 ## [0.4.1] - 2026-10-21
 
 Audit of the ThroughRide alignment items (`docs/notes/throughride-alignment.md` #1–12) against

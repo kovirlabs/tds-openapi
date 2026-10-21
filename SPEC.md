@@ -1,6 +1,6 @@
 # SPEC.md — tds-openapi
 
-Status: **Draft 2 (v0.4.1)** · Owner: Evan / Kovir Labs · Date: 2026-10-20
+Status: **Draft 2 (v0.4.2)** · Owner: Evan / Kovir Labs · Date: 2026-10-20
 
 Field lists below are **proposed**. Names for `profiles/core` must be reconciled with TDS 2020 (TCRP Report 210) in `mappings/tds-2020-crosswalk.md`; anything marked `TODO(crosswalk)` is unverified.
 

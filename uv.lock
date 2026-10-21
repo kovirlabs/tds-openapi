@@ -398,7 +398,7 @@ wheels = [
 
 [[package]]
 name = "tds-conform"
-version = "0.4.1"
+version = "0.4.2"
 source = { editable = "conformance" }
 dependencies = [
     { name = "httpx" },
@@ -421,7 +421,7 @@ requires-dist = [
 
 [[package]]
 name = "tds-openapi-tools"
-version = "0.4.1"
+version = "0.4.2"
 source = { virtual = "." }
 dependencies = [
     { name = "jsonschema" },
