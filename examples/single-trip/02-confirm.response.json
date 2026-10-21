@@ -1,0 +1,61 @@
+{
+  "trip_id": "tr-20261103-0001",
+  "provider_trip_id": "AR-558812",
+  "requester_id": "throughride-demo",
+  "provider_id": "aaata-a-ride",
+  "status": "CONFIRMED",
+  "rider_ref": {
+    "rider_ref_id": "r-7f3a",
+    "display_name": "Dana K.",
+    "language": "en",
+    "eligibility": [
+      {
+        "program": "ADA_PARATRANSIT",
+        "attested_by": "aaata",
+        "valid_until": "2027-06-30"
+      }
+    ]
+  },
+  "party": {
+    "companions": 0,
+    "attendants": 1,
+    "service_animals": 0
+  },
+  "legs": [
+    {
+      "leg_id": "leg-1",
+      "pickup": {
+        "lat": 42.2808,
+        "lon": -83.743,
+        "name": "Blake Transit Center",
+        "gtfs_stop_id": "BTC"
+      },
+      "dropoff": {
+        "lat": 42.6064,
+        "lon": -83.1498,
+        "name": "Corewell Health Troy",
+        "access_notes": "Main entrance, Dequindre Rd side"
+      },
+      "dropoff_window": {
+        "earliest": "2026-11-03T10:15:00-05:00",
+        "latest": "2026-11-03T10:45:00-05:00"
+      },
+      "scheduled_pickup": "2026-11-03T09:20:00-05:00",
+      "scheduled_dropoff": "2026-11-03T10:30:00-05:00",
+      "service_requirements": [
+        "WHEELCHAIR_LIFT"
+      ]
+    }
+  ],
+  "fare_funding": {
+    "fare": {
+      "amount": "0.00",
+      "currency": "USD"
+    },
+    "funding_source": "SPONSOR",
+    "sponsor_ref": "jfs-washtenaw"
+  },
+  "notes_to_driver": "Call on arrival.",
+  "created_at": "2026-10-30T14:02:11-04:00",
+  "updated_at": "2026-10-30T14:05:40-04:00"
+}

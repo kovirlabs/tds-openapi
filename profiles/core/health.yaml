@@ -1,0 +1,52 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/core/health.yaml
+title: Health
+description: >-
+  Body of `GET /health`: liveness plus what the endpoint supports and how fast
+  it usually decides. Requesters use typical_response_s to set deadlines.
+type: object
+required: [status, spec_versions, profiles, operated_via]
+properties:
+  status:
+    description: OK when accepting requests normally; DEGRADED when up but slow or partially available.
+    type: string
+    enum: [OK, DEGRADED]
+  spec_versions:
+    description: Versions of this binding the endpoint implements (SemVer).
+    type: array
+    minItems: 1
+    items:
+      type: string
+      pattern: "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+  profiles:
+    description: Profiles implemented. CORE is always present.
+    type: array
+    minItems: 1
+    uniqueItems: true
+    contains:
+      const: CORE
+    items:
+      type: string
+      enum: [CORE, TRANSFER, PARATRANSIT, NEMT]
+  operated_via:
+    description: >-
+      DIRECT when the provider runs this endpoint itself; BROKER_PROXY when a
+      broker exposes it on the provider's behalf and relays requests to staff.
+    type: string
+    enum: [DIRECT, BROKER_PROXY]
+  typical_response_s:
+    description: >-
+      Typical seconds from a request to an asynchronous decision. 0 or absent
+      means decisions are synchronous.
+    type: integer
+    minimum: 0
+examples:
+  - status: "OK"
+    spec_versions: ["0.2.0"]
+    profiles: [CORE]
+    operated_via: "DIRECT"
+  - status: "OK"
+    spec_versions: ["0.2.0"]
+    profiles: [CORE, TRANSFER]
+    operated_via: "BROKER_PROXY"
+    typical_response_s: 900

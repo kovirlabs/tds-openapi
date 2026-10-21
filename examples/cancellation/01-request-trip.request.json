@@ -1,0 +1,42 @@
+{
+  "trip_id": "tr-20261105-0007",
+  "requester_id": "throughride-demo",
+  "provider_id": "aaata-a-ride",
+  "rider_ref": {
+    "rider_ref_id": "r-91c2",
+    "display_name": "Luis",
+    "contact": {
+      "phone": "+17345550123"
+    },
+    "contact_consent": true,
+    "language": "es"
+  },
+  "legs": [
+    {
+      "leg_id": "leg-1",
+      "pickup": {
+        "lat": 42.2459,
+        "lon": -83.6157,
+        "name": "Ypsilanti Transit Center",
+        "gtfs_stop_id": "YTC"
+      },
+      "dropoff": {
+        "lat": 42.277,
+        "lon": -83.7382,
+        "name": "Ann Arbor District Library, Downtown"
+      },
+      "pickup_window": {
+        "earliest": "2026-11-05T13:00:00-05:00",
+        "preferred": "2026-11-05T13:15:00-05:00",
+        "latest": "2026-11-05T13:30:00-05:00"
+      }
+    }
+  ],
+  "fare_funding": {
+    "fare": {
+      "amount": "2.50",
+      "currency": "USD"
+    },
+    "funding_source": "RIDER"
+  }
+}

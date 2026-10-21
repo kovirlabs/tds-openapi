@@ -1,0 +1,72 @@
+post:
+  operationId: createTender
+  summary: Tender a leg
+  description: >-
+    Offer this provider one leg of a linked journey with the interchange terms
+    and a deadline (SPEC.md §10.2). A provider that decides at once returns 201
+    with the tender ACCEPTED (the trip now exists, CONFIRMED, under
+    trip.trip_id) or REJECTED. One that decides later returns 202 OFFERED and
+    reports the answer in a TENDER_RESPONSE event; unanswered by respond_by, the
+    tender becomes EXPIRED. Both are conformant.
+  x-profile: transfer
+  tags: [Transfer]
+  security:
+    - oauth2: [tenders:write]
+  parameters:
+    - $ref: ../components/parameters.yaml#/IdempotencyKey
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../profiles/transfer/tender-request.yaml
+        examples:
+          feeder_leg:
+            summary: Tender the feeder leg of a protected connection
+            externalValue: ../../examples/two-provider-transfer/05-tender-feeder.request.json
+          onward_leg:
+            summary: Tender the onward leg
+            externalValue: ../../examples/two-provider-transfer/07-tender-onward.request.json
+          short_deadline:
+            summary: Tender with a 5-minute deadline (it will expire)
+            externalValue: ../../examples/tender-expired-retender/03-tender-onward.request.json
+          retender:
+            summary: Re-tender to the fallback provider after expiry
+            externalValue: ../../examples/tender-expired-retender/06-retender-onward.request.json
+  responses:
+    "201":
+      description: Answered at once; ACCEPTED or REJECTED.
+      content:
+        application/json:
+          schema:
+            $ref: ../../profiles/transfer/tender.yaml
+          examples:
+            feeder_accepted:
+              summary: Feeder leg accepted with terms
+              externalValue: ../../examples/two-provider-transfer/06-tender-feeder.response.json
+            onward_accepted:
+              summary: Onward leg accepted
+              externalValue: ../../examples/two-provider-transfer/08-tender-onward.response.json
+            retender_accepted:
+              summary: Fallback provider accepts
+              externalValue: ../../examples/tender-expired-retender/07-retender-onward.response.json
+    "202":
+      description: Received; the answer follows as a TENDER_RESPONSE event.
+      content:
+        application/json:
+          schema:
+            $ref: ../../profiles/transfer/tender.yaml
+          examples:
+            offered:
+              summary: Provider will answer later
+              externalValue: ../../examples/tender-expired-retender/04-tender-onward.response.json
+    "400":
+      $ref: ../components/responses.yaml#/BadRequest
+    "401":
+      $ref: ../components/responses.yaml#/Unauthorized
+    "409":
+      description: tender_id or trip_id already in use (code TRIP_ID_IN_USE), or Idempotency-Key reused.
+      content:
+        application/problem+json:
+          schema:
+            $ref: ../../profiles/core/error.yaml

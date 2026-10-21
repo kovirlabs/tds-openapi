@@ -1,0 +1,47 @@
+parameters:
+  - $ref: ../components/parameters.yaml#/TripId
+post:
+  operationId: cancelTrip
+  summary: Cancel a trip
+  description: >-
+    Cancel a trip that has not reached a terminal state. The response carries
+    the trip with status CANCELLED and a cancellation record.
+  tags: [Trips]
+  security:
+    - oauth2: [trips:write]
+  parameters:
+    - $ref: ../components/parameters.yaml#/IdempotencyKey
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../profiles/core/cancel-request.yaml
+        examples:
+          cancellation:
+            externalValue: ../../examples/cancellation/02-cancel.request.json
+  responses:
+    "200":
+      description: The trip is CANCELLED.
+      content:
+        application/json:
+          schema:
+            $ref: ../../profiles/core/trip.yaml
+          examples:
+            cancellation:
+              externalValue: ../../examples/cancellation/02-cancel.response.json
+    "400":
+      $ref: ../components/responses.yaml#/BadRequest
+    "401":
+      $ref: ../components/responses.yaml#/Unauthorized
+    "404":
+      $ref: ../components/responses.yaml#/NotFound
+    "409":
+      description: The trip is already in a terminal state (code INVALID_STATE).
+      content:
+        application/problem+json:
+          schema:
+            $ref: ../../profiles/core/error.yaml
+          examples:
+            already_cancelled:
+              externalValue: ../../examples/cancellation/03-cancel-again.response.json

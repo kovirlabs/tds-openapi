@@ -1,0 +1,68 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/transfer/hold.yaml
+title: Hold
+x-profile: transfer
+description: >-
+  State of a hold request at the outbound provider. PENDING until answered
+  (synchronously, or later via a HOLD_RESPONSE event). GRANTED and PARTIAL carry
+  the resulting scheduled_pickup; a provider counter-offer ("can't wait that
+  long, can pick up at 10:15") is PARTIAL with that time.
+type: object
+required: [hold_id, trip_id, interchange_id, action, requested_until, respond_by, status, created_at]
+properties:
+  hold_id:
+    description: Broker-assigned hold identifier.
+    type: string
+  trip_id:
+    description: The outbound trip.
+    type: string
+  interchange_id:
+    description: The interchange being protected.
+    type: string
+  action:
+    description: What was asked.
+    type: string
+    enum: [HOLD, RETIME]
+  requested_until:
+    description: As in the request.
+    type: string
+    format: date-time
+  respond_by:
+    description: As in the request.
+    type: string
+    format: date-time
+  status:
+    description: Hold lifecycle state.
+    type: string
+    enum: [PENDING, GRANTED, PARTIAL, DENIED, EXPIRED]
+  scheduled_pickup:
+    description: Outbound pickup time after the decision (GRANTED or PARTIAL).
+    type: string
+    format: date-time
+  held_until:
+    description: Latest time the vehicle will wait at the transfer point, if different from scheduled_pickup.
+    type: string
+    format: date-time
+  reason:
+    description: Why the hold was denied or only partly granted.
+    type: string
+    enum: [EXCEEDS_MAX_HOLD, DOWNSTREAM_COMMITMENT, DRIVER_HOURS, OTHER]
+  created_at:
+    description: When the provider received the request.
+    type: string
+    format: date-time
+  responded_at:
+    description: When the provider answered or the hold expired.
+    type: string
+    format: date-time
+examples:
+  - hold_id: "hd-20261110-1"
+    trip_id: "tr-20261110-b"
+    interchange_id: "ix-20261110-1"
+    action: "HOLD"
+    requested_until: "2026-11-10T10:20:00-05:00"
+    respond_by: "2026-11-10T10:00:00-05:00"
+    status: "GRANTED"
+    scheduled_pickup: "2026-11-10T10:20:00-05:00"
+    created_at: "2026-11-10T09:50:00-05:00"
+    responded_at: "2026-11-10T09:50:01-05:00"

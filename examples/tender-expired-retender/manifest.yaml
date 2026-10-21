@@ -1,0 +1,34 @@
+description: 'The onward provider never answers its tender. At respond_by it expires; a coordinator approves
+  the published fallback (approval: REQUIRED) and the broker re-tenders the leg to the next provider,
+  which accepts.'
+generated_by: tds-demo generate-examples (do not edit by hand; change tds_conform/demo.py and regenerate)
+narrative:
+- 'Tender to aaata-a-ride for tr-rt-a: ACCEPTED'
+- 'Tender to oakland-go for tr-rt-b: OFFERED'
+- Tender to oakland-go is EXPIRED; coordinator approves fallback to county-connector
+- 'Tender to county-connector for tr-rt-b2: ACCEPTED'
+files:
+  01-tender-feeder.request.json:
+    schema: https://tds-openapi.org/schemas/transfer/tender-request.yaml
+  02-tender-feeder.response.json:
+    schema: https://tds-openapi.org/schemas/transfer/tender.yaml
+  03-tender-onward.request.json:
+    schema: https://tds-openapi.org/schemas/transfer/tender-request.yaml
+    operation: POST /tenders
+  04-tender-onward.response.json:
+    schema: https://tds-openapi.org/schemas/transfer/tender.yaml
+    operation: POST /tenders
+    status: 202
+  05-read-expired-tender.response.json:
+    schema: https://tds-openapi.org/schemas/transfer/tender.yaml
+    operation: GET /tenders/{tender_id}
+    status: 200
+  06-retender-onward.request.json:
+    schema: https://tds-openapi.org/schemas/transfer/tender-request.yaml
+    operation: POST /tenders
+  07-retender-onward.response.json:
+    schema: https://tds-openapi.org/schemas/transfer/tender.yaml
+    operation: POST /tenders
+    status: 201
+  events.json:
+    kind: event-stream

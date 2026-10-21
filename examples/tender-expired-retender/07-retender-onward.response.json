@@ -1,0 +1,14 @@
+{
+  "tender_id": "tn-rt-b2",
+  "trip_id": "tr-rt-b2",
+  "interchange_id": "ix-rt-2",
+  "respond_by": "2026-11-10T08:16:00-05:00",
+  "status": "ACCEPTED",
+  "created_at": "2026-11-10T08:01:00-05:00",
+  "accepted_terms": {
+    "auto_hold_s": 300,
+    "max_hold_s": 900
+  },
+  "provider_trip_id": "county-connector-0010",
+  "responded_at": "2026-11-10T08:01:00-05:00"
+}

@@ -1,0 +1,25 @@
+parameters:
+  - $ref: ../components/parameters.yaml#/TenderId
+get:
+  operationId: getTender
+  summary: Get a tender
+  description: Current state of a tender, for brokers that poll instead of (or as well as) receiving events.
+  x-profile: transfer
+  tags: [Transfer]
+  security:
+    - oauth2: [trips:read]
+  responses:
+    "200":
+      description: The tender.
+      content:
+        application/json:
+          schema:
+            $ref: ../../profiles/transfer/tender.yaml
+          examples:
+            expired:
+              summary: Unanswered past respond_by
+              externalValue: ../../examples/tender-expired-retender/05-read-expired-tender.response.json
+    "401":
+      $ref: ../components/responses.yaml#/Unauthorized
+    "404":
+      $ref: ../components/responses.yaml#/NotFound

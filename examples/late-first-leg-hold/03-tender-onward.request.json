@@ -1,0 +1,64 @@
+{
+  "tender_id": "tn-hold-b",
+  "trip": {
+    "trip_id": "tr-hold-b",
+    "requester_id": "throughride-demo",
+    "provider_id": "oakland-go",
+    "rider_ref": {
+      "rider_ref_id": "r-oakl-55e1",
+      "display_name": "Dana K.",
+      "language": "en"
+    },
+    "legs": [
+      {
+        "leg_id": "leg-1",
+        "pickup": {
+          "lat": 42.4802,
+          "lon": -83.4755,
+          "name": "County-line transfer hub",
+          "access_notes": "Covered bay 2"
+        },
+        "dropoff": {
+          "lat": 42.6064,
+          "lon": -83.1498,
+          "name": "Corewell Health Troy",
+          "access_notes": "Main entrance"
+        },
+        "pickup_window": {
+          "earliest": "2026-11-10T09:45:00-05:00",
+          "latest": "2026-11-10T10:00:00-05:00"
+        },
+        "service_requirements": [
+          "WHEELCHAIR_LIFT"
+        ]
+      }
+    ]
+  },
+  "interchange": {
+    "interchange_id": "ix-hold",
+    "from": {
+      "provider_id": "aaata-a-ride",
+      "trip_id": "tr-hold-a",
+      "leg_id": "leg-1"
+    },
+    "to": {
+      "provider_id": "oakland-go",
+      "trip_id": "tr-hold-b",
+      "leg_id": "leg-1"
+    },
+    "transfer_location": {
+      "lat": 42.4802,
+      "lon": -83.4755,
+      "name": "County-line transfer hub",
+      "access_notes": "Covered bay 2"
+    },
+    "min_connection_s": 300,
+    "max_hold_s": 900,
+    "auto_hold_s": 300,
+    "accessibility_buffer_s": 300,
+    "protection": "PROTECTED",
+    "supervision_required": false,
+    "heartbeat_s": 300
+  },
+  "respond_by": "2026-11-10T08:10:00-05:00"
+}

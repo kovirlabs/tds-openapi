@@ -1,0 +1,55 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/transfer/tender.yaml
+title: Tender
+x-profile: transfer
+description: >-
+  State of a tender at the provider. OFFERED until the provider answers
+  (synchronously in the POST response, or later via a TENDER_RESPONSE event),
+  then ACCEPTED, REJECTED or, past respond_by, EXPIRED.
+type: object
+required: [tender_id, trip_id, interchange_id, respond_by, status, created_at]
+properties:
+  tender_id:
+    description: Broker-assigned tender identifier.
+    type: string
+  trip_id:
+    description: The offered trip's trip_id; on ACCEPTED, the trip exists under this id.
+    type: string
+  interchange_id:
+    description: The interchange the leg belongs to.
+    type: string
+  respond_by:
+    description: Deadline for the provider's answer.
+    type: string
+    format: date-time
+  status:
+    description: Tender lifecycle state.
+    type: string
+    enum: [OFFERED, ACCEPTED, REJECTED, EXPIRED]
+  reason:
+    description: Why the tender was rejected.
+    $ref: ../core/refusal-reason.yaml
+  accepted_terms:
+    description: Present when ACCEPTED.
+    $ref: ./accepted-terms.yaml
+  provider_trip_id:
+    description: Provider's own id for the created trip, when ACCEPTED.
+    type: string
+  created_at:
+    description: When the provider received the tender.
+    type: string
+    format: date-time
+  responded_at:
+    description: When the provider answered or the tender expired.
+    type: string
+    format: date-time
+examples:
+  - tender_id: "tn-20261110-b"
+    trip_id: "tr-20261110-b"
+    interchange_id: "ix-20261110-1"
+    respond_by: "2026-11-09T17:00:00-05:00"
+    status: "ACCEPTED"
+    accepted_terms: { auto_hold_s: 300, max_hold_s: 900 }
+    provider_trip_id: "OG-77120"
+    created_at: "2026-11-09T15:00:00-05:00"
+    responded_at: "2026-11-09T15:00:02-05:00"

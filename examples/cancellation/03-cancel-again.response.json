@@ -1,0 +1,8 @@
+{
+  "type": "about:blank",
+  "title": "Invalid state",
+  "status": 409,
+  "detail": "Trip tr-20261105-0007 is already CANCELLED.",
+  "instance": "/trips/tr-20261105-0007/cancel",
+  "code": "INVALID_STATE"
+}

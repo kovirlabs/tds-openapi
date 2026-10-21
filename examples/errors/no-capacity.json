@@ -1,0 +1,7 @@
+{
+  "type": "about:blank",
+  "title": "No capacity",
+  "status": 422,
+  "detail": "No vehicle with a wheelchair lift is available in the requested window.",
+  "code": "NO_CAPACITY"
+}

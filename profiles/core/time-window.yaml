@@ -1,0 +1,28 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/core/time-window.yaml
+title: TimeWindow
+description: >-
+  A span of time within which an event (pickup or dropoff) should happen.
+  Producers MUST ensure earliest <= preferred <= latest; this ordering cannot be
+  expressed in JSON Schema and is checked by the conformance kit.
+type: object
+required: [earliest, latest]
+properties:
+  earliest:
+    description: Start of the window, RFC 3339 with offset.
+    type: string
+    format: date-time
+  latest:
+    description: End of the window, RFC 3339 with offset.
+    type: string
+    format: date-time
+  preferred:
+    description: Time the rider would like, if any. Must fall inside the window.
+    type: string
+    format: date-time
+examples:
+  - earliest: "2026-11-03T09:00:00-05:00"
+    latest: "2026-11-03T09:30:00-05:00"
+  - earliest: "2026-11-03T09:00:00-05:00"
+    preferred: "2026-11-03T09:15:00-05:00"
+    latest: "2026-11-03T09:30:00-05:00"

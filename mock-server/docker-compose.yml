@@ -1,0 +1,27 @@
+# Two mocks of the core API:
+#   provider  http://localhost:4010  stateful reference providers (tds-mock --demo): trips persist,
+#                                    idempotency and the state machine are enforced. Base URLs
+#                                    /p/aaata-a-ride, /p/oakland-go, /p/county-connector; see docs/demo.md.
+#                                    Authorization: Bearer <requester_id>
+#   static    http://localhost:4011  Prism serving examples/ from the bundle (stateless).
+#                                    Needs `npm run bundle` first. Prefer: code=202 / example=<name>.
+services:
+  provider:
+    image: ghcr.io/astral-sh/uv:0.9-python3.12-bookworm-slim
+    working_dir: /repo
+    environment:
+      UV_PROJECT_ENVIRONMENT: /tmp/venv
+      UV_LINK_MODE: copy
+    command: uv run --frozen --package tds-conform tds-mock --demo --host 0.0.0.0 --port 4010
+    ports:
+      - "4010:4010"
+    volumes:
+      - ..:/repo:ro
+  static:
+    image: node:22-alpine
+    working_dir: /repo
+    command: npx --yes @stoplight/prism-cli@5.16.0 mock -h 0.0.0.0 -p 4011 dist/openapi.yaml
+    ports:
+      - "4011:4011"
+    volumes:
+      - ..:/repo:ro

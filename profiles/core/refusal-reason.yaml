@@ -1,0 +1,16 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/core/refusal-reason.yaml
+title: RefusalReason
+description: >-
+  Why a provider refuses to serve a trip, tender or change. Used as the `code`
+  of a 422 Problem Details response and as the `reason` on a rejected tender.
+type: string
+enum:
+  - NO_CAPACITY
+  - OUTSIDE_SERVICE_AREA
+  - OUTSIDE_SERVICE_HOURS
+  - ELIGIBILITY_REQUIRED
+  - INVALID_WINDOW
+  - UNSUPPORTED_REQUIREMENT
+examples:
+  - NO_CAPACITY

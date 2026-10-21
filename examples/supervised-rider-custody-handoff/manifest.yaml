@@ -1,0 +1,19 @@
+description: A rider who must not be left alone (HAND_TO_HAND, supervision_required). Custody passes caregiver
+  → feeder driver → onward driver → clinic staff, with a record at each handoff.
+generated_by: tds-demo generate-examples (do not edit by hand; change tds_conform/demo.py and regenerate)
+narrative:
+- 'Interchange ix-sup: aaata-a-ride → oakland-go at County-line transfer hub, protected, supervised rider'
+- 'Tender to aaata-a-ride for tr-sup-a: ACCEPTED'
+- 'Tender to oakland-go for tr-sup-b: ACCEPTED'
+- Custody recorded at home, at the hub (by both drivers) and at the clinic; both legs COMPLETED
+files:
+  01-tender-feeder.request.json:
+    schema: https://tds-openapi.org/schemas/transfer/tender-request.yaml
+  02-tender-feeder.response.json:
+    schema: https://tds-openapi.org/schemas/transfer/tender.yaml
+  03-tender-onward.request.json:
+    schema: https://tds-openapi.org/schemas/transfer/tender-request.yaml
+  04-tender-onward.response.json:
+    schema: https://tds-openapi.org/schemas/transfer/tender.yaml
+  events.json:
+    kind: event-stream

@@ -1,0 +1,36 @@
+description: 'Two providers, one protected connection at a hub: both legs tendered and accepted, the feeder
+  sends ETA heartbeats while inbound, the onward vehicle waits at the hub, and both legs complete.'
+generated_by: tds-demo generate-examples (do not edit by hand; change tds_conform/demo.py and regenerate)
+narrative:
+- 'Interchange ix-tpt: aaata-a-ride → oakland-go at County-line transfer hub, protected'
+- 'Tender to aaata-a-ride for tr-tpt-a: ACCEPTED'
+- 'Tender to oakland-go for tr-tpt-b: ACCEPTED'
+- Rider delivered; both legs COMPLETED
+files:
+  01-subscribe-aaata-a-ride.request.json:
+    schema: https://tds-openapi.org/schemas/core/subscription-request.yaml
+    operation: POST /subscriptions
+  02-subscribe-aaata-a-ride.response.json:
+    schema: https://tds-openapi.org/schemas/core/subscription.yaml
+    operation: POST /subscriptions
+    status: 201
+  03-subscribe-oakland-go.request.json:
+    schema: https://tds-openapi.org/schemas/core/subscription-request.yaml
+  04-subscribe-oakland-go.response.json:
+    schema: https://tds-openapi.org/schemas/core/subscription.yaml
+  05-tender-feeder.request.json:
+    schema: https://tds-openapi.org/schemas/transfer/tender-request.yaml
+    operation: POST /tenders
+  06-tender-feeder.response.json:
+    schema: https://tds-openapi.org/schemas/transfer/tender.yaml
+    operation: POST /tenders
+    status: 201
+  07-tender-onward.request.json:
+    schema: https://tds-openapi.org/schemas/transfer/tender-request.yaml
+    operation: POST /tenders
+  08-tender-onward.response.json:
+    schema: https://tds-openapi.org/schemas/transfer/tender.yaml
+    operation: POST /tenders
+    status: 201
+  events.json:
+    kind: event-stream

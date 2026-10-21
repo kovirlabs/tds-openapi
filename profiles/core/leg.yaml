@@ -1,0 +1,71 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/core/leg.yaml
+title: Leg
+description: >-
+  One pickup-to-dropoff movement performed by a single provider. Exactly one of
+  the requested windows anchors the leg: pickup_window for "leave at" trips,
+  dropoff_window for appointment ("arrive by") trips. Both may be given.
+type: object
+required: [leg_id, pickup, dropoff]
+anyOf:
+  - required: [pickup_window]
+  - required: [dropoff_window]
+properties:
+  leg_id:
+    description: Identifier of the leg, unique within its trip.
+    type: string
+  pickup:
+    description: Where the rider is picked up.
+    $ref: ./location.yaml
+  dropoff:
+    description: Where the rider is dropped off.
+    $ref: ./location.yaml
+  pickup_window:
+    description: Requested pickup window.
+    $ref: ./time-window.yaml
+  dropoff_window:
+    description: Requested dropoff window; used for appointment-anchored trips.
+    $ref: ./time-window.yaml
+  scheduled_pickup:
+    description: Pickup time committed by the provider. Set on confirmation or scheduling.
+    type: string
+    format: date-time
+  scheduled_dropoff:
+    description: Dropoff time committed by the provider, if it commits to one.
+    type: string
+    format: date-time
+  service_requirements:
+    description: >-
+      Services the vehicle and driver must provide. Expresses what is needed, not
+      why: no diagnoses or conditions. HAND_TO_HAND means the driver may release
+      the rider only to a responsible person at the destination. CHILD_SEAT means
+      the vehicle must carry an appropriate child restraint.
+    type: array
+    uniqueItems: true
+    items:
+      type: string
+      enum:
+        - WHEELCHAIR_LIFT
+        - RAMP
+        - DOOR_TO_DOOR
+        - HAND_TO_HAND
+        - ATTENDANT_REQUIRED
+        - NO_STEPS
+        - CHILD_SEAT
+  vehicle_ref:
+    description: Assigned vehicle, once known.
+    $ref: ./vehicle-ref.yaml
+examples:
+  - leg_id: "leg-1"
+    pickup:
+      lat: 42.2808
+      lon: -83.7430
+      name: "Blake Transit Center"
+    dropoff:
+      lat: 42.6064
+      lon: -83.1498
+      name: "Corewell Health Troy"
+    dropoff_window:
+      earliest: "2026-11-03T10:15:00-05:00"
+      latest: "2026-11-03T10:45:00-05:00"
+    service_requirements: [WHEELCHAIR_LIFT, DOOR_TO_DOOR]

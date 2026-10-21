@@ -1,0 +1,43 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/transfer/event-hold-response.yaml
+title: HoldResponseEvent
+description: >-
+  Emitted when a hold request is answered or expires.
+x-profile: transfer
+allOf:
+  - $ref: ../core/event.yaml
+type: object
+required: [trip_id]
+properties:
+  event_type:
+    description: Always HOLD_RESPONSE.
+    const: HOLD_RESPONSE
+  payload:
+    description: The hold after the decision.
+    type: object
+    required: [hold]
+    properties:
+      hold:
+        description: Current hold state.
+        $ref: ./hold.yaml
+examples:
+  - event_id: "evt-hold-response-1"
+    event_type: "HOLD_RESPONSE"
+    occurred_at: "2026-11-10T09:48:00-05:00"
+    provider_id: "aaata-a-ride"
+    trip_id: "tr-20261110-a"
+    leg_id: "leg-1"
+    schema_version: "0.4.0"
+    payload:
+      hold:
+        hold_id: "hd-20261110-1"
+        trip_id: "tr-20261110-a"
+        interchange_id: "ix-20261110-1"
+        action: "HOLD"
+        requested_until: "2026-11-10T10:20:00-05:00"
+        respond_by: "2026-11-10T10:00:00-05:00"
+        status: "PARTIAL"
+        scheduled_pickup: "2026-11-10T10:15:00-05:00"
+        reason: "DOWNSTREAM_COMMITMENT"
+        created_at: "2026-11-10T09:50:00-05:00"
+        responded_at: "2026-11-10T09:51:30-05:00"

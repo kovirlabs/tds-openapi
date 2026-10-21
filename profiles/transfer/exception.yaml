@@ -1,0 +1,55 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/transfer/exception.yaml
+title: Exception
+x-profile: transfer
+description: >-
+  Broker-generated alert for coordinators (manage by exception, SPEC.md §10.6).
+  Not sent by providers; defined so broker UIs and integrations share
+  vocabulary. Default triggers: connection probability below 0.8 is AT_RISK,
+  below 0.5 CRITICAL.
+type: object
+required: [exception_id, severity, type, detected_at]
+properties:
+  exception_id:
+    description: Broker-assigned identifier.
+    type: string
+  severity:
+    description: How urgent the exception is.
+    type: string
+    enum: [INFO, AT_RISK, CRITICAL]
+  type:
+    description: What went wrong.
+    type: string
+    enum:
+      - LOW_CONNECTION_PROBABILITY
+      - TENDER_EXPIRED
+      - TENDER_EXHAUSTED
+      - STALE_HEARTBEAT
+      - MISSED_MILESTONE
+      - HOLD_DENIED
+      - HOLD_UNANSWERED
+      - CUSTODY_GAP
+  interchange_id:
+    description: The affected interchange, if any.
+    type: string
+  detected_at:
+    description: When the broker raised it.
+    type: string
+    format: date-time
+  suggested_actions:
+    description: Actions the coordinator might take, as codes (e.g. HOLD, RETIME, REPROTECT, CALL_PROVIDER).
+    type: array
+    items:
+      type: string
+      pattern: "^[A-Z][A-Z0-9_]*$"
+  resolved_at:
+    description: When it was resolved, if it has been.
+    type: string
+    format: date-time
+examples:
+  - exception_id: "ex-1"
+    severity: "AT_RISK"
+    type: "LOW_CONNECTION_PROBABILITY"
+    interchange_id: "ix-20261110-1"
+    detected_at: "2026-11-10T09:48:30-05:00"
+    suggested_actions: [HOLD]

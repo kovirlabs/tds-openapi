@@ -1,0 +1,23 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/transfer/milestone.yaml
+title: Milestone
+x-profile: transfer
+description: >-
+  Progress point of a leg, always relative to the leg's own pickup and dropoff
+  (SPEC.md §10.3). Valid order: EN_ROUTE_TO_PICKUP (optional), ARRIVED_PICKUP,
+  RIDER_ONBOARD, EN_ROUTE_TO_DROPOFF, ARRIVED_DROPOFF, RIDER_HANDED_OFF (required
+  when custody applies), LEG_COMPLETED. RIDER_NO_SHOW may follow ARRIVED_PICKUP;
+  LEG_FAILED may follow any non-terminal milestone.
+type: string
+enum:
+  - EN_ROUTE_TO_PICKUP
+  - ARRIVED_PICKUP
+  - RIDER_ONBOARD
+  - EN_ROUTE_TO_DROPOFF
+  - ARRIVED_DROPOFF
+  - RIDER_HANDED_OFF
+  - LEG_COMPLETED
+  - RIDER_NO_SHOW
+  - LEG_FAILED
+examples:
+  - ARRIVED_DROPOFF

@@ -1,0 +1,27 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/core/party.yaml
+title: Party
+description: >-
+  People and animals travelling with the rider, so the provider can reserve
+  capacity. Counts only; no identities.
+type: object
+properties:
+  companions:
+    description: Number of companions travelling with the rider.
+    type: integer
+    minimum: 0
+    default: 0
+  attendants:
+    description: Number of personal care attendants travelling with the rider.
+    type: integer
+    minimum: 0
+    default: 0
+  service_animals:
+    description: Number of service animals travelling with the rider.
+    type: integer
+    minimum: 0
+    default: 0
+examples:
+  - companions: 0
+    attendants: 1
+    service_animals: 0

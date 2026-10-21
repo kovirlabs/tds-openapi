@@ -1,0 +1,10 @@
+description: Problem Details responses not tied to a longer scenario.
+files:
+  no-capacity.json:
+    schema: https://tds-openapi.org/schemas/core/error.yaml
+    operation: POST /trips
+    status: 422
+  idempotency-key-reused.json:
+    schema: https://tds-openapi.org/schemas/core/error.yaml
+    operation: POST /trips
+    status: 409

@@ -1,0 +1,21 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/transfer/leg-ref.yaml
+title: LegRef
+x-profile: transfer
+description: Points at one leg of one provider's trip.
+type: object
+required: [provider_id, trip_id, leg_id]
+properties:
+  provider_id:
+    description: Provider serving the leg.
+    type: string
+  trip_id:
+    description: Requester-assigned trip id at that provider.
+    type: string
+  leg_id:
+    description: Leg within that trip.
+    type: string
+examples:
+  - provider_id: "aaata-a-ride"
+    trip_id: "tr-20261110-a"
+    leg_id: "leg-1"

@@ -1,0 +1,222 @@
+asyncapi: 3.0.0
+info:
+  title: TDS events binding
+  version: 0.4.0
+  description: >-
+    Events a provider delivers to a requester's webhook (SPEC.md §9, §12). The
+    requester registers a callback URL with `POST /subscriptions` (see
+    openapi.yaml) and receives the signing secret once.
+
+
+    **Delivery.** Each event is an HTTPS POST of one JSON event to the callback
+    URL. Delivery is at least once with exponential backoff; receivers return
+    2xx quickly and dedupe on `event_id`. Order is not guaranteed; use
+    `occurred_at`. Providers emit an event for every change, including changes
+    the requester already saw in a synchronous response.
+
+
+    **Signing.** `X-TDS-Timestamp` is Unix seconds at send time.
+    `X-TDS-Signature` is `sha256=` followed by the lowercase hex
+    HMAC-SHA256, keyed with the subscription's signing secret, of
+    `<X-TDS-Timestamp>.<raw request body>`. Receivers reject a bad signature
+    or a timestamp more than 300 seconds from their clock.
+  contact:
+    name: tds-openapi maintainers
+    url: https://github.com/kovirlabs/tds-openapi
+  license:
+    name: Apache-2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+  tags:
+    - name: core
+      description: Core trip events.
+    - name: transfer
+      description: Transfer profile events.
+defaultContentType: application/json
+channels:
+  subscriberCallback:
+    address: null
+    title: Subscriber callback
+    description: The callback_url given in the subscription. Events are POSTed here.
+    messages:
+      TripStatusChanged:
+        $ref: '#/components/messages/TripStatusChanged'
+      TripScheduled:
+        $ref: '#/components/messages/TripScheduled'
+      TripCancelled:
+        $ref: '#/components/messages/TripCancelled'
+      TenderResponse:
+        $ref: '#/components/messages/TenderResponse'
+      HoldResponse:
+        $ref: '#/components/messages/HoldResponse'
+      Milestone:
+        $ref: '#/components/messages/Milestone'
+      EtaUpdate:
+        $ref: '#/components/messages/EtaUpdate'
+      CustodyHandoff:
+        $ref: '#/components/messages/CustodyHandoff'
+operations:
+  deliverTripStatusChanged:
+    action: send
+    title: Deliver TRIP_STATUS_CHANGED
+    description: Provider POSTs a TRIP_STATUS_CHANGED event to the subscriber's callback URL.
+    channel:
+      $ref: '#/channels/subscriberCallback'
+    messages:
+      - $ref: '#/channels/subscriberCallback/messages/TripStatusChanged'
+  deliverTripScheduled:
+    action: send
+    title: Deliver TRIP_SCHEDULED
+    description: Provider POSTs a TRIP_SCHEDULED event to the subscriber's callback URL.
+    channel:
+      $ref: '#/channels/subscriberCallback'
+    messages:
+      - $ref: '#/channels/subscriberCallback/messages/TripScheduled'
+  deliverTripCancelled:
+    action: send
+    title: Deliver TRIP_CANCELLED
+    description: Provider POSTs a TRIP_CANCELLED event to the subscriber's callback URL.
+    channel:
+      $ref: '#/channels/subscriberCallback'
+    messages:
+      - $ref: '#/channels/subscriberCallback/messages/TripCancelled'
+  deliverTenderResponse:
+    action: send
+    title: Deliver TENDER_RESPONSE
+    description: Provider POSTs a TENDER_RESPONSE event to the subscriber's callback URL.
+    channel:
+      $ref: '#/channels/subscriberCallback'
+    messages:
+      - $ref: '#/channels/subscriberCallback/messages/TenderResponse'
+  deliverHoldResponse:
+    action: send
+    title: Deliver HOLD_RESPONSE
+    description: Provider POSTs a HOLD_RESPONSE event to the subscriber's callback URL.
+    channel:
+      $ref: '#/channels/subscriberCallback'
+    messages:
+      - $ref: '#/channels/subscriberCallback/messages/HoldResponse'
+  deliverMilestone:
+    action: send
+    title: Deliver MILESTONE
+    description: Provider POSTs a MILESTONE event to the subscriber's callback URL.
+    channel:
+      $ref: '#/channels/subscriberCallback'
+    messages:
+      - $ref: '#/channels/subscriberCallback/messages/Milestone'
+  deliverEtaUpdate:
+    action: send
+    title: Deliver ETA_UPDATE
+    description: Provider POSTs a ETA_UPDATE event to the subscriber's callback URL.
+    channel:
+      $ref: '#/channels/subscriberCallback'
+    messages:
+      - $ref: '#/channels/subscriberCallback/messages/EtaUpdate'
+  deliverCustodyHandoff:
+    action: send
+    title: Deliver CUSTODY_HANDOFF
+    description: Provider POSTs a CUSTODY_HANDOFF event to the subscriber's callback URL.
+    channel:
+      $ref: '#/channels/subscriberCallback'
+    messages:
+      - $ref: '#/channels/subscriberCallback/messages/CustodyHandoff'
+components:
+  messageTraits:
+    signed:
+      headers:
+        type: object
+        required: [X-TDS-Signature, X-TDS-Timestamp]
+        properties:
+          X-TDS-Signature:
+            description: sha256=<hex HMAC-SHA256 of "<timestamp>.<body>">.
+            type: string
+            pattern: "^sha256=[0-9a-f]{64}$"
+          X-TDS-Timestamp:
+            description: Unix seconds when the request was sent.
+            type: string
+            pattern: "^[0-9]+$"
+  messages:
+    TripStatusChanged:
+      name: TRIP_STATUS_CHANGED
+      title: Trip status changed
+      summary: Every trip status change.
+      traits:
+        - $ref: '#/components/messageTraits/signed'
+      payload:
+        schemaFormat: application/schema+json;version=draft-2020-12
+        schema:
+          $ref: ../profiles/core/event-trip-status-changed.yaml
+    TripScheduled:
+      name: TRIP_SCHEDULED
+      title: Trip scheduled
+      summary: Committed times or vehicle set or changed.
+      traits:
+        - $ref: '#/components/messageTraits/signed'
+      payload:
+        schemaFormat: application/schema+json;version=draft-2020-12
+        schema:
+          $ref: ../profiles/core/event-trip-scheduled.yaml
+    TripCancelled:
+      name: TRIP_CANCELLED
+      title: Trip cancelled
+      summary: Who cancelled, why and when; sent with TRIP_STATUS_CHANGED.
+      traits:
+        - $ref: '#/components/messageTraits/signed'
+      payload:
+        schemaFormat: application/schema+json;version=draft-2020-12
+        schema:
+          $ref: ../profiles/core/event-trip-cancelled.yaml
+    TenderResponse:
+      name: TENDER_RESPONSE
+      title: Tender answered
+      summary: A tender was accepted, rejected or expired.
+      x-profile: transfer
+      traits:
+        - $ref: '#/components/messageTraits/signed'
+      payload:
+        schemaFormat: application/schema+json;version=draft-2020-12
+        schema:
+          $ref: ../profiles/transfer/event-tender-response.yaml
+    HoldResponse:
+      name: HOLD_RESPONSE
+      title: Hold answered
+      summary: A hold request was answered or expired.
+      x-profile: transfer
+      traits:
+        - $ref: '#/components/messageTraits/signed'
+      payload:
+        schemaFormat: application/schema+json;version=draft-2020-12
+        schema:
+          $ref: ../profiles/transfer/event-hold-response.yaml
+    Milestone:
+      name: MILESTONE
+      title: Milestone reached
+      summary: A leg reached a milestone (SPEC.md §10.3).
+      x-profile: transfer
+      traits:
+        - $ref: '#/components/messageTraits/signed'
+      payload:
+        schemaFormat: application/schema+json;version=draft-2020-12
+        schema:
+          $ref: ../profiles/transfer/event-milestone.yaml
+    EtaUpdate:
+      name: ETA_UPDATE
+      title: ETA update
+      summary: ETA band for a leg's next end; heartbeat toward protected interchanges.
+      x-profile: transfer
+      traits:
+        - $ref: '#/components/messageTraits/signed'
+      payload:
+        schemaFormat: application/schema+json;version=draft-2020-12
+        schema:
+          $ref: ../profiles/transfer/event-eta-update.yaml
+    CustodyHandoff:
+      name: CUSTODY_HANDOFF
+      title: Custody handoff
+      summary: A supervised rider changed custodian (SPEC.md §10.7).
+      x-profile: transfer
+      traits:
+        - $ref: '#/components/messageTraits/signed'
+      payload:
+        schemaFormat: application/schema+json;version=draft-2020-12
+        schema:
+          $ref: ../profiles/transfer/event-custody-handoff.yaml

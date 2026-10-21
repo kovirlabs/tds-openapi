@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.DS_Store
+.remember/
+tds-conform-report/
+# Private background research: never commit
+reference/
+build/
+*.egg-info/
+.mypy_cache/

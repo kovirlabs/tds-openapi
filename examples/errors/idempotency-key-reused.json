@@ -1,0 +1,7 @@
+{
+  "type": "about:blank",
+  "title": "Idempotency key reused",
+  "status": 409,
+  "detail": "This Idempotency-Key was used earlier with a different request body.",
+  "code": "IDEMPOTENCY_KEY_REUSED"
+}

@@ -1,0 +1,39 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/transfer/fallback-policy.yaml
+title: FallbackPolicy
+x-profile: transfer
+description: >-
+  A broker's published policy for re-tendering when a provider rejects or lets
+  a tender expire (SPEC.md §10.2). Published for transparency; not sent on the wire.
+type: object
+required: [providers, max_attempts, per_attempt_deadline_s, approval]
+properties:
+  providers:
+    description: Provider ids to try, in order.
+    type: array
+    minItems: 1
+    items:
+      type: string
+  max_attempts:
+    description: Most tenders to send for one leg before escalating.
+    type: integer
+    minimum: 1
+  per_attempt_deadline_s:
+    description: respond_by offset for each attempt.
+    type: integer
+    minimum: 1
+  approval:
+    description: >-
+      REQUIRED: a human approves each fallback tender or re-protection.
+      PRE_AGREED: the broker may send them automatically under a signed agreement.
+    type: string
+    enum: [REQUIRED, PRE_AGREED]
+  escalate_to_coordinator:
+    description: Raise TENDER_EXHAUSTED to a coordinator when attempts run out.
+    type: boolean
+    default: true
+examples:
+  - providers: ["oakland-go", "smart-flex"]
+    max_attempts: 2
+    per_attempt_deadline_s: 900
+    approval: "REQUIRED"

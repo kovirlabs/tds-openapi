@@ -1,0 +1,22 @@
+description: >-
+  A provider that decides asynchronously (202 REQUESTED). The rider cancels
+  before a decision; a second cancel is refused because the trip is terminal.
+files:
+  01-request-trip.request.json:
+    schema: https://tds-openapi.org/schemas/core/trip-request.yaml
+    operation: POST /trips
+  01-request-trip.response.json:
+    schema: https://tds-openapi.org/schemas/core/trip.yaml
+    operation: POST /trips
+    status: 202
+  02-cancel.request.json:
+    schema: https://tds-openapi.org/schemas/core/cancel-request.yaml
+    operation: POST /trips/{trip_id}/cancel
+  02-cancel.response.json:
+    schema: https://tds-openapi.org/schemas/core/trip.yaml
+    operation: POST /trips/{trip_id}/cancel
+    status: 200
+  03-cancel-again.response.json:
+    schema: https://tds-openapi.org/schemas/core/error.yaml
+    operation: POST /trips/{trip_id}/cancel
+    status: 409

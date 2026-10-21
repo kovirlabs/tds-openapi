@@ -1,0 +1,36 @@
+name: conformance
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  core-vs-reference-mock:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        decision: [sync, async]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --frozen --package tds-conform
+      - name: Start tds-mock (${{ matrix.decision }})
+        run: |
+          uv run --package tds-conform tds-mock --quiet --decision ${{ matrix.decision }} --decision-delay 2 &
+          for i in $(seq 1 30); do curl -sf localhost:4010/health && break; sleep 1; done
+      - name: Run kit
+        run: uv run --package tds-conform tds-conform run --url http://localhost:4010 --profile transfer --report-dir report
+      - name: Check example event streams
+        run: |
+          for f in examples/*/events.json; do
+            uv run --package tds-conform tds-conform check-events "$f" $(ls "$(dirname "$f")"/*tender*.request.json 2>/dev/null | sed 's/^/--interchange /')
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: conformance-report-${{ matrix.decision }}
+          path: report/

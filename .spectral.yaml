@@ -1,0 +1,36 @@
+# Lint rules for the bundled OpenAPI document (npm run lint bundles first, because
+# Spectral mis-validates $ref'd path items in OAS 3.1 source files) and spec/asyncapi.yaml.
+# Field-level conventions (snake_case, descriptions, enum casing, crosswalk) and
+# full 2020-12 example validation are enforced on the sources by scripts/validate_examples.py.
+extends:
+  - spectral:oas
+  - spectral:asyncapi
+rules:
+  # Webhook events go to each subscriber's callback_url; there is no fixed server.
+  asyncapi-servers: off
+  # No shared maintainer mailbox yet; add info.contact.email and re-enable when there is one.
+  asyncapi-info-contact-properties: off
+  tds-path-params-snake-case:
+    description: Path parameters must be snake_case (CLAUDE.md conventions).
+    severity: error
+    given: "$.paths[*]~"
+    then:
+      function: pattern
+      functionOptions:
+        notMatch: "\\{[^}]*[A-Z-][^}]*\\}"
+  tds-mutations-require-idempotency-key:
+    description: POST and PATCH operations must take the Idempotency-Key header (SPEC.md §7).
+    severity: error
+    given: "$.paths[*][post,patch]"
+    then:
+      field: parameters
+      function: schema
+      functionOptions:
+        schema:
+          type: array
+          contains:
+            type: object
+            required: [name, in]
+            properties:
+              name: { const: Idempotency-Key }
+              in: { const: header }

@@ -1,0 +1,36 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/core/fare-funding.yaml
+title: FareFunding
+description: >-
+  Who pays for the trip and under what authorization. Data for settlement only;
+  no payment is processed through this API.
+type: object
+properties:
+  fare:
+    description: Fare charged for the trip, if known at booking.
+    $ref: ./money.yaml
+  funding_source:
+    description: Primary funding source for the trip.
+    type: string
+    enum:
+      - RIDER
+      - SECTION_5310
+      - SECTION_5311
+      - MEDICAID_NEMT
+      - AGENCY
+      - SPONSOR
+      - OTHER
+  sponsor_ref:
+    description: Identifier of the sponsoring organization, when funding_source is SPONSOR.
+    type: string
+  authorization_ref:
+    description: >-
+      Reference to a funding authorization held by the funder (e.g. a Medicaid
+      prior-authorization number). A reference only; no clinical content.
+    type: string
+examples:
+  - fare:
+      amount: "0.00"
+      currency: "USD"
+    funding_source: "SPONSOR"
+    sponsor_ref: "jfs-washtenaw"

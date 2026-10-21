@@ -1,0 +1,23 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/core/event-types.yaml
+title: EventTypes
+description: >-
+  A set of event types a subscriber wants delivered (SPEC.md §9). Lists every
+  event type in this binding; the last five belong to the transfer profile and
+  are only delivered by providers that implement it.
+type: array
+minItems: 1
+uniqueItems: true
+items:
+  type: string
+  enum:
+    - TRIP_STATUS_CHANGED
+    - TRIP_SCHEDULED
+    - TRIP_CANCELLED
+    - TENDER_RESPONSE
+    - HOLD_RESPONSE
+    - MILESTONE
+    - ETA_UPDATE
+    - CUSTODY_HANDOFF
+examples:
+  - [TRIP_STATUS_CHANGED]

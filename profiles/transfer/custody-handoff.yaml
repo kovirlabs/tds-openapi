@@ -1,0 +1,39 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/transfer/custody-handoff.yaml
+title: CustodyHandoff
+x-profile: transfer
+description: >-
+  Record that a supervised rider passed from one custodian to another (SPEC.md
+  §10.7; proof-of-delivery pattern). A supervised leg needs one at pickup and
+  one at dropoff before LEG_COMPLETED.
+type: object
+required: [handoff_from, handoff_to, timestamp, location, method]
+properties:
+  handoff_from:
+    description: Who released the rider.
+    $ref: ./custody-party.yaml
+  handoff_to:
+    description: Who took the rider.
+    $ref: ./custody-party.yaml
+  timestamp:
+    description: When the handoff happened.
+    type: string
+    format: date-time
+  location:
+    description: Where it happened.
+    $ref: ../core/location.yaml
+  method:
+    description: How the handoff was confirmed.
+    type: string
+    enum: [DRIVER_CONFIRM, ATTENDANT_CONFIRM, RIDER_SELF_CONFIRM, CODE_EXCHANGE]
+  caregiver_notified:
+    description: Whether the rider's caregiver was told of the handoff.
+    type: boolean
+    default: false
+examples:
+  - handoff_from: { role: "DRIVER", provider_id: "aaata-a-ride" }
+    handoff_to: { role: "DRIVER", provider_id: "oakland-go" }
+    timestamp: "2026-11-10T10:14:00-05:00"
+    location: { lat: 42.4730, lon: -83.2219, name: "Hub transfer point" }
+    method: "CODE_EXCHANGE"
+    caregiver_notified: true

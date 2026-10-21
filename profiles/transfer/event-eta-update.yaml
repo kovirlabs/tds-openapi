@@ -1,0 +1,40 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/transfer/event-eta-update.yaml
+title: EtaUpdateEvent
+description: >-
+  An ETA band for one end of a leg (SPEC.md §10.4). While a leg is IN_PROGRESS
+  toward a PROTECTED interchange, sent at least every heartbeat_s.
+x-profile: transfer
+allOf:
+  - $ref: ../core/event.yaml
+type: object
+required: [trip_id, leg_id]
+properties:
+  event_type:
+    description: Always ETA_UPDATE.
+    const: ETA_UPDATE
+  payload:
+    description: The estimate.
+    type: object
+    required: [eta]
+    properties:
+      eta:
+        description: ETA band for the leg's next end.
+        $ref: ./eta-band.yaml
+examples:
+  - event_id: "evt-eta-update-1"
+    event_type: "ETA_UPDATE"
+    occurred_at: "2026-11-10T09:48:00-05:00"
+    provider_id: "aaata-a-ride"
+    trip_id: "tr-20261110-a"
+    leg_id: "leg-1"
+    schema_version: "0.4.0"
+    payload:
+      eta:
+        target: "DROPOFF"
+        earliest: "2026-11-10T10:04:00-05:00"
+        likely: "2026-11-10T10:12:00-05:00"
+        latest: "2026-11-10T10:20:00-05:00"
+        confidence: 0.85
+        computed_at: "2026-11-10T09:48:00-05:00"
+        source: "VEHICLE_POSITION"

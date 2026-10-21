@@ -1,0 +1,59 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/core/rider.yaml
+title: Rider
+description: >-
+  A reference to the rider, carrying the minimum a provider needs to serve one
+  leg. The requester owns rider identity; no date of birth, diagnosis or other
+  health data belongs here. Contact details may only be sent with consent.
+type: object
+required: [rider_ref_id]
+properties:
+  rider_ref_id:
+    description: >-
+      Opaque rider identifier, scoped to the requester. The requester SHOULD issue
+      a different value for each provider (a pairwise pseudonym) and SHOULD keep it
+      stable for a given rider and provider, so providers cannot link a rider
+      across services.
+    type: string
+  display_name:
+    description: How the driver should address the rider, e.g. first name or initial.
+    type: string
+    maxLength: 60
+  contact:
+    description: Rider contact details. Only present when contact_consent is true.
+    $ref: ./contact.yaml
+  contact_consent:
+    description: >-
+      True if the rider has agreed to be contacted by the provider. Managed by
+      the requester.
+    type: boolean
+    default: false
+  language:
+    description: Preferred language as a BCP 47 tag, e.g. "en" or "es-MX".
+    type: string
+    pattern: "^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$"
+  eligibility:
+    description: Program eligibility attestations relevant to this trip.
+    type: array
+    items:
+      $ref: ./eligibility.yaml
+dependentSchemas:
+  contact:
+    required: [contact_consent]
+    properties:
+      contact_consent:
+        const: true
+examples:
+  - rider_ref_id: "r-7f3a"
+    display_name: "Dana K."
+    language: "en"
+  - rider_ref_id: "r-91c2"
+    display_name: "Luis"
+    contact:
+      phone: "+17345550123"
+    contact_consent: true
+    language: "es"
+    eligibility:
+      - program: "ADA_PARATRANSIT"
+        attested_by: "aaata"
+        valid_until: "2027-06-30"

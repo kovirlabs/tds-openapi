@@ -1,0 +1,23 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/core/trip-status.yaml
+title: TripStatus
+description: >-
+  Lifecycle state of a trip (SPEC.md §8.1). Terminal states: COMPLETED, FAILED,
+  REJECTED, EXPIRED, CANCELLED, NO_SHOW. Allowed transitions are enforced by the
+  conformance kit, not by this schema.
+type: string
+enum:
+  - REQUESTED
+  - OFFERED
+  - CONFIRMED
+  - SCHEDULED
+  - IN_PROGRESS
+  - COMPLETED
+  - FAILED
+  - REJECTED
+  - EXPIRED
+  - CANCELLED
+  - NO_SHOW
+examples:
+  - REQUESTED
+  - SCHEDULED

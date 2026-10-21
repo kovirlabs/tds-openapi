@@ -1,0 +1,32 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/core/address.yaml
+title: Address
+description: Structured postal address. Supplements, never replaces, coordinates on a Location.
+type: object
+properties:
+  street:
+    description: Street number and name, including unit if relevant.
+    type: string
+    maxLength: 200
+  city:
+    description: City, town or municipality.
+    type: string
+    maxLength: 100
+  region:
+    description: State, province or region; US states use the two-letter USPS code.
+    type: string
+    maxLength: 100
+  postal_code:
+    description: Postal or ZIP code.
+    type: string
+    maxLength: 20
+  country:
+    description: ISO 3166-1 alpha-2 country code.
+    type: string
+    pattern: "^[A-Z]{2}$"
+examples:
+  - street: "200 N Main St"
+    city: "Ann Arbor"
+    region: "MI"
+    postal_code: "48104"
+    country: "US"

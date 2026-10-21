@@ -1,0 +1,35 @@
+[project]
+name = "tds-conform"
+version = "0.4.0"
+description = "Conformance kit and reference mock provider for the TDS OpenAPI binding."
+readme = "README.md"
+requires-python = ">=3.12"
+license = "Apache-2.0"
+dependencies = [
+    "httpx>=0.27",
+    "jsonschema>=4.23",
+    "referencing>=0.35",
+    "pyyaml>=6.0",
+    "rfc3339-validator>=0.1.4",
+    "rfc3986-validator>=0.1.1",
+]
+
+[project.scripts]
+tds-conform = "tds_conform.cli:conform_main"
+tds-mock = "tds_conform.cli:mock_main"
+tds-demo = "tds_conform.demo:main"
+
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/tds_conform"]
+
+# Wheels carry a copy of the schemas and examples; editable installs read the repo.
+[tool.hatch.build.targets.wheel.force-include]
+"../profiles" = "tds_conform/_data/profiles"
+"../examples" = "tds_conform/_data/examples"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

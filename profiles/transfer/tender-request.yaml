@@ -1,0 +1,47 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/transfer/tender-request.yaml
+title: TenderRequest
+x-profile: transfer
+description: >-
+  Body of `POST /tenders`: a broker offers a provider one leg of a linked
+  journey, with the interchange terms, and a deadline to answer (EDI 204
+  pattern). On ACCEPTED the provider creates the trip (status CONFIRMED) under
+  trip.trip_id, readable at /trips/{trip_id}.
+type: object
+required: [tender_id, trip, interchange, respond_by]
+properties:
+  tender_id:
+    description: Broker-assigned identifier, unique per requester.
+    type: string
+  trip:
+    description: The trip being offered. Its leg must be the interchange's from or to leg for this provider.
+    $ref: ../core/trip-request.yaml
+  interchange:
+    description: The connection this leg is part of, including the terms the provider is asked to commit to.
+    $ref: ./interchange.yaml
+  respond_by:
+    description: Deadline for the provider's answer. Unanswered by then, the tender is EXPIRED.
+    type: string
+    format: date-time
+examples:
+  - tender_id: "tn-20261110-b"
+    trip:
+      trip_id: "tr-20261110-b"
+      requester_id: "throughride-demo"
+      provider_id: "oakland-go"
+      rider_ref: { rider_ref_id: "r-oak-55e1" }
+      legs:
+        - leg_id: "leg-1"
+          pickup: { lat: 42.4730, lon: -83.2219, name: "Hub transfer point" }
+          dropoff: { lat: 42.6064, lon: -83.1498, name: "Corewell Health Troy" }
+          pickup_window: { earliest: "2026-11-10T10:05:00-05:00", latest: "2026-11-10T10:20:00-05:00" }
+    interchange:
+      interchange_id: "ix-20261110-1"
+      from: { provider_id: "aaata-a-ride", trip_id: "tr-20261110-a", leg_id: "leg-1" }
+      to: { provider_id: "oakland-go", trip_id: "tr-20261110-b", leg_id: "leg-1" }
+      transfer_location: { lat: 42.4730, lon: -83.2219 }
+      min_connection_s: 300
+      max_hold_s: 900
+      auto_hold_s: 300
+      protection: "PROTECTED"
+    respond_by: "2026-11-09T17:00:00-05:00"

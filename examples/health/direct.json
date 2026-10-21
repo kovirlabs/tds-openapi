@@ -1,0 +1,10 @@
+{
+  "status": "OK",
+  "spec_versions": [
+    "0.4.0"
+  ],
+  "profiles": [
+    "CORE"
+  ],
+  "operated_via": "DIRECT"
+}

@@ -1,0 +1,20 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/core/money.yaml
+title: Money
+description: >-
+  An amount of money. The amount is a decimal string so it survives JSON
+  round-trips without floating-point error.
+type: object
+required: [amount, currency]
+properties:
+  amount:
+    description: Non-negative decimal amount in the major unit, e.g. "2.50".
+    type: string
+    pattern: "^[0-9]+(\\.[0-9]{1,4})?$"
+  currency:
+    description: ISO 4217 currency code.
+    type: string
+    pattern: "^[A-Z]{3}$"
+examples:
+  - amount: "2.50"
+    currency: "USD"

@@ -1,0 +1,9 @@
+description: A broker subscribes to all core trip events.
+files:
+  01-subscribe.request.json:
+    schema: https://tds-openapi.org/schemas/core/subscription-request.yaml
+    operation: POST /subscriptions
+  01-subscribe.response.json:
+    schema: https://tds-openapi.org/schemas/core/subscription.yaml
+    operation: POST /subscriptions
+    status: 201

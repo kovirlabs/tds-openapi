@@ -1,0 +1,13 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/core/contact.yaml
+title: Contact
+description: How a provider may reach the rider about a trip, e.g. for arrival notices.
+type: object
+required: [phone]
+properties:
+  phone:
+    description: Phone number able to receive SMS, in E.164 format.
+    type: string
+    pattern: "^\\+[1-9][0-9]{1,14}$"
+examples:
+  - phone: "+17345550123"

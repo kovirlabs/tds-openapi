@@ -1,0 +1,850 @@
+[
+  {
+    "event_id": "evt-0001",
+    "event_type": "TRIP_STATUS_CHANGED",
+    "occurred_at": "2026-11-10T07:55:00.000-05:00",
+    "provider_id": "aaata-a-ride",
+    "schema_version": "0.4.0",
+    "payload": {
+      "status": "REQUESTED"
+    },
+    "trip_id": "tr-sup-a",
+    "leg_id": "leg-1"
+  },
+  {
+    "event_id": "evt-0006",
+    "event_type": "TRIP_STATUS_CHANGED",
+    "occurred_at": "2026-11-10T07:55:00.000-05:00",
+    "provider_id": "oakland-go",
+    "schema_version": "0.4.0",
+    "payload": {
+      "status": "REQUESTED"
+    },
+    "trip_id": "tr-sup-b",
+    "leg_id": "leg-1"
+  },
+  {
+    "event_id": "evt-0003",
+    "event_type": "TRIP_STATUS_CHANGED",
+    "occurred_at": "2026-11-10T07:55:00.001-05:00",
+    "provider_id": "aaata-a-ride",
+    "schema_version": "0.4.0",
+    "payload": {
+      "status": "OFFERED",
+      "previous_status": "REQUESTED"
+    },
+    "trip_id": "tr-sup-a",
+    "leg_id": "leg-1"
+  },
+  {
+    "event_id": "evt-0008",
+    "event_type": "TRIP_STATUS_CHANGED",
+    "occurred_at": "2026-11-10T07:55:00.001-05:00",
+    "provider_id": "oakland-go",
+    "schema_version": "0.4.0",
+    "payload": {
+      "status": "OFFERED",
+      "previous_status": "REQUESTED"
+    },
+    "trip_id": "tr-sup-b",
+    "leg_id": "leg-1"
+  },
+  {
+    "event_id": "evt-0004",
+    "event_type": "TRIP_STATUS_CHANGED",
+    "occurred_at": "2026-11-10T07:55:00.002-05:00",
+    "provider_id": "aaata-a-ride",
+    "schema_version": "0.4.0",
+    "payload": {
+      "status": "CONFIRMED",
+      "previous_status": "OFFERED"
+    },
+    "trip_id": "tr-sup-a",
+    "leg_id": "leg-1"
+  },
+  {
+    "event_id": "evt-0009",
+    "event_type": "TRIP_STATUS_CHANGED",
+    "occurred_at": "2026-11-10T07:55:00.002-05:00",
+    "provider_id": "oakland-go",
+    "schema_version": "0.4.0",
+    "payload": {
+      "status": "CONFIRMED",
+      "previous_status": "OFFERED"
+    },
+    "trip_id": "tr-sup-b",
+    "leg_id": "leg-1"
+  },
+  {
+    "event_id": "evt-0005",
+    "event_type": "TENDER_RESPONSE",
+    "occurred_at": "2026-11-10T07:55:00.003-05:00",
+    "provider_id": "aaata-a-ride",
+    "schema_version": "0.4.0",
+    "payload": {
+      "tender": {
+        "tender_id": "tn-sup-a",
+        "trip_id": "tr-sup-a",
+        "interchange_id": "ix-sup",
+        "respond_by": "2026-11-10T08:10:00-05:00",
+        "status": "ACCEPTED",
+        "created_at": "2026-11-10T07:55:00-05:00",
+        "accepted_terms": {
+          "auto_hold_s": 300,
+          "max_hold_s": 900
+        },
+        "provider_trip_id": "aaata-a-ride-0002",
+        "responded_at": "2026-11-10T07:55:00-05:00"
+      }
+    },
+    "trip_id": "tr-sup-a"
+  },
+  {
+    "event_id": "evt-0010",
+    "event_type": "TENDER_RESPONSE",
+    "occurred_at": "2026-11-10T07:55:00.003-05:00",
+    "provider_id": "oakland-go",
+    "schema_version": "0.4.0",
+    "payload": {
+      "tender": {
+        "tender_id": "tn-sup-b",
+        "trip_id": "tr-sup-b",
+        "interchange_id": "ix-sup",
+        "respond_by": "2026-11-10T08:10:00-05:00",
+        "status": "ACCEPTED",
+        "created_at": "2026-11-10T07:55:00-05:00",
+        "accepted_terms": {
+          "auto_hold_s": 300,
+          "max_hold_s": 900
+        },
+        "provider_trip_id": "oakland-go-0007",
+        "responded_at": "2026-11-10T07:55:00-05:00"
+      }
+    },
+    "trip_id": "tr-sup-b"
+  },
+  {
+    "event_id": "evt-0011",
+    "event_type": "TRIP_STATUS_CHANGED",
+    "occurred_at": "2026-11-10T07:56:00.000-05:00",
+    "provider_id": "aaata-a-ride",
+    "schema_version": "0.4.0",
+    "payload": {
+      "status": "SCHEDULED",
+      "previous_status": "CONFIRMED"
+    },
+    "trip_id": "tr-sup-a",
+    "leg_id": "leg-1"
+  },
+  {
+    "event_id": "evt-0013",
+    "event_type": "TRIP_STATUS_CHANGED",
+    "occurred_at": "2026-11-10T07:56:00.000-05:00",
+    "provider_id": "oakland-go",
+    "schema_version": "0.4.0",
+    "payload": {
+      "status": "SCHEDULED",
+      "previous_status": "CONFIRMED"
+    },
+    "trip_id": "tr-sup-b",
+    "leg_id": "leg-1"
+  },
+  {
+    "event_id": "evt-0012",
+    "event_type": "TRIP_SCHEDULED",
+    "occurred_at": "2026-11-10T07:56:00.001-05:00",
+    "provider_id": "aaata-a-ride",
+    "schema_version": "0.4.0",
+    "payload": {
+      "scheduled_pickup": "2026-11-10T08:50:00-05:00",
+      "vehicle_ref": {
+        "vehicle_id": "aaata-a-ride-veh-1",
+        "description": "Mock vehicle"
+      }
+    },
+    "trip_id": "tr-sup-a",
+    "leg_id": "leg-1"
+  },
+  {
+    "event_id": "evt-0014",
+    "event_type": "TRIP_SCHEDULED",
+    "occurred_at": "2026-11-10T07:56:00.001-05:00",
+    "provider_id": "oakland-go",
+    "schema_version": "0.4.0",
+    "payload": {
+      "scheduled_pickup": "2026-11-10T09:45:00-05:00",
+      "vehicle_ref": {
+        "vehicle_id": "oakland-go-veh-1",
+        "description": "Mock vehicle"
+      }
+    },
+    "trip_id": "tr-sup-b",
+    "leg_id": "leg-1"
+  },
+  {
+    "event_id": "evt-0015",
+    "event_type": "TRIP_STATUS_CHANGED",
+    "occurred_at": "2026-11-10T08:40:00.000-05:00",
+    "provider_id": "aaata-a-ride",
+    "schema_version": "0.4.0",
+    "payload": {
+      "status": "IN_PROGRESS",
+      "previous_status": "SCHEDULED"
+    },
+    "trip_id": "tr-sup-a",
+    "leg_id": "leg-1"
+  },
+  {
+    "event_id": "evt-0016",
+    "event_type": "MILESTONE",
+    "occurred_at": "2026-11-10T08:40:00.001-05:00",
+    "provider_id": "aaata-a-ride",
+    "schema_version": "0.4.0",
+    "payload": {
+      "milestone": "EN_ROUTE_TO_PICKUP"
+    },
+    "trip_id": "tr-sup-a",
+    "leg_id": "leg-1"
+  },
+  {
+    "event_id": "evt-0017",
+    "event_type": "ETA_UPDATE",
+    "occurred_at": "2026-11-10T08:40:00.002-05:00",
+    "provider_id": "aaata-a-ride",
+    "schema_version": "0.4.0",
+    "payload": {
+      "eta": {
+        "target": "PICKUP",
+        "earliest": "2026-11-10T08:47:00-05:00",
+        "likely": "2026-11-10T08:50:00-05:00",
+        "latest": "2026-11-10T08:55:00-05:00",
+        "confidence": 0.9,
+        "computed_at": "2026-11-10T08:40:00-05:00",
+        "source": "VEHICLE_POSITION"
+      }
+    },
+    "trip_id": "tr-sup-a",
+    "leg_id": "leg-1"
+  },
+  {
+    "event_id": "evt-0018",
+    "event_type": "ETA_UPDATE",
+    "occurred_at": "2026-11-10T08:45:00.000-05:00",
+    "provider_id": "aaata-a-ride",
+    "schema_version": "0.4.0",
+    "payload": {
+      "eta": {
+        "target": "PICKUP",
+        "earliest": "2026-11-10T08:47:00-05:00",
+        "likely": "2026-11-10T08:50:00-05:00",
+        "latest": "2026-11-10T08:55:00-05:00",
+        "confidence": 0.9,
+        "computed_at": "2026-11-10T08:45:00-05:00",
+        "source": "VEHICLE_POSITION"
+      }
+    },
+    "trip_id": "tr-sup-a",
+    "leg_id": "leg-1"
+  },
+  {
+    "event_id": "evt-0019",
+    "event_type": "ETA_UPDATE",
+    "occurred_at": "2026-11-10T08:50:00.000-05:00",
+    "provider_id": "aaata-a-ride",
+    "schema_version": "0.4.0",
+    "payload": {
+      "eta": {
+        "target": "PICKUP",
+        "earliest": "2026-11-10T08:50:00-05:00",
+        "likely": "2026-11-10T08:51:00-05:00",
+        "latest": "2026-11-10T08:56:00-05:00",
+        "confidence": 0.9,
+        "computed_at": "2026-11-10T08:50:00-05:00",
+        "source": "VEHICLE_POSITION"
+      }
+    },
+    "trip_id": "tr-sup-a",
+    "leg_id": "leg-1"
+  },
+  {
+    "event_id": "evt-0020",
+    "event_type": "MILESTONE",
+    "occurred_at": "2026-11-10T08:50:00.001-05:00",
+    "provider_id": "aaata-a-ride",
+    "schema_version": "0.4.0",
+    "payload": {
+      "milestone": "ARRIVED_PICKUP",
+      "location": {
+        "lat": 42.2459,
+        "lon": -83.6157,
+        "name": "Rider's home (Ypsilanti)",
+        "access_notes": "Side door, ramp"
+      }
+    },
+    "trip_id": "tr-sup-a",
+    "leg_id": "leg-1"
+  },
+  {
+    "event_id": "evt-0021",
+    "event_type": "CUSTODY_HANDOFF",
+    "occurred_at": "2026-11-10T08:53:00.000-05:00",
+    "provider_id": "aaata-a-ride",
+    "schema_version": "0.4.0",
+    "payload": {
+      "handoff": {
+        "handoff_from": {
+          "role": "CAREGIVER"
+        },
+        "handoff_to": {
+          "role": "DRIVER",
+          "provider_id": "aaata-a-ride"
+        },
+        "timestamp": "2026-11-10T08:53:00-05:00",
+        "location": {
+          "lat": 42.2459,
+          "lon": -83.6157,
+          "name": "Rider's home (Ypsilanti)",
+          "access_notes": "Side door, ramp"
+        },
+        "method": "DRIVER_CONFIRM",
+        "caregiver_notified": true
+      }
+    },
+    "trip_id": "tr-sup-a",
+    "leg_id": "leg-1"
+  },
+  {
+    "event_id": "evt-0022",
+    "event_type": "MILESTONE",
+    "occurred_at": "2026-11-10T08:53:00.001-05:00",
+    "provider_id": "aaata-a-ride",
+    "schema_version": "0.4.0",
+    "payload": {
+      "milestone": "RIDER_ONBOARD",
+      "location": {
+        "lat": 42.2459,
+        "lon": -83.6157,
+        "name": "Rider's home (Ypsilanti)",
+        "access_notes": "Side door, ramp"
+      }
+    },
+    "trip_id": "tr-sup-a",
+    "leg_id": "leg-1"
+  },
+  {
+    "event_id": "evt-0023",
+    "event_type": "MILESTONE",
+    "occurred_at": "2026-11-10T08:54:00.000-05:00",
+    "provider_id": "aaata-a-ride",
+    "schema_version": "0.4.0",
+    "payload": {
+      "milestone": "EN_ROUTE_TO_DROPOFF"
+    },
+    "trip_id": "tr-sup-a",
+    "leg_id": "leg-1"
+  },
+  {
+    "event_id": "evt-0024",
+    "event_type": "ETA_UPDATE",
+    "occurred_at": "2026-11-10T08:54:00.001-05:00",
+    "provider_id": "aaata-a-ride",
+    "schema_version": "0.4.0",
+    "payload": {
+      "eta": {
+        "target": "DROPOFF",
+        "earliest": "2026-11-10T09:27:00-05:00",
+        "likely": "2026-11-10T09:30:00-05:00",
+        "latest": "2026-11-10T09:35:00-05:00",
+        "confidence": 0.9,
+        "computed_at": "2026-11-10T08:54:00-05:00",
+        "source": "VEHICLE_POSITION"
+      }
+    },
+    "trip_id": "tr-sup-a",
+    "leg_id": "leg-1"
+  },
+  {
+    "event_id": "evt-0025",
+    "event_type": "ETA_UPDATE",
+    "occurred_at": "2026-11-10T08:59:00.000-05:00",
+    "provider_id": "aaata-a-ride",
+    "schema_version": "0.4.0",
+    "payload": {
+      "eta": {
+        "target": "DROPOFF",
+        "earliest": "2026-11-10T09:27:00-05:00",
+        "likely": "2026-11-10T09:30:00-05:00",
+        "latest": "2026-11-10T09:35:00-05:00",
+        "confidence": 0.9,
+        "computed_at": "2026-11-10T08:59:00-05:00",
+        "source": "VEHICLE_POSITION"
+      }
+    },
+    "trip_id": "tr-sup-a",
+    "leg_id": "leg-1"
+  },
+  {
+    "event_id": "evt-0026",
+    "event_type": "ETA_UPDATE",
+    "occurred_at": "2026-11-10T09:04:00.000-05:00",
+    "provider_id": "aaata-a-ride",
+    "schema_version": "0.4.0",
+    "payload": {
+      "eta": {
+        "target": "DROPOFF",
+        "earliest": "2026-11-10T09:27:00-05:00",
+        "likely": "2026-11-10T09:30:00-05:00",
+        "latest": "2026-11-10T09:35:00-05:00",
+        "confidence": 0.9,
+        "computed_at": "2026-11-10T09:04:00-05:00",
+        "source": "VEHICLE_POSITION"
+      }
+    },
+    "trip_id": "tr-sup-a",
+    "leg_id": "leg-1"
+  },
+  {
+    "event_id": "evt-0027",
+    "event_type": "ETA_UPDATE",
+    "occurred_at": "2026-11-10T09:09:00.000-05:00",
+    "provider_id": "aaata-a-ride",
+    "schema_version": "0.4.0",
+    "payload": {
+      "eta": {
+        "target": "DROPOFF",
+        "earliest": "2026-11-10T09:27:00-05:00",
+        "likely": "2026-11-10T09:30:00-05:00",
+        "latest": "2026-11-10T09:35:00-05:00",
+        "confidence": 0.9,
+        "computed_at": "2026-11-10T09:09:00-05:00",
+        "source": "VEHICLE_POSITION"
+      }
+    },
+    "trip_id": "tr-sup-a",
+    "leg_id": "leg-1"
+  },
+  {
+    "event_id": "evt-0028",
+    "event_type": "ETA_UPDATE",
+    "occurred_at": "2026-11-10T09:14:00.000-05:00",
+    "provider_id": "aaata-a-ride",
+    "schema_version": "0.4.0",
+    "payload": {
+      "eta": {
+        "target": "DROPOFF",
+        "earliest": "2026-11-10T09:27:00-05:00",
+        "likely": "2026-11-10T09:30:00-05:00",
+        "latest": "2026-11-10T09:35:00-05:00",
+        "confidence": 0.9,
+        "computed_at": "2026-11-10T09:14:00-05:00",
+        "source": "VEHICLE_POSITION"
+      }
+    },
+    "trip_id": "tr-sup-a",
+    "leg_id": "leg-1"
+  },
+  {
+    "event_id": "evt-0029",
+    "event_type": "ETA_UPDATE",
+    "occurred_at": "2026-11-10T09:19:00.000-05:00",
+    "provider_id": "aaata-a-ride",
+    "schema_version": "0.4.0",
+    "payload": {
+      "eta": {
+        "target": "DROPOFF",
+        "earliest": "2026-11-10T09:27:00-05:00",
+        "likely": "2026-11-10T09:30:00-05:00",
+        "latest": "2026-11-10T09:35:00-05:00",
+        "confidence": 0.9,
+        "computed_at": "2026-11-10T09:19:00-05:00",
+        "source": "VEHICLE_POSITION"
+      }
+    },
+    "trip_id": "tr-sup-a",
+    "leg_id": "leg-1"
+  },
+  {
+    "event_id": "evt-0030",
+    "event_type": "TRIP_STATUS_CHANGED",
+    "occurred_at": "2026-11-10T09:20:00.000-05:00",
+    "provider_id": "oakland-go",
+    "schema_version": "0.4.0",
+    "payload": {
+      "status": "IN_PROGRESS",
+      "previous_status": "SCHEDULED"
+    },
+    "trip_id": "tr-sup-b",
+    "leg_id": "leg-1"
+  },
+  {
+    "event_id": "evt-0031",
+    "event_type": "MILESTONE",
+    "occurred_at": "2026-11-10T09:20:00.001-05:00",
+    "provider_id": "oakland-go",
+    "schema_version": "0.4.0",
+    "payload": {
+      "milestone": "EN_ROUTE_TO_PICKUP"
+    },
+    "trip_id": "tr-sup-b",
+    "leg_id": "leg-1"
+  },
+  {
+    "event_id": "evt-0032",
+    "event_type": "ETA_UPDATE",
+    "occurred_at": "2026-11-10T09:20:00.002-05:00",
+    "provider_id": "oakland-go",
+    "schema_version": "0.4.0",
+    "payload": {
+      "eta": {
+        "target": "PICKUP",
+        "earliest": "2026-11-10T09:42:00-05:00",
+        "likely": "2026-11-10T09:45:00-05:00",
+        "latest": "2026-11-10T09:50:00-05:00",
+        "confidence": 0.9,
+        "computed_at": "2026-11-10T09:20:00-05:00",
+        "source": "VEHICLE_POSITION"
+      }
+    },
+    "trip_id": "tr-sup-b",
+    "leg_id": "leg-1"
+  },
+  {
+    "event_id": "evt-0033",
+    "event_type": "ETA_UPDATE",
+    "occurred_at": "2026-11-10T09:24:00.000-05:00",
+    "provider_id": "aaata-a-ride",
+    "schema_version": "0.4.0",
+    "payload": {
+      "eta": {
+        "target": "DROPOFF",
+        "earliest": "2026-11-10T09:27:00-05:00",
+        "likely": "2026-11-10T09:30:00-05:00",
+        "latest": "2026-11-10T09:35:00-05:00",
+        "confidence": 0.9,
+        "computed_at": "2026-11-10T09:24:00-05:00",
+        "source": "VEHICLE_POSITION"
+      }
+    },
+    "trip_id": "tr-sup-a",
+    "leg_id": "leg-1"
+  },
+  {
+    "event_id": "evt-0034",
+    "event_type": "ETA_UPDATE",
+    "occurred_at": "2026-11-10T09:29:00.000-05:00",
+    "provider_id": "aaata-a-ride",
+    "schema_version": "0.4.0",
+    "payload": {
+      "eta": {
+        "target": "DROPOFF",
+        "earliest": "2026-11-10T09:29:00-05:00",
+        "likely": "2026-11-10T09:30:00-05:00",
+        "latest": "2026-11-10T09:35:00-05:00",
+        "confidence": 0.9,
+        "computed_at": "2026-11-10T09:29:00-05:00",
+        "source": "VEHICLE_POSITION"
+      }
+    },
+    "trip_id": "tr-sup-a",
+    "leg_id": "leg-1"
+  },
+  {
+    "event_id": "evt-0035",
+    "event_type": "MILESTONE",
+    "occurred_at": "2026-11-10T09:33:00.000-05:00",
+    "provider_id": "oakland-go",
+    "schema_version": "0.4.0",
+    "payload": {
+      "milestone": "ARRIVED_PICKUP",
+      "location": {
+        "lat": 42.4802,
+        "lon": -83.4755,
+        "name": "County-line transfer hub",
+        "access_notes": "Covered bay 2"
+      }
+    },
+    "trip_id": "tr-sup-b",
+    "leg_id": "leg-1"
+  },
+  {
+    "event_id": "evt-0036",
+    "event_type": "ETA_UPDATE",
+    "occurred_at": "2026-11-10T09:34:00.000-05:00",
+    "provider_id": "aaata-a-ride",
+    "schema_version": "0.4.0",
+    "payload": {
+      "eta": {
+        "target": "DROPOFF",
+        "earliest": "2026-11-10T09:34:00-05:00",
+        "likely": "2026-11-10T09:35:00-05:00",
+        "latest": "2026-11-10T09:40:00-05:00",
+        "confidence": 0.9,
+        "computed_at": "2026-11-10T09:34:00-05:00",
+        "source": "VEHICLE_POSITION"
+      }
+    },
+    "trip_id": "tr-sup-a",
+    "leg_id": "leg-1"
+  },
+  {
+    "event_id": "evt-0037",
+    "event_type": "MILESTONE",
+    "occurred_at": "2026-11-10T09:35:00.000-05:00",
+    "provider_id": "aaata-a-ride",
+    "schema_version": "0.4.0",
+    "payload": {
+      "milestone": "ARRIVED_DROPOFF",
+      "location": {
+        "lat": 42.4802,
+        "lon": -83.4755,
+        "name": "County-line transfer hub",
+        "access_notes": "Covered bay 2"
+      }
+    },
+    "trip_id": "tr-sup-a",
+    "leg_id": "leg-1"
+  },
+  {
+    "event_id": "evt-0038",
+    "event_type": "MILESTONE",
+    "occurred_at": "2026-11-10T09:37:00.000-05:00",
+    "provider_id": "aaata-a-ride",
+    "schema_version": "0.4.0",
+    "payload": {
+      "milestone": "RIDER_HANDED_OFF",
+      "location": {
+        "lat": 42.4802,
+        "lon": -83.4755,
+        "name": "County-line transfer hub",
+        "access_notes": "Covered bay 2"
+      }
+    },
+    "trip_id": "tr-sup-a",
+    "leg_id": "leg-1"
+  },
+  {
+    "event_id": "evt-0039",
+    "event_type": "CUSTODY_HANDOFF",
+    "occurred_at": "2026-11-10T09:37:00.001-05:00",
+    "provider_id": "aaata-a-ride",
+    "schema_version": "0.4.0",
+    "payload": {
+      "handoff": {
+        "handoff_from": {
+          "role": "DRIVER",
+          "provider_id": "aaata-a-ride"
+        },
+        "handoff_to": {
+          "role": "DRIVER",
+          "provider_id": "oakland-go"
+        },
+        "timestamp": "2026-11-10T09:37:00-05:00",
+        "location": {
+          "lat": 42.4802,
+          "lon": -83.4755,
+          "name": "County-line transfer hub",
+          "access_notes": "Covered bay 2"
+        },
+        "method": "CODE_EXCHANGE",
+        "caregiver_notified": true
+      }
+    },
+    "trip_id": "tr-sup-a",
+    "leg_id": "leg-1"
+  },
+  {
+    "event_id": "evt-0040",
+    "event_type": "MILESTONE",
+    "occurred_at": "2026-11-10T09:38:00.000-05:00",
+    "provider_id": "aaata-a-ride",
+    "schema_version": "0.4.0",
+    "payload": {
+      "milestone": "LEG_COMPLETED"
+    },
+    "trip_id": "tr-sup-a",
+    "leg_id": "leg-1"
+  },
+  {
+    "event_id": "evt-0042",
+    "event_type": "CUSTODY_HANDOFF",
+    "occurred_at": "2026-11-10T09:38:00.000-05:00",
+    "provider_id": "oakland-go",
+    "schema_version": "0.4.0",
+    "payload": {
+      "handoff": {
+        "handoff_from": {
+          "role": "DRIVER",
+          "provider_id": "aaata-a-ride"
+        },
+        "handoff_to": {
+          "role": "DRIVER",
+          "provider_id": "oakland-go"
+        },
+        "timestamp": "2026-11-10T09:38:00-05:00",
+        "location": {
+          "lat": 42.4802,
+          "lon": -83.4755,
+          "name": "County-line transfer hub",
+          "access_notes": "Covered bay 2"
+        },
+        "method": "CODE_EXCHANGE",
+        "caregiver_notified": true
+      }
+    },
+    "trip_id": "tr-sup-b",
+    "leg_id": "leg-1"
+  },
+  {
+    "event_id": "evt-0041",
+    "event_type": "TRIP_STATUS_CHANGED",
+    "occurred_at": "2026-11-10T09:38:00.001-05:00",
+    "provider_id": "aaata-a-ride",
+    "schema_version": "0.4.0",
+    "payload": {
+      "status": "COMPLETED",
+      "previous_status": "IN_PROGRESS"
+    },
+    "trip_id": "tr-sup-a",
+    "leg_id": "leg-1"
+  },
+  {
+    "event_id": "evt-0043",
+    "event_type": "MILESTONE",
+    "occurred_at": "2026-11-10T09:38:00.001-05:00",
+    "provider_id": "oakland-go",
+    "schema_version": "0.4.0",
+    "payload": {
+      "milestone": "RIDER_ONBOARD",
+      "location": {
+        "lat": 42.4802,
+        "lon": -83.4755,
+        "name": "County-line transfer hub",
+        "access_notes": "Covered bay 2"
+      }
+    },
+    "trip_id": "tr-sup-b",
+    "leg_id": "leg-1"
+  },
+  {
+    "event_id": "evt-0044",
+    "event_type": "MILESTONE",
+    "occurred_at": "2026-11-10T09:39:00.000-05:00",
+    "provider_id": "oakland-go",
+    "schema_version": "0.4.0",
+    "payload": {
+      "milestone": "EN_ROUTE_TO_DROPOFF"
+    },
+    "trip_id": "tr-sup-b",
+    "leg_id": "leg-1"
+  },
+  {
+    "event_id": "evt-0045",
+    "event_type": "ETA_UPDATE",
+    "occurred_at": "2026-11-10T09:39:00.001-05:00",
+    "provider_id": "oakland-go",
+    "schema_version": "0.4.0",
+    "payload": {
+      "eta": {
+        "target": "DROPOFF",
+        "earliest": "2026-11-10T10:22:00-05:00",
+        "likely": "2026-11-10T10:25:00-05:00",
+        "latest": "2026-11-10T10:30:00-05:00",
+        "confidence": 0.9,
+        "computed_at": "2026-11-10T09:39:00-05:00",
+        "source": "VEHICLE_POSITION"
+      }
+    },
+    "trip_id": "tr-sup-b",
+    "leg_id": "leg-1"
+  },
+  {
+    "event_id": "evt-0046",
+    "event_type": "MILESTONE",
+    "occurred_at": "2026-11-10T10:12:00.000-05:00",
+    "provider_id": "oakland-go",
+    "schema_version": "0.4.0",
+    "payload": {
+      "milestone": "ARRIVED_DROPOFF",
+      "location": {
+        "lat": 42.6064,
+        "lon": -83.1498,
+        "name": "Corewell Health Troy",
+        "access_notes": "Main entrance"
+      }
+    },
+    "trip_id": "tr-sup-b",
+    "leg_id": "leg-1"
+  },
+  {
+    "event_id": "evt-0047",
+    "event_type": "MILESTONE",
+    "occurred_at": "2026-11-10T10:14:00.000-05:00",
+    "provider_id": "oakland-go",
+    "schema_version": "0.4.0",
+    "payload": {
+      "milestone": "RIDER_HANDED_OFF",
+      "location": {
+        "lat": 42.6064,
+        "lon": -83.1498,
+        "name": "Corewell Health Troy",
+        "access_notes": "Main entrance"
+      }
+    },
+    "trip_id": "tr-sup-b",
+    "leg_id": "leg-1"
+  },
+  {
+    "event_id": "evt-0048",
+    "event_type": "CUSTODY_HANDOFF",
+    "occurred_at": "2026-11-10T10:14:00.001-05:00",
+    "provider_id": "oakland-go",
+    "schema_version": "0.4.0",
+    "payload": {
+      "handoff": {
+        "handoff_from": {
+          "role": "DRIVER",
+          "provider_id": "oakland-go"
+        },
+        "handoff_to": {
+          "role": "FACILITY_STAFF"
+        },
+        "timestamp": "2026-11-10T10:14:00-05:00",
+        "location": {
+          "lat": 42.6064,
+          "lon": -83.1498,
+          "name": "Corewell Health Troy",
+          "access_notes": "Main entrance"
+        },
+        "method": "DRIVER_CONFIRM",
+        "caregiver_notified": true
+      }
+    },
+    "trip_id": "tr-sup-b",
+    "leg_id": "leg-1"
+  },
+  {
+    "event_id": "evt-0049",
+    "event_type": "MILESTONE",
+    "occurred_at": "2026-11-10T10:15:00.000-05:00",
+    "provider_id": "oakland-go",
+    "schema_version": "0.4.0",
+    "payload": {
+      "milestone": "LEG_COMPLETED"
+    },
+    "trip_id": "tr-sup-b",
+    "leg_id": "leg-1"
+  },
+  {
+    "event_id": "evt-0050",
+    "event_type": "TRIP_STATUS_CHANGED",
+    "occurred_at": "2026-11-10T10:15:00.001-05:00",
+    "provider_id": "oakland-go",
+    "schema_version": "0.4.0",
+    "payload": {
+      "status": "COMPLETED",
+      "previous_status": "IN_PROGRESS"
+    },
+    "trip_id": "tr-sup-b",
+    "leg_id": "leg-1"
+  }
+]

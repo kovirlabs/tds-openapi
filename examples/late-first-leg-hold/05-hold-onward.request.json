@@ -1,0 +1,17 @@
+{
+  "hold_id": "hd-hold-1",
+  "interchange_id": "ix-hold",
+  "action": "HOLD",
+  "requested_until": "2026-11-10T09:50:00-05:00",
+  "respond_by": "2026-11-10T09:11:00-05:00",
+  "inbound_eta": {
+    "target": "DROPOFF",
+    "earliest": "2026-11-10T09:42:00-05:00",
+    "likely": "2026-11-10T09:45:00-05:00",
+    "latest": "2026-11-10T09:57:30-05:00",
+    "confidence": 0.7,
+    "computed_at": "2026-11-10T09:05:00-05:00",
+    "source": "VEHICLE_POSITION",
+    "delay_cause": "TRAFFIC"
+  }
+}

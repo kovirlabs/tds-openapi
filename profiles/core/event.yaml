@@ -1,0 +1,49 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/core/event.yaml
+title: Event
+description: >-
+  Envelope of every webhook event (SPEC.md §9). Providers emit an event for every
+  change they make, including changes the requester already saw in a synchronous
+  response. Delivery is at least once: receivers dedupe on event_id. Each event
+  type has its own schema fixing `event_type` and `payload`.
+type: object
+required: [event_id, event_type, occurred_at, provider_id, schema_version, payload]
+properties:
+  event_id:
+    description: Unique id of this event, stable across delivery retries.
+    type: string
+  event_type:
+    description: Which event this is; selects the payload schema.
+    type: string
+    pattern: "^[A-Z][A-Z0-9_]*$"
+  occurred_at:
+    description: When the change happened at the provider, RFC 3339 with offset.
+    type: string
+    format: date-time
+  provider_id:
+    description: Provider that emitted the event.
+    type: string
+  trip_id:
+    description: Requester-assigned trip id the event concerns, if any.
+    type: string
+  leg_id:
+    description: Leg the event concerns, if any.
+    type: string
+  schema_version:
+    description: Version of this binding the payload follows (SemVer).
+    type: string
+    pattern: "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+  payload:
+    description: Event-specific content.
+    type: object
+examples:
+  - event_id: "evt-0001"
+    event_type: "TRIP_STATUS_CHANGED"
+    occurred_at: "2026-11-03T09:05:00-05:00"
+    provider_id: "aaata-a-ride"
+    trip_id: "tr-20261103-0001"
+    leg_id: "leg-1"
+    schema_version: "0.4.0"
+    payload:
+      status: "IN_PROGRESS"
+      previous_status: "SCHEDULED"

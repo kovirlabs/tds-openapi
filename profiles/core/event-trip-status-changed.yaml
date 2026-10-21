@@ -1,0 +1,34 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/core/event-trip-status-changed.yaml
+title: TripStatusChangedEvent
+description: Emitted on every trip status change.
+allOf:
+  - $ref: ./event.yaml
+type: object
+required: [trip_id]
+properties:
+  event_type:
+    description: Always TRIP_STATUS_CHANGED.
+    const: TRIP_STATUS_CHANGED
+  payload:
+    description: The new and previous status.
+    type: object
+    required: [status]
+    properties:
+      status:
+        description: Status after the change.
+        $ref: ./trip-status.yaml
+      previous_status:
+        description: Status before the change; absent for the first event of a trip.
+        $ref: ./trip-status.yaml
+examples:
+  - event_id: "evt-0001"
+    event_type: "TRIP_STATUS_CHANGED"
+    occurred_at: "2026-11-03T09:05:00-05:00"
+    provider_id: "aaata-a-ride"
+    trip_id: "tr-20261103-0001"
+    leg_id: "leg-1"
+    schema_version: "0.4.0"
+    payload:
+      status: "IN_PROGRESS"
+      previous_status: "SCHEDULED"

@@ -1,0 +1,18 @@
+BadRequest:
+  description: The request is malformed or fails schema validation (code INVALID_REQUEST).
+  content:
+    application/problem+json:
+      schema:
+        $ref: ../../profiles/core/error.yaml
+Unauthorized:
+  description: Missing or invalid credentials (code UNAUTHORIZED).
+  content:
+    application/problem+json:
+      schema:
+        $ref: ../../profiles/core/error.yaml
+NotFound:
+  description: No trip with this trip_id for the authenticated requester (code NOT_FOUND).
+  content:
+    application/problem+json:
+      schema:
+        $ref: ../../profiles/core/error.yaml

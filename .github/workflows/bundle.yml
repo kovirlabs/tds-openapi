@@ -1,0 +1,26 @@
+name: bundle
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  bundle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - uses: astral-sh/setup-uv@v6
+      - run: npm ci
+      - run: npm run bundle
+      - uses: actions/upload-artifact@v4
+        with:
+          name: openapi-bundle
+          path: dist/openapi.yaml

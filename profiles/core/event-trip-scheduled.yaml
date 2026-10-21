@@ -1,0 +1,40 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/core/event-trip-scheduled.yaml
+title: TripScheduledEvent
+description: Emitted when a trip's committed times or assigned vehicle are set or change.
+allOf:
+  - $ref: ./event.yaml
+type: object
+required: [trip_id, leg_id]
+properties:
+  event_type:
+    description: Always TRIP_SCHEDULED.
+    const: TRIP_SCHEDULED
+  payload:
+    description: The leg's current commitments.
+    type: object
+    required: [scheduled_pickup]
+    properties:
+      scheduled_pickup:
+        description: Committed pickup time.
+        type: string
+        format: date-time
+      scheduled_dropoff:
+        description: Committed dropoff time, if the provider commits to one.
+        type: string
+        format: date-time
+      vehicle_ref:
+        description: Assigned vehicle, once known.
+        $ref: ./vehicle-ref.yaml
+examples:
+  - event_id: "evt-0002"
+    event_type: "TRIP_SCHEDULED"
+    occurred_at: "2026-11-02T16:40:05-05:00"
+    provider_id: "aaata-a-ride"
+    trip_id: "tr-20261103-0001"
+    leg_id: "leg-1"
+    schema_version: "0.4.0"
+    payload:
+      scheduled_pickup: "2026-11-03T09:20:00-05:00"
+      vehicle_ref:
+        vehicle_id: "veh-214"

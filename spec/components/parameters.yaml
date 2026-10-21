@@ -1,0 +1,34 @@
+IdempotencyKey:
+  name: Idempotency-Key
+  in: header
+  required: true
+  description: >-
+    Client-generated key (e.g. a UUID) making the request safe to retry. A
+    repeat with the same key and body returns the original response; the same
+    key with a different body is rejected with IDEMPOTENCY_KEY_REUSED. Keys are
+    scoped to the authenticated requester and kept for at least 24 hours.
+  schema:
+    type: string
+    minLength: 8
+    maxLength: 128
+TripId:
+  name: trip_id
+  in: path
+  required: true
+  description: The requester-assigned trip_id. Scoped to the authenticated requester.
+  schema:
+    type: string
+TenderId:
+  name: tender_id
+  in: path
+  required: true
+  description: The broker-assigned tender_id. Scoped to the authenticated requester.
+  schema:
+    type: string
+HoldId:
+  name: hold_id
+  in: path
+  required: true
+  description: The broker-assigned hold_id. Scoped to the authenticated requester.
+  schema:
+    type: string

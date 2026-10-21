@@ -1,0 +1,39 @@
+post:
+  operationId: createSubscription
+  summary: Register a webhook
+  description: >-
+    Register a callback URL for trip events. The response carries the signing
+    secret once; events are signed with X-TDS-Signature (SPEC.md §9, §12).
+  tags: [Events]
+  security:
+    - oauth2: [events:subscribe]
+  parameters:
+    - $ref: ../components/parameters.yaml#/IdempotencyKey
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../profiles/core/subscription-request.yaml
+        examples:
+          all_core_events:
+            externalValue: ../../examples/subscriptions/01-subscribe.request.json
+          with_transfer_events:
+            summary: Subscribe to core and transfer events
+            externalValue: ../../examples/two-provider-transfer/01-subscribe-aaata-a-ride.request.json
+  responses:
+    "201":
+      description: Subscription created.
+      content:
+        application/json:
+          schema:
+            $ref: ../../profiles/core/subscription.yaml
+          examples:
+            all_core_events:
+              externalValue: ../../examples/subscriptions/01-subscribe.response.json
+            with_transfer_events:
+              externalValue: ../../examples/two-provider-transfer/02-subscribe-aaata-a-ride.response.json
+    "400":
+      $ref: ../components/responses.yaml#/BadRequest
+    "401":
+      $ref: ../components/responses.yaml#/Unauthorized

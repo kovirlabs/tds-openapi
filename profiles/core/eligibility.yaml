@@ -1,0 +1,26 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/core/eligibility.yaml
+title: Eligibility
+description: >-
+  An attestation that the rider is eligible for a program. Carries the program
+  and who vouches for it, never the evidence behind it.
+type: object
+required: [program, attested_by]
+properties:
+  program:
+    description: >-
+      Program code, e.g. ADA_PARATRANSIT or SENIOR_5310. Open vocabulary until the
+      crosswalk settles a list.
+    type: string
+    pattern: "^[A-Z][A-Z0-9_]*$"
+  attested_by:
+    description: Identifier of the party (agency, provider or broker) that attests eligibility.
+    type: string
+  valid_until:
+    description: Last date the attestation is valid, if it expires.
+    type: string
+    format: date
+examples:
+  - program: "ADA_PARATRANSIT"
+    attested_by: "aaata"
+    valid_until: "2027-06-30"

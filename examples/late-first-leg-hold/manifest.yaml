@@ -1,0 +1,32 @@
+description: The feeder runs 15 minutes late in traffic. The broker sees the ETA band slip past the connection
+  and asks the onward provider to hold; the hold is granted and the onward pickup moves.
+generated_by: tds-demo generate-examples (do not edit by hand; change tds_conform/demo.py and regenerate)
+narrative:
+- 'Interchange ix-hold: aaata-a-ride → oakland-go at County-line transfer hub, protected'
+- 'Tender to aaata-a-ride for tr-hold-a: ACCEPTED'
+- 'Tender to oakland-go for tr-hold-b: ACCEPTED'
+- Feeder now likely at hub 09:45; connection needs pickup ≥ 09:50
+- 'Hold GRANTED: onward pickup now 09:50'
+- Connection made despite the late feeder
+files:
+  01-tender-feeder.request.json:
+    schema: https://tds-openapi.org/schemas/transfer/tender-request.yaml
+  02-tender-feeder.response.json:
+    schema: https://tds-openapi.org/schemas/transfer/tender.yaml
+  03-tender-onward.request.json:
+    schema: https://tds-openapi.org/schemas/transfer/tender-request.yaml
+  04-tender-onward.response.json:
+    schema: https://tds-openapi.org/schemas/transfer/tender.yaml
+  05-hold-onward.request.json:
+    schema: https://tds-openapi.org/schemas/transfer/hold-request.yaml
+    operation: POST /trips/{trip_id}/hold
+  06-hold-onward.response.json:
+    schema: https://tds-openapi.org/schemas/transfer/hold.yaml
+    operation: POST /trips/{trip_id}/hold
+    status: 201
+  07-read-hold.response.json:
+    schema: https://tds-openapi.org/schemas/transfer/hold.yaml
+    operation: GET /trips/{trip_id}/holds/{hold_id}
+    status: 200
+  events.json:
+    kind: event-stream

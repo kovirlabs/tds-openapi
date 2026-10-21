@@ -1,0 +1,21 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/transfer/custody-party.yaml
+title: CustodyParty
+x-profile: transfer
+description: One side of a custody handoff, by role. No names or contact details.
+type: object
+required: [role]
+properties:
+  role:
+    description: Role of the person taking or giving custody.
+    type: string
+    enum: [DRIVER, ATTENDANT, CAREGIVER, FACILITY_STAFF]
+  provider_id:
+    description: Provider the person works for, when the role is DRIVER or ATTENDANT.
+    type: string
+  party_ref:
+    description: Opaque reference the issuing party can resolve (e.g. a driver id). Never a name.
+    type: string
+examples:
+  - role: "DRIVER"
+    provider_id: "aaata-a-ride"

@@ -1,0 +1,39 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/transfer/event-custody-handoff.yaml
+title: CustodyHandoffEvent
+description: >-
+  Emitted when a supervised rider is handed from one custodian to another
+  (SPEC.md §10.7).
+x-profile: transfer
+allOf:
+  - $ref: ../core/event.yaml
+type: object
+required: [trip_id, leg_id]
+properties:
+  event_type:
+    description: Always CUSTODY_HANDOFF.
+    const: CUSTODY_HANDOFF
+  payload:
+    description: The handoff record.
+    type: object
+    required: [handoff]
+    properties:
+      handoff:
+        description: Who handed the rider to whom, where, when and how.
+        $ref: ./custody-handoff.yaml
+examples:
+  - event_id: "evt-custody-handoff-1"
+    event_type: "CUSTODY_HANDOFF"
+    occurred_at: "2026-11-10T09:48:00-05:00"
+    provider_id: "aaata-a-ride"
+    trip_id: "tr-20261110-a"
+    leg_id: "leg-1"
+    schema_version: "0.4.0"
+    payload:
+      handoff:
+        handoff_from: { role: "DRIVER", provider_id: "aaata-a-ride" }
+        handoff_to: { role: "DRIVER", provider_id: "oakland-go" }
+        timestamp: "2026-11-10T10:14:00-05:00"
+        location: { lat: 42.4730, lon: -83.2219 }
+        method: "CODE_EXCHANGE"
+        caregiver_notified: true

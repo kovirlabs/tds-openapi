@@ -1,0 +1,31 @@
+parameters:
+  - $ref: ../components/parameters.yaml#/TripId
+post:
+  operationId: confirmTrip
+  summary: Confirm an offered trip
+  description: Accept the provider's offer. Only valid while the trip is OFFERED.
+  tags: [Trips]
+  security:
+    - oauth2: [trips:write]
+  parameters:
+    - $ref: ../components/parameters.yaml#/IdempotencyKey
+  responses:
+    "200":
+      description: The trip is CONFIRMED.
+      content:
+        application/json:
+          schema:
+            $ref: ../../profiles/core/trip.yaml
+          examples:
+            single_trip:
+              externalValue: ../../examples/single-trip/02-confirm.response.json
+    "401":
+      $ref: ../components/responses.yaml#/Unauthorized
+    "404":
+      $ref: ../components/responses.yaml#/NotFound
+    "409":
+      description: The trip is not OFFERED (code INVALID_STATE), e.g. the offer EXPIRED.
+      content:
+        application/problem+json:
+          schema:
+            $ref: ../../profiles/core/error.yaml

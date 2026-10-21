@@ -1,0 +1,58 @@
+parameters:
+  - $ref: ../components/parameters.yaml#/TripId
+post:
+  operationId: requestHold
+  summary: Ask the outbound vehicle to hold or retime
+  description: >-
+    Sent to the outbound provider when the inbound leg's ETA threatens the
+    connection (SPEC.md §10.5). Answered at once (201: GRANTED, PARTIAL or
+    DENIED) or later (202 PENDING, then a HOLD_RESPONSE event); unanswered by
+    respond_by, the hold is EXPIRED. GRANTED and PARTIAL also update the trip's
+    scheduled_pickup and emit TRIP_SCHEDULED.
+  x-profile: transfer
+  tags: [Transfer]
+  security:
+    - oauth2: [trips:write]
+  parameters:
+    - $ref: ../components/parameters.yaml#/IdempotencyKey
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../profiles/transfer/hold-request.yaml
+        examples:
+          late_feeder:
+            summary: Hold for a feeder running 15 minutes late
+            externalValue: ../../examples/late-first-leg-hold/05-hold-onward.request.json
+  responses:
+    "201":
+      description: Answered at once.
+      content:
+        application/json:
+          schema:
+            $ref: ../../profiles/transfer/hold.yaml
+          examples:
+            granted:
+              summary: Granted; onward pickup moved
+              externalValue: ../../examples/late-first-leg-hold/06-hold-onward.response.json
+    "202":
+      description: Received; the answer follows as a HOLD_RESPONSE event.
+      content:
+        application/json:
+          schema:
+            $ref: ../../profiles/transfer/hold.yaml
+    "400":
+      $ref: ../components/responses.yaml#/BadRequest
+    "401":
+      $ref: ../components/responses.yaml#/Unauthorized
+    "404":
+      $ref: ../components/responses.yaml#/NotFound
+    "409":
+      description: >-
+        The trip is not the outbound leg of that interchange or has already
+        departed (code INVALID_STATE), or hold_id is in use (TRIP_ID_IN_USE).
+      content:
+        application/problem+json:
+          schema:
+            $ref: ../../profiles/core/error.yaml

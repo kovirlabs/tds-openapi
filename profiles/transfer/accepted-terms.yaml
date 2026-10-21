@@ -1,0 +1,21 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/transfer/accepted-terms.yaml
+title: AcceptedTerms
+x-profile: transfer
+description: >-
+  Interchange terms the provider commits to by accepting a tender. Values may
+  be lower than requested; the broker plans with these, not the requested ones.
+type: object
+required: [auto_hold_s, max_hold_s]
+properties:
+  auto_hold_s:
+    description: Seconds the provider will wait for a late inbound leg without being asked.
+    type: integer
+    minimum: 0
+  max_hold_s:
+    description: Longest hold the provider will consider on request.
+    type: integer
+    minimum: 0
+examples:
+  - auto_hold_s: 300
+    max_hold_s: 900

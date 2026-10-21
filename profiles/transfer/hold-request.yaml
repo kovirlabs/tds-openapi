@@ -1,0 +1,40 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/transfer/hold-request.yaml
+title: HoldRequest
+x-profile: transfer
+description: >-
+  Body of `POST /trips/{trip_id}/hold`, sent by the broker to the outbound
+  provider when the inbound leg's ETA threatens the connection (SPEC.md §10.5).
+  HOLD asks the vehicle to wait until requested_until; RETIME proposes
+  requested_until as the new pickup time. Re-protecting with another provider
+  is broker-side (cancel with MISSED_CONNECTION, then a new tender), not a hold.
+type: object
+required: [hold_id, interchange_id, action, requested_until, respond_by]
+properties:
+  hold_id:
+    description: Broker-assigned identifier, unique per requester.
+    type: string
+  interchange_id:
+    description: The interchange whose outbound leg is this trip.
+    type: string
+  action:
+    description: HOLD (wait) or RETIME (move the pickup).
+    type: string
+    enum: [HOLD, RETIME]
+  requested_until:
+    description: "HOLD: wait until this time. RETIME: the proposed new pickup time."
+    type: string
+    format: date-time
+  respond_by:
+    description: Deadline for an answer. Unanswered by then, the hold is EXPIRED.
+    type: string
+    format: date-time
+  inbound_eta:
+    description: The inbound leg's latest ETA band, so the provider can judge the request.
+    $ref: ./eta-band.yaml
+examples:
+  - hold_id: "hd-20261110-1"
+    interchange_id: "ix-20261110-1"
+    action: "HOLD"
+    requested_until: "2026-11-10T10:20:00-05:00"
+    respond_by: "2026-11-10T10:00:00-05:00"

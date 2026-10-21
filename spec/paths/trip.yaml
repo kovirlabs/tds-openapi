@@ -1,0 +1,74 @@
+parameters:
+  - $ref: ../components/parameters.yaml#/TripId
+get:
+  operationId: getTrip
+  summary: Get a trip
+  description: Current state of a trip, including scheduled times and vehicle once known.
+  tags: [Trips]
+  security:
+    - oauth2: [trips:read]
+  responses:
+    "200":
+      description: The trip.
+      content:
+        application/json:
+          schema:
+            $ref: ../../profiles/core/trip.yaml
+          examples:
+            single_trip:
+              summary: Scheduled, vehicle assigned
+              externalValue: ../../examples/single-trip/03-get-trip.response.json
+    "401":
+      $ref: ../components/responses.yaml#/Unauthorized
+    "404":
+      $ref: ../components/responses.yaml#/NotFound
+patch:
+  operationId: modifyTrip
+  summary: Modify a trip
+  description: >-
+    Change windows, party or driver notes. The provider may accept (200, status
+    unchanged or CONFIRMED), re-offer (200, status OFFERED), or decide later
+    (202). If it refuses, the trip keeps its previous terms and the response is
+    422.
+  tags: [Trips]
+  security:
+    - oauth2: [trips:write]
+  parameters:
+    - $ref: ../components/parameters.yaml#/IdempotencyKey
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../profiles/core/trip-modification.yaml
+  responses:
+    "200":
+      description: Change applied or re-offered.
+      content:
+        application/json:
+          schema:
+            $ref: ../../profiles/core/trip.yaml
+    "202":
+      description: Change accepted for an asynchronous decision.
+      content:
+        application/json:
+          schema:
+            $ref: ../../profiles/core/trip.yaml
+    "400":
+      $ref: ../components/responses.yaml#/BadRequest
+    "401":
+      $ref: ../components/responses.yaml#/Unauthorized
+    "404":
+      $ref: ../components/responses.yaml#/NotFound
+    "409":
+      description: The trip is in a terminal state (code INVALID_STATE) or the Idempotency-Key was reused.
+      content:
+        application/problem+json:
+          schema:
+            $ref: ../../profiles/core/error.yaml
+    "422":
+      description: The provider refuses the change; previous terms stand.
+      content:
+        application/problem+json:
+          schema:
+            $ref: ../../profiles/core/error.yaml

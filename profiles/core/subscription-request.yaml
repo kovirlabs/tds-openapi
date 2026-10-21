@@ -1,0 +1,21 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/core/subscription-request.yaml
+title: SubscriptionRequest
+description: Body of `POST /subscriptions`. Registers a webhook for trip events.
+type: object
+required: [callback_url, event_types]
+properties:
+  callback_url:
+    description: >-
+      HTTPS URL the provider POSTs events to. Plain http is allowed only for
+      loopback addresses (localhost, 127.0.0.1), for development and the
+      conformance kit's local receiver.
+    type: string
+    format: uri
+    pattern: "^(https://|http://(localhost|127\\.0\\.0\\.1)(:[0-9]+)?(/|$))"
+  event_types:
+    description: Event types to deliver.
+    $ref: ./event-types.yaml
+examples:
+  - callback_url: "https://broker.example.org/tds/events"
+    event_types: [TRIP_STATUS_CHANGED, TRIP_SCHEDULED, TRIP_CANCELLED]

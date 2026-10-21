@@ -1,0 +1,12 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/transfer/delay-cause.yaml
+title: DelayCause
+x-profile: transfer
+description: >-
+  Why a leg is late or failed, modeled on rail delay attribution. Codes only, no
+  free text, and no rider-attributed cause. Whether a cause shifts cost is for
+  inter-provider agreements, not this spec.
+type: string
+enum: [TRAFFIC, BOARDING, VEHICLE, WEATHER, PRIOR_TRIP, UNKNOWN]
+examples:
+  - TRAFFIC

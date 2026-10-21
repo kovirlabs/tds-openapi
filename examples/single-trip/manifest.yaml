@@ -1,0 +1,22 @@
+# Maps each example file to the schema ($id) it must validate against and, when it
+# is an API payload, the operation and status it illustrates (status omitted = request body).
+description: >-
+  One rider, one provider, one leg: an appointment-anchored trip from Ann Arbor
+  to a Troy clinic. The provider decides synchronously and offers; the requester
+  confirms; later the provider schedules it and assigns a vehicle.
+files:
+  01-request-trip.request.json:
+    schema: https://tds-openapi.org/schemas/core/trip-request.yaml
+    operation: POST /trips
+  01-request-trip.response.json:
+    schema: https://tds-openapi.org/schemas/core/trip.yaml
+    operation: POST /trips
+    status: 201
+  02-confirm.response.json:
+    schema: https://tds-openapi.org/schemas/core/trip.yaml
+    operation: POST /trips/{trip_id}/confirm
+    status: 200
+  03-get-trip.response.json:
+    schema: https://tds-openapi.org/schemas/core/trip.yaml
+    operation: GET /trips/{trip_id}
+    status: 200

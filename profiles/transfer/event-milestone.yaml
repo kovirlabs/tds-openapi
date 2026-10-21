@@ -1,0 +1,39 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/transfer/event-milestone.yaml
+title: MilestoneEvent
+description: >-
+  Emitted at each milestone of a leg (SPEC.md §10.3), instead of raw vehicle
+  positions.
+x-profile: transfer
+allOf:
+  - $ref: ../core/event.yaml
+type: object
+required: [trip_id, leg_id]
+properties:
+  event_type:
+    description: Always MILESTONE.
+    const: MILESTONE
+  payload:
+    description: The milestone reached.
+    type: object
+    required: [milestone]
+    properties:
+      milestone:
+        description: Which milestone.
+        $ref: ./milestone.yaml
+      location:
+        description: Where it happened, if useful (e.g. the transfer point).
+        $ref: ../core/location.yaml
+      delay_cause:
+        description: On LEG_FAILED, why the leg failed.
+        $ref: ./delay-cause.yaml
+examples:
+  - event_id: "evt-milestone-1"
+    event_type: "MILESTONE"
+    occurred_at: "2026-11-10T09:48:00-05:00"
+    provider_id: "aaata-a-ride"
+    trip_id: "tr-20261110-a"
+    leg_id: "leg-1"
+    schema_version: "0.4.0"
+    payload:
+      milestone: "ARRIVED_DROPOFF"

@@ -1,0 +1,87 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/core/trip.yaml
+title: Trip
+description: >-
+  A trip requested by a requester and served by one provider. In core a trip
+  has exactly one leg; composing several providers' trips into one journey is a
+  broker concern handled by the transfer profile.
+type: object
+required:
+  - trip_id
+  - requester_id
+  - provider_id
+  - status
+  - rider_ref
+  - legs
+  - created_at
+  - updated_at
+properties:
+  trip_id:
+    description: Identifier assigned by the requester; unique per requester_id.
+    type: string
+  provider_trip_id:
+    description: Identifier assigned by the provider once it accepts the trip.
+    type: string
+  requester_id:
+    description: Identifier of the party requesting the trip.
+    type: string
+  provider_id:
+    description: Identifier of the party asked to serve the trip.
+    type: string
+  status:
+    description: Current lifecycle state.
+    $ref: ./trip-status.yaml
+  rider_ref:
+    description: The rider, by reference.
+    $ref: ./rider.yaml
+  party:
+    description: Others travelling with the rider.
+    $ref: ./party.yaml
+  legs:
+    description: The trip's legs. Core requires exactly one.
+    type: array
+    minItems: 1
+    maxItems: 1
+    items:
+      $ref: ./leg.yaml
+  fare_funding:
+    description: Fare and funding details for settlement.
+    $ref: ./fare-funding.yaml
+  notes_to_driver:
+    description: >-
+      Free-text operational notes, e.g. "call on arrival". Must not contain
+      health or diagnosis information.
+    type: string
+    maxLength: 500
+  cancellation:
+    description: Present when status is CANCELLED.
+    $ref: ./cancellation.yaml
+  created_at:
+    description: When the trip was created, RFC 3339 with offset.
+    type: string
+    format: date-time
+  updated_at:
+    description: When the trip last changed, RFC 3339 with offset.
+    type: string
+    format: date-time
+examples:
+  - trip_id: "tr-20261103-0001"
+    requester_id: "throughride-demo"
+    provider_id: "aaata-a-ride"
+    status: "REQUESTED"
+    rider_ref:
+      rider_ref_id: "r-7f3a"
+      display_name: "Dana K."
+    legs:
+      - leg_id: "leg-1"
+        pickup:
+          lat: 42.2808
+          lon: -83.7430
+        dropoff:
+          lat: 42.2569
+          lon: -83.6960
+        pickup_window:
+          earliest: "2026-11-03T09:00:00-05:00"
+          latest: "2026-11-03T09:30:00-05:00"
+    created_at: "2026-10-30T14:02:11-04:00"
+    updated_at: "2026-10-30T14:02:11-04:00"

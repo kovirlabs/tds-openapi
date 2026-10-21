@@ -1,0 +1,31 @@
+name: lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - uses: astral-sh/setup-uv@v6
+      - run: npm ci
+      - name: Spectral (bundled spec)
+        run: npm run lint
+      - name: Schemas, examples, crosswalk coverage
+        run: uv run scripts/validate_examples.py
+      - name: Tests
+        run: uv run --group dev pytest
+      - name: Ruff
+        run: |
+          uv run --group dev ruff check .
+          uv run --group dev ruff format --check .

@@ -1,0 +1,22 @@
+get:
+  operationId: getHealth
+  summary: Health and capabilities
+  description: >-
+    Liveness, supported spec versions and profiles, and how the endpoint is
+    operated. No authentication required.
+  tags: [Meta]
+  security: []
+  responses:
+    "200":
+      description: Endpoint is up.
+      content:
+        application/json:
+          schema:
+            $ref: ../../profiles/core/health.yaml
+          examples:
+            direct:
+              summary: Provider runs its own endpoint
+              externalValue: ../../examples/health/direct.json
+            broker_proxy:
+              summary: Broker fronts a provider without software
+              externalValue: ../../examples/health/broker-proxy.json

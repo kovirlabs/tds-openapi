@@ -1,0 +1,10 @@
+description: Health responses for a provider-run endpoint and a broker-proxied one.
+files:
+  direct.json:
+    schema: https://tds-openapi.org/schemas/core/health.yaml
+    operation: GET /health
+    status: 200
+  broker-proxy.json:
+    schema: https://tds-openapi.org/schemas/core/health.yaml
+    operation: GET /health
+    status: 200

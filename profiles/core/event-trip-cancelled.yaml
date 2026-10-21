@@ -1,0 +1,34 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/core/event-trip-cancelled.yaml
+title: TripCancelledEvent
+description: >-
+  Emitted when a trip is cancelled by either side, alongside the
+  TRIP_STATUS_CHANGED event, so requesters learn who cancelled and why.
+allOf:
+  - $ref: ./event.yaml
+type: object
+required: [trip_id]
+properties:
+  event_type:
+    description: Always TRIP_CANCELLED.
+    const: TRIP_CANCELLED
+  payload:
+    description: The cancellation record.
+    type: object
+    required: [cancellation]
+    properties:
+      cancellation:
+        description: Who cancelled, why and when.
+        $ref: ./cancellation.yaml
+examples:
+  - event_id: "evt-0003"
+    event_type: "TRIP_CANCELLED"
+    occurred_at: "2026-11-02T18:05:00-05:00"
+    provider_id: "aaata-a-ride"
+    trip_id: "tr-20261105-0007"
+    schema_version: "0.4.0"
+    payload:
+      cancellation:
+        reason: "PROVIDER_UNABLE"
+        cancelled_by: "PROVIDER"
+        cancelled_at: "2026-11-02T18:05:00-05:00"

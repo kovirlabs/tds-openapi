@@ -1,0 +1,16 @@
+{
+  "name": "tds-openapi",
+  "version": "0.4.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "scripts": {
+    "bundle": "REDOCLY_SUPPRESS_UPDATE_NOTICE=true redocly bundle spec/openapi.yaml -o dist/openapi.yaml && uv run scripts/finalize_bundle.py dist/openapi.yaml",
+    "lint": "npm run -s bundle && spectral lint --fail-severity=warn dist/openapi.yaml spec/asyncapi.yaml",
+    "mock:static": "npm run -s bundle && prism mock -h 127.0.0.1 -p 4011 dist/openapi.yaml"
+  },
+  "devDependencies": {
+    "@redocly/cli": "2.57.0",
+    "@stoplight/prism-cli": "5.16.0",
+    "@stoplight/spectral-cli": "6.17.0"
+  }
+}

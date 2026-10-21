@@ -1,0 +1,26 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/core/cancellation.yaml
+title: Cancellation
+description: Record of a trip's cancellation, set by the provider when the trip becomes CANCELLED.
+type: object
+required: [reason, cancelled_by, cancelled_at]
+properties:
+  reason:
+    description: Why the trip was cancelled.
+    $ref: ./cancel-reason.yaml
+  cancelled_by:
+    description: Which side cancelled.
+    type: string
+    enum: [REQUESTER, PROVIDER]
+  detail:
+    description: Optional free-text explanation. Must not contain health or diagnosis information.
+    type: string
+    maxLength: 500
+  cancelled_at:
+    description: When the cancellation took effect, RFC 3339 with offset.
+    type: string
+    format: date-time
+examples:
+  - reason: "RIDER_REQUEST"
+    cancelled_by: "REQUESTER"
+    cancelled_at: "2026-11-02T18:05:00-05:00"

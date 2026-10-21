@@ -1,0 +1,70 @@
+post:
+  operationId: requestTrip
+  summary: Request a trip
+  description: >-
+    Ask a provider to serve a trip. A provider that decides synchronously returns
+    201 with the trip OFFERED (or CONFIRMED, skipping the offer step). One that
+    decides later returns 202 with the trip REQUESTED and reports the decision by
+    event. Both are conformant. A synchronous refusal is a 422 whose `code` says
+    why; the trip is then REJECTED.
+  tags: [Trips]
+  security:
+    - oauth2: [trips:write]
+  parameters:
+    - $ref: ../components/parameters.yaml#/IdempotencyKey
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../profiles/core/trip-request.yaml
+        examples:
+          single_trip:
+            summary: Appointment trip, Ann Arbor to Troy
+            externalValue: ../../examples/single-trip/01-request-trip.request.json
+          cancellation:
+            summary: Local pickup-anchored trip
+            externalValue: ../../examples/cancellation/01-request-trip.request.json
+  responses:
+    "201":
+      description: Decided synchronously; the trip is OFFERED or CONFIRMED.
+      content:
+        application/json:
+          schema:
+            $ref: ../../profiles/core/trip.yaml
+          examples:
+            single_trip:
+              summary: Offered with a scheduled pickup
+              externalValue: ../../examples/single-trip/01-request-trip.response.json
+    "202":
+      description: Accepted for an asynchronous decision; the trip is REQUESTED.
+      content:
+        application/json:
+          schema:
+            $ref: ../../profiles/core/trip.yaml
+          examples:
+            cancellation:
+              summary: Provider will decide later
+              externalValue: ../../examples/cancellation/01-request-trip.response.json
+    "400":
+      $ref: ../components/responses.yaml#/BadRequest
+    "401":
+      $ref: ../components/responses.yaml#/Unauthorized
+    "409":
+      description: Idempotency-Key reused with a different body (code IDEMPOTENCY_KEY_REUSED), or this requester already has a trip with this trip_id under another key (code TRIP_ID_IN_USE).
+      content:
+        application/problem+json:
+          schema:
+            $ref: ../../profiles/core/error.yaml
+          examples:
+            idempotency_key_reused:
+              externalValue: ../../examples/errors/idempotency-key-reused.json
+    "422":
+      description: The provider refuses the trip; `code` says why and the trip is REJECTED.
+      content:
+        application/problem+json:
+          schema:
+            $ref: ../../profiles/core/error.yaml
+          examples:
+            no_capacity:
+              externalValue: ../../examples/errors/no-capacity.json

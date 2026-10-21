@@ -1,0 +1,75 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/transfer/interchange.yaml
+title: Interchange
+x-profile: transfer
+description: >-
+  Links an inbound (feeder) leg to an outbound (onward) leg run by another
+  provider at a transfer point, with the connection's terms (SPEC.md §10.1;
+  semantics borrowed from NeTEx interchange). auto_hold_s must not exceed
+  max_hold_s. If either leg has HAND_TO_HAND and protection is PROTECTED,
+  supervision_required must be true.
+type: object
+required: [interchange_id, from, to, transfer_location, min_connection_s, protection]
+properties:
+  interchange_id:
+    description: Broker-assigned identifier of the interchange.
+    type: string
+  from:
+    description: The inbound leg, arriving at the transfer point.
+    $ref: ./leg-ref.yaml
+  to:
+    description: The outbound leg, departing from the transfer point.
+    $ref: ./leg-ref.yaml
+  transfer_location:
+    description: Where the rider changes vehicles.
+    $ref: ../core/location.yaml
+  min_connection_s:
+    description: Minimum time between inbound arrival and outbound departure.
+    type: integer
+    minimum: 0
+  max_hold_s:
+    description: Longest the outbound provider can be asked to wait for a late inbound leg (§10.5).
+    type: integer
+    minimum: 0
+    default: 0
+  auto_hold_s:
+    description: >-
+      How long the outbound vehicle waits for a late inbound leg without being
+      asked. Binds only once the outbound provider echoes it when accepting the
+      tender.
+    type: integer
+    minimum: 0
+    default: 0
+  accessibility_buffer_s:
+    description: >-
+      Added to min_connection_s only when either leg has service_requirements;
+      otherwise ignored.
+    type: integer
+    minimum: 0
+    default: 0
+  protection:
+    description: PROTECTED connections are actively managed (heartbeats, holds); BEST_EFFORT are not.
+    type: string
+    enum: [PROTECTED, BEST_EFFORT]
+  supervision_required:
+    description: The rider must be handed from custodian to custodian; custody records are required (§10.7).
+    type: boolean
+    default: false
+  heartbeat_s:
+    description: >-
+      Most seconds between ETA updates the inbound provider sends while its leg
+      is IN_PROGRESS toward a PROTECTED interchange; stale after twice this.
+    type: integer
+    minimum: 10
+    default: 60
+examples:
+  - interchange_id: "ix-20261110-1"
+    from: { provider_id: "aaata-a-ride", trip_id: "tr-20261110-a", leg_id: "leg-1" }
+    to: { provider_id: "oakland-go", trip_id: "tr-20261110-b", leg_id: "leg-1" }
+    transfer_location: { lat: 42.4730, lon: -83.2219, name: "Hub transfer point" }
+    min_connection_s: 300
+    max_hold_s: 900
+    auto_hold_s: 300
+    accessibility_buffer_s: 300
+    protection: "PROTECTED"
+    supervision_required: true

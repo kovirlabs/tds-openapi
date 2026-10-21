@@ -1,0 +1,56 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/core/trip-request.yaml
+title: TripRequest
+description: >-
+  Body of `POST /trips`. The requester's view of a trip before the provider has
+  decided: fields the provider sets (status, provider_trip_id, timestamps,
+  scheduled times, vehicle) are absent or ignored.
+type: object
+required: [trip_id, requester_id, provider_id, rider_ref, legs]
+properties:
+  trip_id:
+    description: Identifier assigned by the requester; unique per requester_id. Same as trip.trip_id.
+    type: string
+  requester_id:
+    description: Identifier of the party requesting the trip. Must match the authenticated client.
+    type: string
+  provider_id:
+    description: Identifier of the provider asked to serve the trip.
+    type: string
+  rider_ref:
+    description: The rider, by reference.
+    $ref: ./rider.yaml
+  party:
+    description: Others travelling with the rider.
+    $ref: ./party.yaml
+  legs:
+    description: The requested leg. Core requires exactly one.
+    type: array
+    minItems: 1
+    maxItems: 1
+    items:
+      $ref: ./leg.yaml
+  fare_funding:
+    description: Fare and funding details for settlement.
+    $ref: ./fare-funding.yaml
+  notes_to_driver:
+    description: Free-text operational notes. Must not contain health or diagnosis information.
+    type: string
+    maxLength: 500
+examples:
+  - trip_id: "tr-20261103-0001"
+    requester_id: "throughride-demo"
+    provider_id: "aaata-a-ride"
+    rider_ref:
+      rider_ref_id: "r-7f3a"
+    legs:
+      - leg_id: "leg-1"
+        pickup:
+          lat: 42.2808
+          lon: -83.7430
+        dropoff:
+          lat: 42.2569
+          lon: -83.6960
+        pickup_window:
+          earliest: "2026-11-03T09:00:00-05:00"
+          latest: "2026-11-03T09:30:00-05:00"

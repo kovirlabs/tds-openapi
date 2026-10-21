@@ -1,0 +1,16 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/core/cancel-reason.yaml
+title: CancelReason
+description: >-
+  Reason code for a cancellation. Codes, not free text, so events carry no
+  personal information. MISSED_CONNECTION is used when an upstream leg in a
+  transfer failed.
+type: string
+enum:
+  - RIDER_REQUEST
+  - PROVIDER_UNABLE
+  - DUPLICATE
+  - MISSED_CONNECTION
+  - OTHER
+examples:
+  - RIDER_REQUEST

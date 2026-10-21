@@ -1,0 +1,53 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/transfer/eta-band.yaml
+title: EtaBand
+x-profile: transfer
+description: >-
+  Estimated arrival at one end of a leg as a band rather than a point (SPEC.md
+  §10.4). Requires earliest <= likely <= latest.
+type: object
+required: [target, earliest, likely, latest, confidence, computed_at]
+properties:
+  target:
+    description: Which end of the leg the estimate is for.
+    type: string
+    enum: [PICKUP, DROPOFF]
+  earliest:
+    description: Earliest plausible arrival.
+    type: string
+    format: date-time
+  likely:
+    description: Most likely arrival.
+    type: string
+    format: date-time
+  latest:
+    description: Latest plausible arrival.
+    type: string
+    format: date-time
+  confidence:
+    description: Probability that arrival is no later than `latest`.
+    type: number
+    minimum: 0
+    maximum: 1
+  computed_at:
+    description: When the estimate was made.
+    type: string
+    format: date-time
+  source:
+    description: >-
+      Where the estimate comes from. SCHEDULE means only the promised time is
+      known; brokers may ask for fresher status sooner when the source is weak.
+    type: string
+    enum: [VEHICLE_POSITION, PROVIDER_FORECAST, DISPATCHER, DRIVER, SCHEDULE]
+  delay_cause:
+    description: Why the leg is running late, if it is and the cause is known.
+    $ref: ./delay-cause.yaml
+examples:
+  - target: "DROPOFF"
+    earliest: "2026-11-10T10:04:00-05:00"
+    likely: "2026-11-10T10:12:00-05:00"
+    latest: "2026-11-10T10:20:00-05:00"
+    confidence: 0.85
+    computed_at: "2026-11-10T09:48:00-05:00"
+    source: "VEHICLE_POSITION"
+    delay_cause: "TRAFFIC"

@@ -1,0 +1,16 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/core/cancel-request.yaml
+title: CancelRequest
+description: Body of `POST /trips/{trip_id}/cancel`, sent by the requester.
+type: object
+required: [reason]
+properties:
+  reason:
+    description: Why the trip is cancelled.
+    $ref: ./cancel-reason.yaml
+  detail:
+    description: Optional free-text explanation. Must not contain health or diagnosis information.
+    type: string
+    maxLength: 500
+examples:
+  - reason: "RIDER_REQUEST"

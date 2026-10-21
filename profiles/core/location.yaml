@@ -1,0 +1,50 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/core/location.yaml
+title: Location
+description: >-
+  A pickup, dropoff or transfer point. Coordinates are WGS84 and always required;
+  GTFS / GTFS-Flex identifiers are given when the point is a published stop or zone.
+type: object
+required: [lat, lon]
+properties:
+  lat:
+    description: Latitude in decimal degrees (WGS84).
+    type: number
+    minimum: -90
+    maximum: 90
+  lon:
+    description: Longitude in decimal degrees (WGS84).
+    type: number
+    minimum: -180
+    maximum: 180
+  name:
+    description: Human-readable place name, e.g. a facility or landmark.
+    type: string
+    maxLength: 200
+  address:
+    description: Structured postal address of the point.
+    $ref: ./address.yaml
+  gtfs_stop_id:
+    description: GTFS `stop_id` in the provider's published feed, if the point is a stop.
+    type: string
+  flex_location_id:
+    description: GTFS-Flex location or location-group id, if the point is a Flex zone.
+    type: string
+  access_notes:
+    description: >-
+      Wayfinding for the driver, e.g. "east entrance". Not for rider health or
+      condition information.
+    type: string
+    maxLength: 300
+examples:
+  - lat: 42.2808
+    lon: -83.7430
+    name: "Blake Transit Center"
+    gtfs_stop_id: "BTC"
+    address:
+      street: "331 S 4th Ave"
+      city: "Ann Arbor"
+      region: "MI"
+      postal_code: "48104"
+      country: "US"
+    access_notes: "Curb on 4th Ave side"

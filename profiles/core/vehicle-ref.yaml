@@ -1,0 +1,24 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/core/vehicle-ref.yaml
+title: VehicleRef
+description: >-
+  Identifies the vehicle assigned to a leg so the rider or an attendant can
+  recognise it. Typically set by the provider shortly before pickup.
+type: object
+required: [vehicle_id]
+properties:
+  vehicle_id:
+    description: Provider's opaque vehicle identifier.
+    type: string
+  description:
+    description: Rider-facing description, e.g. "White Ford Transit, #214".
+    type: string
+    maxLength: 200
+  plate:
+    description: Licence plate as displayed on the vehicle.
+    type: string
+    maxLength: 20
+examples:
+  - vehicle_id: "veh-214"
+    description: "White Ford Transit, #214"
+    plate: "ABC1234"

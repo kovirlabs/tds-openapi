@@ -1,0 +1,26 @@
+parameters:
+  - $ref: ../components/parameters.yaml#/TripId
+  - $ref: ../components/parameters.yaml#/HoldId
+get:
+  operationId: getHold
+  summary: Get a hold request
+  description: Current state of a hold request.
+  x-profile: transfer
+  tags: [Transfer]
+  security:
+    - oauth2: [trips:read]
+  responses:
+    "200":
+      description: The hold.
+      content:
+        application/json:
+          schema:
+            $ref: ../../profiles/transfer/hold.yaml
+          examples:
+            granted:
+              summary: A granted hold
+              externalValue: ../../examples/late-first-leg-hold/07-read-hold.response.json
+    "401":
+      $ref: ../components/responses.yaml#/Unauthorized
+    "404":
+      $ref: ../components/responses.yaml#/NotFound

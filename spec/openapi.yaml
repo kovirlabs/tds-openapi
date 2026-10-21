@@ -1,0 +1,72 @@
+openapi: 3.1.0
+jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
+info:
+  title: TDS OpenAPI binding
+  version: 0.4.0
+  summary: Machine-readable binding of the Transactional Data Specification (TCRP Report 210, 2020).
+  description: >-
+    Request/response operations for booking demand-response trips between a
+    requester (broker, coordinator tool or provider) and a provider: the core
+    profile (SPEC.md §6–§8) and the transfer profile's tenders and holds
+    (SPEC.md §10, operations marked x-profile: transfer). Events are delivered
+    by signed webhook; see spec/asyncapi.yaml. Every mutating call requires an
+    Idempotency-Key header.
+  contact:
+    name: tds-openapi maintainers
+    url: https://github.com/kovirlabs/tds-openapi
+  license:
+    name: Apache-2.0
+    identifier: Apache-2.0
+servers:
+  - url: http://localhost:4010
+    description: Stateful reference provider (uv run tds-mock)
+  - url: http://localhost:4011
+    description: Static example mock (npm run mock:static)
+security:
+  - oauth2: []
+tags:
+  - name: Trips
+    description: Request, confirm, modify, cancel and read trips.
+  - name: Events
+    description: Webhook subscriptions.
+  - name: Transfer
+    description: "Transfer profile: tenders and hold requests for protected cross-provider connections."
+  - name: Meta
+    description: Health and capabilities.
+paths:
+  /trips:
+    $ref: paths/trips.yaml
+  /trips/{trip_id}:
+    $ref: paths/trip.yaml
+  /trips/{trip_id}/confirm:
+    $ref: paths/trip-confirm.yaml
+  /trips/{trip_id}/cancel:
+    $ref: paths/trip-cancel.yaml
+  /trips/{trip_id}/hold:
+    $ref: paths/trip-hold.yaml
+  /trips/{trip_id}/holds/{hold_id}:
+    $ref: paths/trip-hold-status.yaml
+  /tenders:
+    $ref: paths/tenders.yaml
+  /tenders/{tender_id}:
+    $ref: paths/tender.yaml
+  /subscriptions:
+    $ref: paths/subscriptions.yaml
+  /health:
+    $ref: paths/health.yaml
+components:
+  securitySchemes:
+    oauth2:
+      type: oauth2
+      description: >-
+        OAuth 2.0 client credentials (SPEC.md §12). Each deployment publishes its own
+        token endpoint; the URL here is relative to the server. mTLS may be layered on
+        top by agreement.
+      flows:
+        clientCredentials:
+          tokenUrl: /oauth/token
+          scopes:
+            trips:read: Read trips this client requested.
+            trips:write: Request, confirm, modify and cancel trips.
+            events:subscribe: Register webhook subscriptions.
+            tenders:write: Send tenders (transfer profile).

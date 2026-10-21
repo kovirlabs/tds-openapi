@@ -1,0 +1,27 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/core/trip-modification.yaml
+title: TripModification
+description: >-
+  Body of `PATCH /trips/{trip_id}`: the fields a requester may change after
+  booking. Windows apply to the trip's single leg. Omitted fields are unchanged.
+  The provider may accept the change, re-offer (status OFFERED) or reject it.
+type: object
+minProperties: 1
+properties:
+  pickup_window:
+    description: New requested pickup window.
+    $ref: ./time-window.yaml
+  dropoff_window:
+    description: New requested dropoff window.
+    $ref: ./time-window.yaml
+  party:
+    description: New party counts; replaces the previous party object.
+    $ref: ./party.yaml
+  notes_to_driver:
+    description: Replacement driver notes. Must not contain health or diagnosis information.
+    type: string
+    maxLength: 500
+examples:
+  - pickup_window:
+      earliest: "2026-11-03T09:30:00-05:00"
+      latest: "2026-11-03T10:00:00-05:00"
