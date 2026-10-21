@@ -1,0 +1,20 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/core/funding-source.yaml
+title: FundingSource
+description: >-
+  Who pays for a trip or leg. SECTION_5310 and SECTION_5311 are the US federal
+  transit programs (49 U.S.C. 5310 and 5311); MEDICAID_NEMT is Medicaid
+  non-emergency medical transportation; AGENCY is the provider's or requester's own
+  budget; SPONSOR is a third party named by sponsor_ref. Settlement data only; no
+  payment is processed through this API.
+type: string
+enum:
+  - RIDER
+  - SECTION_5310
+  - SECTION_5311
+  - MEDICAID_NEMT
+  - AGENCY
+  - SPONSOR
+  - OTHER
+examples:
+  - SECTION_5310

@@ -4,6 +4,24 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+Toward **0.5.0** (SPEC.md §15). Version fields stay at 0.4.2 until 0.5.0 is cut.
+
+### Added
+- **Settlement split** (`profiles/transfer/settlement-split.yaml`, SPEC.md §10.8): after-trip
+  reconciliation of a linked journey, one line per leg with `trip_status`, `cost`,
+  `funding_source`, optional `sponsor_ref`, `authorization_ref`, `cancellation_reason` and
+  `delay_cause`, plus `total`. Data only; no API operation yet.
+- `core/funding-source.yaml`: the funding source enum (`RIDER`, `SECTION_5310`, `SECTION_5311`,
+  `MEDICAID_NEMT`, `AGENCY`, `SPONSOR`, `OTHER`), now shared by `fare_funding` and the split.
+- `tds_conform.settlement.settlement_problems()`: one currency, total = sum of lines, each leg
+  once, terminal statuses only; the example validator applies it.
+- Example `settlement-split` with splits for the `two-provider-transfer` and
+  `missed-connection-reprotect` journeys (a test checks they match the generated trips).
+
+### Changed
+- `fare-funding.funding_source` references `core/funding-source.yaml` (same values).
+- SPEC.md Draft 3: §10.8 written out; §7 notes settlement endpoints stay deferred.
+
 ## [0.4.2] - 2026-10-21
 
 ### Added

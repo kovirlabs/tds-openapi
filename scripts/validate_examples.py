@@ -12,7 +12,8 @@ Checks:
      schema spec/asyncapi.yaml gives its event_type, and the stream follows the
      milestone order and custody rules (SPEC.md §10.3, §10.7). Tender requests
      also follow the interchange rules (auto_hold_s ≤ max_hold_s; HAND_TO_HAND on a
-     PROTECTED interchange needs supervision_required, SPEC.md §10.1).
+     PROTECTED interchange needs supervision_required, SPEC.md §10.1); settlement
+     splits add up in one currency (SPEC.md §10.8).
   5. Manifest entries that name an `operation` are wired into spec/openapi.yaml at
      that operation and status (so the mock serves them), the operation declares
      the same schema, and every example the spec references has such an entry.
@@ -209,7 +210,14 @@ def interchange_problems(interchange: dict, legs: list[dict]) -> list[str]:
 RULES = {
     f"{ID_BASE}transfer/tender-request.yaml": lambda t: interchange_problems(t["interchange"], t["trip"]["legs"]),
     f"{ID_BASE}transfer/interchange.yaml": lambda ix: interchange_problems(ix, []),
+    f"{ID_BASE}transfer/settlement-split.yaml": lambda split: _settlement_problems(split),
 }
+
+
+def _settlement_problems(split: dict) -> list[str]:
+    from tds_conform.settlement import settlement_problems
+
+    return settlement_problems(split)
 
 
 def _resolve(node, base: Path):

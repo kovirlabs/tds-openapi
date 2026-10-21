@@ -11,15 +11,7 @@ properties:
     $ref: ./money.yaml
   funding_source:
     description: Primary funding source for the trip.
-    type: string
-    enum:
-      - RIDER
-      - SECTION_5310
-      - SECTION_5311
-      - MEDICAID_NEMT
-      - AGENCY
-      - SPONSOR
-      - OTHER
+    $ref: ./funding-source.yaml
   sponsor_ref:
     description: Identifier of the sponsoring organization, when funding_source is SPONSOR.
     type: string

@@ -1,0 +1,98 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/transfer/settlement-split.yaml
+title: SettlementSplit
+x-profile: transfer
+description: >-
+  After-trip reconciliation of a linked journey (SPEC.md §10.8): one line per leg
+  with the provider, the leg's final trip status, its cost and who funds it. Produced
+  by the broker once every leg has reached a terminal status, and shared with the
+  providers and funders involved. Data only: no payment is processed, and the spec
+  does not say who bears the cost of a late or failed leg (that is for inter-provider
+  agreements). Every line's cost uses the same currency as total, total is their
+  sum, each leg appears once and every leg's trip_status is terminal
+  (`tds_conform.settlement.settlement_problems` checks these, as does the example
+  validator). Lines identify riders only through the trips they reference; no
+  rider or health data.
+type: object
+required: [split_id, requester_id, service_date, legs, total, created_at]
+properties:
+  split_id:
+    description: Broker-assigned identifier of this split, unique per requester.
+    type: string
+  requester_id:
+    description: The broker that composed the journey and produced the split.
+    type: string
+  service_date:
+    description: Local date of service of the journey's first pickup.
+    type: string
+    format: date
+  interchange_ids:
+    description: Interchanges linking the legs, if any (a re-protected journey lists every one it used).
+    type: array
+    uniqueItems: true
+    items:
+      type: string
+  legs:
+    description: One line per leg tendered for the journey, including cancelled ones.
+    type: array
+    minItems: 1
+    items:
+      type: object
+      required: [leg, trip_status, cost, funding_source]
+      properties:
+        leg:
+          description: The leg, by provider, trip and leg id.
+          $ref: ./leg-ref.yaml
+        trip_status:
+          description: >-
+            The trip's terminal status at reconciliation (COMPLETED, NO_SHOW,
+            CANCELLED, FAILED, ...). Only COMPLETED legs were driven to the end.
+          $ref: ../core/trip-status.yaml
+        cost:
+          description: >-
+            What the provider charges for the leg under its agreement with the
+            requester; "0.00" when nothing is owed (e.g. cancelled in time).
+          $ref: ../core/money.yaml
+        funding_source:
+          description: Who funds this leg. May differ between legs of one journey.
+          $ref: ../core/funding-source.yaml
+        sponsor_ref:
+          description: Identifier of the sponsoring organization, when funding_source is SPONSOR.
+          type: string
+        authorization_ref:
+          description: >-
+            Reference to the funder's authorization for this leg (e.g. a Medicaid
+            prior-authorization number). A reference only; no clinical content.
+          type: string
+        cancellation_reason:
+          description: For a CANCELLED leg, the cancellation's reason code.
+          $ref: ../core/cancel-reason.yaml
+        delay_cause:
+          description: >-
+            Last delay cause the provider reported for the leg, if any. Recorded as a
+            fact; whether it shifts cost is for the agreements.
+          $ref: ./delay-cause.yaml
+  total:
+    description: Sum of the legs' costs, in the same currency.
+    $ref: ../core/money.yaml
+  created_at:
+    description: When the broker produced the split.
+    type: string
+    format: date-time
+examples:
+  - split_id: "ss-20261110-1"
+    requester_id: "throughride-demo"
+    service_date: "2026-11-10"
+    interchange_ids: ["ix-20261110-1"]
+    legs:
+      - leg: { provider_id: "aaata-a-ride", trip_id: "tr-20261110-a", leg_id: "leg-1" }
+        trip_status: "COMPLETED"
+        cost: { amount: "18.50", currency: "USD" }
+        funding_source: "SECTION_5310"
+      - leg: { provider_id: "oakland-go", trip_id: "tr-20261110-b", leg_id: "leg-1" }
+        trip_status: "COMPLETED"
+        cost: { amount: "22.00", currency: "USD" }
+        funding_source: "SPONSOR"
+        sponsor_ref: "sponsor-example"
+    total: { amount: "40.50", currency: "USD" }
+    created_at: "2026-11-10T18:00:00-05:00"

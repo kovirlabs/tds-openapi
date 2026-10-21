@@ -1,6 +1,6 @@
 # SPEC.md — tds-openapi
 
-Status: **Draft 2 (v0.4.2)** · Owner: Evan / Kovir Labs · Date: 2026-10-20
+Status: **Draft 3 (v0.5.0 in progress; last release v0.4.2)** · Owner: Evan / Kovir Labs · Date: 2026-10-20
 
 Field lists below are **proposed**. Names for `profiles/core` must be reconciled with TDS 2020 (TCRP Report 210) in `mappings/tds-2020-crosswalk.md`; anything marked `TODO(crosswalk)` is unverified.
 
@@ -102,7 +102,7 @@ RFC 9457 Problem Details (`type`, `title`, `status`, `detail`, `instance`) + `co
 | POST | `/subscriptions` | Register webhook URL + event types. |
 | GET | `/health` | Liveness, supported profiles and spec versions, `operated_via` (`DIRECT` / `BROKER_PROXY`), `typical_response_s` (how long an asynchronous decision usually takes). |
 
-All mutating calls require `Idempotency-Key` header. Settlement endpoints deferred to v0.5+.
+All mutating calls require `Idempotency-Key` header. Settlement endpoints are deferred; v0.5 defines the settlement split format only (§10.8).
 
 Requesters should set deadlines (`respond_by`) no shorter than the provider's declared `typical_response_s`.
 
@@ -179,7 +179,13 @@ Event `CUSTODY_HANDOFF`: `handoff_from` (party + role: `DRIVER`, `ATTENDANT`, `C
 A leg is supervised when its `service_requirements` include `HAND_TO_HAND` or its interchange has `supervision_required`. A supervised leg cannot reach `LEG_COMPLETED` without a custody record at pickup (by `RIDER_ONBOARD`) and at dropoff (with `RIDER_HANDED_OFF`) (conformance: `custody_required`). At a hub, both drivers' providers record the same physical handoff; that corroboration is intended. Parties are identified by role (and optionally provider and an opaque `party_ref`), never by name.
 
 ### 10.8 Settlement split (`settlement-split.yaml`)
-Per-leg `provider_id`, `cost`, `funding_source`, `authorization_ref`, `trip_completed` status. For after-trip reconciliation only.
+After-trip reconciliation of a linked journey, produced by the broker once every leg is terminal and shared with the providers and funders involved. Data only: no payment is processed.
+`split_id`, `requester_id`, `service_date`, `interchange_ids`, `total` (Money), `created_at`, and one line per tendered leg (cancelled ones included): `leg` (`provider_id`, `trip_id`, `leg_id`), `trip_status` (terminal), `cost` (Money; `"0.00"` when nothing is owed), `funding_source`, optional `sponsor_ref`, `authorization_ref`, `cancellation_reason`, `delay_cause`.
+- `funding_source` (`core/funding-source.yaml`, shared with `fare_funding`): `RIDER`, `SECTION_5310`, `SECTION_5311`, `MEDICAID_NEMT`, `AGENCY`, `SPONSOR`, `OTHER`. Legs of one journey may have different funders.
+- One currency throughout; `total` is the sum of the lines; each leg once (checked by the example validator and `tds_conform.settlement`).
+- `delay_cause` is recorded as a fact. Who bears the cost of a late or failed leg is for inter-provider agreements, not this spec (§10.4).
+- No rider data: lines identify riders only through the trips they reference. `authorization_ref` is a reference, never clinical content.
+- Exchange is not yet an API operation (§7); the schema fixes the format so brokers and funders can exchange files now.
 
 ## 11. Other profiles (placeholders)
 - **paratransit:** ADA eligibility attestation, mobility device dimensions/weight, PCA rules.
