@@ -117,11 +117,11 @@ def make_handler(network: Network) -> type[BaseHTTPRequestHandler]:
             return problem(404, "NOT_FOUND", f"No simulation route {method} {path}.")
 
         def _body(self):
-            length = int(self.headers.get("Content-Length") or 0)
             try:
+                length = int(self.headers.get("Content-Length") or 0)
                 return json.loads(self.rfile.read(length) or b"null"), None
-            except json.JSONDecodeError:
-                return None, problem(400, "INVALID_REQUEST", "Body is not valid JSON.")
+            except ValueError:  # bad length, bad encoding (UnicodeDecodeError) or bad JSON
+                return None, problem(400, "INVALID_REQUEST", "Body is not valid UTF-8 JSON.")
 
         def _send(self, status: int, body: dict) -> None:
             data = json.dumps(body).encode()

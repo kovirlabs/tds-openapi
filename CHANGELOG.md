@@ -27,9 +27,19 @@ Toward **0.5.0** (SPEC.md §15). Version fields stay at 0.4.2 until 0.5.0 is cut
   holds the cross-field rules; `tds-mock` validates both objects when present. Examples
   `paratransit-trip` and `nemt-trip`.
 - `leg.service_requirements`: `STRETCHER`.
+- `tds-conform fuzz` (extra `tds-conform[fuzz]`, schemathesis 4): positive and negative
+  generated requests to every operation of `dist/openapi.yaml`; checks no 5xx, documented
+  status codes and media types, response schemas and headers, and rejection of invalid input.
+  Writes `fuzz.json`. `POST /subscriptions` is skipped by default. CI job
+  `fuzz-vs-reference-mock`; tests include faulty providers that fuzzing must catch.
 
 ### Changed
 - `fare-funding.funding_source` references `core/funding-source.yaml` (same values).
+- `POST /trips/{trip_id}/confirm` documents 400 (e.g. missing `Idempotency-Key`); found by fuzzing.
+
+### Fixed
+- `tds-mock` answered a body that is not UTF-8 JSON by dropping the connection; it now returns
+  400 `INVALID_REQUEST` (found by fuzzing).
 - SPEC.md Draft 3: §10.8 written out; §7 notes settlement endpoints stay deferred.
 - SPEC.md §12: one scope list (`tenders:write`, not `tenders:respond`); dropped the reference to a
   nonexistent `security/auth.yaml`.

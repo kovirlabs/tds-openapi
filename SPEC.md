@@ -218,6 +218,7 @@ Both profiles extend `POST /trips`: the body is a core TripRequest plus one prof
 - Conformance scenarios (initial): `book_confirm_cancel`, `modify_window`, `idempotency`, `webhook_delivery`, `tender_deadline`, `milestone_sequence`, `eta_heartbeat_staleness`, `hold_request`, `custody_required`.
 - Synchronous (201) and asynchronous (202 → later `OFFERED`/`REJECTED`) decisions are equally conformant. Timing checks use the provider's declared `typical_response_s`, not a fixed number of seconds; a broker-proxied provider is tested the same way (the kit may stand in for its staff).
 - Scenarios that need a vehicle to move (`milestone_sequence`, `custody_required`, `eta_heartbeat_staleness`) cannot be triggered on a live provider; they are checked on a captured event log (`tds-conform check-events`). `webhook_delivery`, `tender_deadline` and `hold_request` run live against any endpoint.
+- Fuzzing (`tds-conform fuzz`, schemathesis) complements the scenarios: generated valid and invalid requests to every operation must get documented status codes, media types and schema-valid bodies, never a 5xx. It is a diagnostic, not part of a level.
 - `tender_deadline` tests the provider side: respond by `respond_by`, or the tender becomes `EXPIRED`. Conformance never measures how fast a broker or a human approves a fallback tender; it checks only that a fallback tender, when sent, follows the published policy.
 
 ## 14. Mappings
