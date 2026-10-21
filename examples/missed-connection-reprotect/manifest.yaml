@@ -1,0 +1,56 @@
+description: 'The feeder breaks down and runs 40 minutes late. The onward provider can''t wait that long
+  and counter-offers a later pickup (PARTIAL); the broker asks it to retime further and gets no answer
+  by respond_by (EXPIRED, so the broker raises HOLD_UNANSWERED). A coordinator approves re-protecting
+  (fallback approval: REQUIRED): the broker cancels the onward trip with MISSED_CONNECTION and tenders
+  the leg to another provider, which carries the rider.'
+generated_by: tds-demo generate-examples (do not edit by hand; change tds_conform/demo.py and regenerate)
+narrative:
+- 'Interchange ix-rp: aaata-a-ride → oakland-go at County-line transfer hub, protected'
+- 'Tender to aaata-a-ride for tr-rp-a: ACCEPTED'
+- 'Tender to oakland-go for tr-rp-b: ACCEPTED'
+- Feeder now likely at hub 10:10; connection needs pickup ≥ 10:15
+- 'Hold PARTIAL (DOWNSTREAM_COMMITMENT): oakland-go offers pickup 10:00'
+- 'Asked oakland-go to retime to 10:15: PENDING'
+- 'Retime is EXPIRED: broker raises HOLD_UNANSWERED; coordinator approves re-protect to county-connector'
+- 'Tender to county-connector for tr-rp-b2: ACCEPTED'
+- Rider reached the clinic on county-connector; oakland-go's trip CANCELLED with MISSED_CONNECTION
+files:
+  01-tender-feeder.request.json:
+    schema: https://tds-openapi.org/schemas/transfer/tender-request.yaml
+  02-tender-feeder.response.json:
+    schema: https://tds-openapi.org/schemas/transfer/tender.yaml
+  03-tender-onward.request.json:
+    schema: https://tds-openapi.org/schemas/transfer/tender-request.yaml
+  04-tender-onward.response.json:
+    schema: https://tds-openapi.org/schemas/transfer/tender.yaml
+  05-hold-onward.request.json:
+    schema: https://tds-openapi.org/schemas/transfer/hold-request.yaml
+    operation: POST /trips/{trip_id}/hold
+  06-hold-onward.response.json:
+    schema: https://tds-openapi.org/schemas/transfer/hold.yaml
+    operation: POST /trips/{trip_id}/hold
+    status: 201
+  07-retime-onward.request.json:
+    schema: https://tds-openapi.org/schemas/transfer/hold-request.yaml
+    operation: POST /trips/{trip_id}/hold
+  08-retime-onward.response.json:
+    schema: https://tds-openapi.org/schemas/transfer/hold.yaml
+    operation: POST /trips/{trip_id}/hold
+    status: 202
+  09-read-unanswered-hold.response.json:
+    schema: https://tds-openapi.org/schemas/transfer/hold.yaml
+    operation: GET /trips/{trip_id}/holds/{hold_id}
+    status: 200
+  10-cancel-onward.request.json:
+    schema: https://tds-openapi.org/schemas/core/cancel-request.yaml
+    operation: POST /trips/{trip_id}/cancel
+  11-cancel-onward.response.json:
+    schema: https://tds-openapi.org/schemas/core/trip.yaml
+    operation: POST /trips/{trip_id}/cancel
+    status: 200
+  12-reprotect-onward.request.json:
+    schema: https://tds-openapi.org/schemas/transfer/tender-request.yaml
+  13-reprotect-onward.response.json:
+    schema: https://tds-openapi.org/schemas/transfer/tender.yaml
+  events.json:
+    kind: event-stream

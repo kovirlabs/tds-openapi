@@ -75,6 +75,14 @@ class TransferMixin:
             return problem(400, "INVALID_REQUEST", "The trip is neither the from nor the to leg of the interchange.")
         if interchange.get("auto_hold_s", 0) > interchange.get("max_hold_s", 0):
             return problem(400, "INVALID_REQUEST", "auto_hold_s must not exceed max_hold_s.")
+        if (
+            "HAND_TO_HAND" in trip_req["legs"][0].get("service_requirements", [])
+            and interchange["protection"] == "PROTECTED"
+            and not interchange.get("supervision_required", False)
+        ):
+            return problem(
+                400, "INVALID_REQUEST", "HAND_TO_HAND on a PROTECTED interchange needs supervision_required: true."
+            )
 
         tender = {
             "tender_id": body["tender_id"],

@@ -25,6 +25,12 @@ post:
           late_feeder:
             summary: Hold for a feeder running 15 minutes late
             externalValue: ../../examples/late-first-leg-hold/05-hold-onward.request.json
+          long_delay:
+            summary: Hold for a feeder running 40 minutes late
+            externalValue: ../../examples/missed-connection-reprotect/05-hold-onward.request.json
+          retime:
+            summary: Ask the onward vehicle to move its pickup
+            externalValue: ../../examples/missed-connection-reprotect/07-retime-onward.request.json
   responses:
     "201":
       description: Answered at once.
@@ -36,12 +42,19 @@ post:
             granted:
               summary: Granted; onward pickup moved
               externalValue: ../../examples/late-first-leg-hold/06-hold-onward.response.json
+            counter_offer:
+              summary: Can't wait that long; counter-offers a later pickup (PARTIAL)
+              externalValue: ../../examples/missed-connection-reprotect/06-hold-onward.response.json
     "202":
       description: Received; the answer follows as a HOLD_RESPONSE event.
       content:
         application/json:
           schema:
             $ref: ../../profiles/transfer/hold.yaml
+          examples:
+            pending:
+              summary: Not answered yet
+              externalValue: ../../examples/missed-connection-reprotect/08-retime-onward.response.json
     "400":
       $ref: ../components/responses.yaml#/BadRequest
     "401":

@@ -1,6 +1,6 @@
 # SPEC.md — tds-openapi
 
-Status: **Draft 2 (v0.4)** · Owner: Evan / Kovir Labs · Date: 2026-10-20
+Status: **Draft 2 (v0.4.1)** · Owner: Evan / Kovir Labs · Date: 2026-10-20
 
 Field lists below are **proposed**. Names for `profiles/core` must be reconciled with TDS 2020 (TCRP Report 210) in `mappings/tds-2020-crosswalk.md`; anything marked `TODO(crosswalk)` is unverified.
 
@@ -133,16 +133,16 @@ Links an inbound leg to an outbound leg.
 - `max_hold_s`: the longest the outbound provider can be *asked* to wait (§10.5).
 - `auto_hold_s` (≤ `max_hold_s`, default 0): how long the outbound vehicle waits for a late feeder *without being asked* (rail-style standard waiting time). It is a provider commitment, so it binds only once the outbound provider echoes it in its tender `ACCEPT` (§10.2).
 - `accessibility_buffer_s` is added to `min_connection_s` only when either leg has `service_requirements`; otherwise it is ignored.
-- If either leg has `HAND_TO_HAND` and `protection: PROTECTED`, `supervision_required` MUST be true.
+- If either leg has `HAND_TO_HAND` and `protection: PROTECTED`, `supervision_required` MUST be true. A provider refuses a tender that breaks this (400 `INVALID_REQUEST`), as it does one with `auto_hold_s` > `max_hold_s`.
 
-### 10.2 Tender (`tender.yaml`, `tender-fallback.yaml`)
+### 10.2 Tender (`tender-request.yaml`, `tender.yaml`, `accepted-terms.yaml`, `fallback-policy.yaml`)
 Broker offers a leg to a provider with a deadline (EDI 204/990 pattern).
 - `POST /tenders` (scope `tenders:write`): `tender_id`, `trip` (a TripRequest), `interchange` (the full interchange, so the provider sees the terms and which end it serves), `respond_by`.
 - States: `OFFERED → ACCEPTED | REJECTED | EXPIRED`. The provider answers in the response (201 `ACCEPTED`/`REJECTED`) or later (202 `OFFERED`, then a `TENDER_RESPONSE` event); `GET /tenders/{tender_id}` shows the current state. Unanswered past `respond_by`, the tender is `EXPIRED`.
 - `ACCEPTED` creates the trip (status `CONFIRMED`) under `trip.trip_id` and carries `accepted_terms` (`auto_hold_s`, `max_hold_s`): what the provider commits to, possibly less than asked. The broker plans with these. `REJECTED` carries a `reason` (RefusalReason).
 - Fallback (broker-side policy, published for transparency): ordered provider list, max attempts, per-attempt deadline, `approval` (`REQUIRED`: a human approves each fallback tender or `REPROTECT`; `PRE_AGREED`: the broker may send them automatically under a signed agreement), escalate to coordinator on exhaustion.
 
-### 10.3 Milestones (`milestones.yaml`)
+### 10.3 Milestones (`milestone.yaml`, `event-milestone.yaml`)
 Fixed event vocabulary instead of raw GPS (EDI 214 pattern). Event `MILESTONE` with `milestone` enum:
 `EN_ROUTE_TO_PICKUP`, `ARRIVED_PICKUP`, `RIDER_ONBOARD`, `EN_ROUTE_TO_DROPOFF`, `ARRIVED_DROPOFF`, `RIDER_HANDED_OFF`, `LEG_COMPLETED`, `RIDER_NO_SHOW`, `LEG_FAILED`.
 
@@ -155,25 +155,25 @@ EN_ROUTE_TO_PICKUP → ARRIVED_PICKUP → RIDER_ONBOARD → EN_ROUTE_TO_DROPOFF 
 `EN_ROUTE_TO_PICKUP` may be omitted (vehicle already at pickup). `RIDER_HANDED_OFF` is required when custody applies (§10.7) and otherwise optional. `LEG_FAILED` may carry `delay_cause` (§10.4).
 Valid sequence enforced by conformance (`milestone_sequence`). Live vehicle position is an **optional** separate event, off by default.
 
-### 10.4 ETA band (`eta.yaml`, `eta-heartbeat.yaml`)
+### 10.4 ETA band (`eta-band.yaml`, `delay-cause.yaml`, `event-eta-update.yaml`)
 Event `ETA_UPDATE`: `target` (`PICKUP`/`DROPOFF`, the leg's own ends as in §10.3), `earliest`, `likely`, `latest`, `confidence` (0–1, probability arrival ≤ `latest`), `computed_at`, and optionally:
 - `source`: `VEHICLE_POSITION`, `PROVIDER_FORECAST`, `DISPATCHER`, `DRIVER`, `SCHEDULE` (promised time only). Brokers may poll sooner when the source is weak.
 - `delay_cause`: `TRAFFIC`, `BOARDING`, `VEHICLE`, `WEATHER`, `PRIOR_TRIP`, `UNKNOWN`. Codes only, no free text, and no rider-attributed cause (avoids health explanations). Whether a cause shifts cost is for inter-provider agreements, not this spec.
 Heartbeat: the provider of an interchange's **from** (feeder) leg sends `ETA_UPDATE` at least every `heartbeat_s` (an interchange field, default 60) while that leg is `IN_PROGRESS` and before `ARRIVED_DROPOFF`, if the interchange is `PROTECTED`; stale after `2 × heartbeat_s`. A feeder learns its role from the tender's interchange. ETA bands never predict an arrival earlier than now.
 
-### 10.5 Hold request (`hold-request.yaml`)
+### 10.5 Hold request (`hold-request.yaml`, `hold.yaml`)
 Broker → outbound provider when inbound ETA threatens the connection.
 `POST /trips/{trip_id}/hold`: `hold_id`, `interchange_id`, `action` (`HOLD`: wait until `requested_until`; `RETIME`: move the pickup to `requested_until`), `requested_until`, `respond_by`, `inbound_eta` (ETA band).
 Answered in the response (201 `GRANTED`, `PARTIAL` or `DENIED` + reason) or later (202 `PENDING`, then a `HOLD_RESPONSE` event); `GET /trips/{trip_id}/holds/{hold_id}` shows the state. `GRANTED` and `PARTIAL` carry `scheduled_pickup` and optionally `held_until`, update the trip and emit `TRIP_SCHEDULED`. A provider counter-offer ("can't wait that long, can pick up at 14:35") is `PARTIAL` with the new `scheduled_pickup`. No response by `respond_by` = `EXPIRED`; the broker raises `HOLD_UNANSWERED`. Escalation steps (who is contacted, when) are broker-local.
 Only the outbound leg of the named interchange can be held, and only before `RIDER_ONBOARD`.
 **Re-protecting** with another provider is not a hold action (the outbound provider cannot act on it): the broker cancels the outbound trip with `MISSED_CONNECTION` and tenders the leg elsewhere, subject to the fallback `approval` mode (§10.2).
 
-### 10.6 Exceptions (`exceptions.yaml`)
+### 10.6 Exceptions (`exception.yaml`)
 Broker-generated alerts for coordinators (manage by exception). Not required of providers; defined so broker UIs and integrations share vocabulary.
-`exception_id`, `severity` (`INFO`/`AT_RISK`/`CRITICAL`), `type` (`LOW_CONNECTION_PROBABILITY`, `TENDER_EXPIRED`, `TENDER_EXHAUSTED`, `STALE_HEARTBEAT`, `MISSED_MILESTONE`, `HOLD_DENIED`, `HOLD_UNANSWERED`, `CUSTODY_GAP`), `interchange_ref`, `detected_at`, `suggested_actions`, `resolved_at`.
+`exception_id`, `severity` (`INFO`/`AT_RISK`/`CRITICAL`), `type` (`LOW_CONNECTION_PROBABILITY`, `TENDER_EXPIRED`, `TENDER_EXHAUSTED`, `STALE_HEARTBEAT`, `MISSED_MILESTONE`, `HOLD_DENIED`, `HOLD_UNANSWERED`, `CUSTODY_GAP`), `interchange_id`, `detected_at`, `suggested_actions`, `resolved_at`.
 Default trigger: connection probability < 0.8 → `AT_RISK`; < 0.5 → `CRITICAL`.
 
-### 10.7 Custody (`custody.yaml`)
+### 10.7 Custody (`custody-handoff.yaml`, `custody-party.yaml`)
 Required when `supervision_required: true`.
 Event `CUSTODY_HANDOFF`: `handoff_from` (party + role: `DRIVER`, `ATTENDANT`, `CAREGIVER`, `FACILITY_STAFF`), `handoff_to`, `timestamp`, `location`, `method` (`DRIVER_CONFIRM`, `ATTENDANT_CONFIRM`, `RIDER_SELF_CONFIRM`, `CODE_EXCHANGE`), `caregiver_notified` (bool).
 A leg is supervised when its `service_requirements` include `HAND_TO_HAND` or its interchange has `supervision_required`. A supervised leg cannot reach `LEG_COMPLETED` without a custody record at pickup (by `RIDER_ONBOARD`) and at dropoff (with `RIDER_HANDED_OFF`) (conformance: `custody_required`). At a hub, both drivers' providers record the same physical handoff; that corroboration is intended. Parties are identified by role (and optionally provider and an opaque `party_ref`), never by name.
@@ -213,7 +213,7 @@ Per-leg `provider_id`, `cost`, `funding_source`, `authorization_ref`, `trip_comp
 | **v0.1** | Crosswalk template; core schemas: trip, leg, location, time-window, error; Spectral config; example validator script; README/licenses/CONTRIBUTING. |
 | **v0.2** | Core paths (§7); 2 examples (`single-trip`, `cancellation`); Prism mock server; CI lint + validate. |
 | **v0.3** | `tds-conform` CLI running `book_confirm_cancel` + `idempotency` against mock; report output. |
-| **v0.4** | Transfer profile (§10) draft; examples `two-provider-transfer`, `late-first-leg-hold`, `tender-expired-retender`, `supervised-rider-custody-handoff`; mock simulating two providers; ThroughRide adapters pointed at mock. **SE Michigan pilot demo target.** |
+| **v0.4** | Transfer profile (§10) draft; examples `two-provider-transfer`, `late-first-leg-hold`, `tender-expired-retender`, `supervised-rider-custody-handoff` (v0.4.1 adds `missed-connection-reprotect`); mock simulating two providers; ThroughRide adapters pointed at mock. **SE Michigan pilot demo target.** |
 | v0.5+ | AsyncAPI completeness, settlement, paratransit/NEMT profiles, `for-agencies.md` RFP language, outreach to MobilityData/OMF. |
 
 ## 16. Open questions

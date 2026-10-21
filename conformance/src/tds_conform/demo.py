@@ -355,6 +355,109 @@ def tender_expired_retender(d: Demo, day: date) -> None:
         d.sim(B, "policy", body={"tender_decision": "ACCEPT"})
 
 
+def missed_connection_reprotect(d: Demo, day: date) -> None:
+    """The feeder breaks down and runs 40 minutes late. The onward provider can't wait that
+    long and counter-offers a later pickup (PARTIAL); the broker asks it to retime further and
+    gets no answer by respond_by (EXPIRED, so the broker raises HOLD_UNANSWERED). A coordinator
+    approves re-protecting (fallback approval: REQUIRED): the broker cancels the onward trip with
+    MISSED_CONNECTION and tenders the leg to another provider, which carries the rider."""
+    a, b, ix = _book(d, d.code("rp"), day)
+    code = d.code("rp")
+    eta: dict = {}
+
+    def connection() -> datetime:
+        return datetime.fromisoformat(eta["likely"]) + timedelta(seconds=ix["min_connection_s"])
+
+    def delay() -> None:
+        eta.update(d.sim(A, "delay", a, {"seconds": 2400, "cause": "VEHICLE"})["emitted"][0]["payload"]["eta"])
+
+    def hold() -> None:
+        d.say(f"Feeder now likely at hub {eta['likely'][11:16]}; connection needs pickup ≥ {connection():%H:%M}")
+        d.sim(B, "policy", body={"hold_decision": "PARTIAL"})
+        body = {
+            "hold_id": f"hd-{code}-1",
+            "interchange_id": ix["interchange_id"],
+            "action": "HOLD",
+            "requested_until": _iso(connection()),
+            "respond_by": _iso(d.after(5)),
+            "inbound_eta": dict(eta),
+        }
+        result = d.api(
+            "hold-onward", B, "POST", "/trips/{trip_id}/hold", trip_id=b, body=body, expect=(201,), wire=True
+        )
+        d.say(
+            f"Hold {result['status']} ({result.get('reason')}): {B} offers pickup {result['scheduled_pickup'][11:16]}"
+        )
+
+    def retime() -> None:
+        d.sim(B, "policy", body={"hold_decision": "IGNORE"})
+        body = {
+            "hold_id": f"hd-{code}-2",
+            "interchange_id": ix["interchange_id"],
+            "action": "RETIME",
+            "requested_until": _iso(connection()),
+            "respond_by": _iso(d.after(5)),
+        }
+        result = d.api(
+            "retime-onward", B, "POST", "/trips/{trip_id}/hold", trip_id=b, body=body, expect=(202,), wire=True
+        )
+        d.say(f"Asked {B} to retime to {connection():%H:%M}: {result['status']}")
+
+    def reprotect() -> None:
+        hold = d.api(
+            "read-unanswered-hold",
+            B,
+            "GET",
+            "/trips/{trip_id}/holds/{hold_id}",
+            trip_id=b,
+            hold_id=f"hd-{code}-2",
+            expect=(200,),
+            wire=True,
+        )
+        d.say(f"Retime is {hold['status']}: broker raises HOLD_UNANSWERED; coordinator approves re-protect to {C}")
+        d.api(
+            "cancel-onward",
+            B,
+            "POST",
+            "/trips/{trip_id}/cancel",
+            trip_id=b,
+            body={"reason": "MISSED_CONNECTION"},
+            expect=(200,),
+            wire=True,
+        )
+        start = datetime.fromisoformat(eta["likely"]).replace(second=0) + timedelta(minutes=5)
+        fallback = _trip(code, "b2", C, HUB, CLINIC, start, ("WHEELCHAIR_LIFT",))
+        ix2 = _interchange(f"{code}-2", {"provider_id": A, "trip_id": a}, fallback, supervised=False, heartbeat_s=300)
+        d.tender("reprotect-onward", fallback, ix2, respond_in_min=10)
+        c.append(fallback["trip_id"])
+
+    c: list[str] = []
+    try:
+        d.play(
+            [
+                ("08:40", (A, a)),
+                ("08:50", (A, a)),
+                ("08:53", (A, a)),
+                ("08:54", (A, a)),
+                ("09:00", delay),
+                ("09:01", hold),
+                ("09:03", retime),
+                ("09:10", reprotect),
+                ("09:55", lambda: d.advance(C, c[0])),  # en route to the hub
+                ("10:13", lambda: d.advance(A, a)),  # feeder arrives 40 min late
+                ("10:14", lambda: d.advance(A, a)),
+                ("10:15", lambda: d.advance(C, c[0])),
+                ("10:17", lambda: d.advance(C, c[0])),
+                ("10:18", lambda: d.advance(C, c[0])),
+                ("10:50", lambda: d.advance(C, c[0])),
+                ("10:51", lambda: d.advance(C, c[0])),
+            ]
+        )
+    finally:
+        d.sim(B, "policy", body={"hold_decision": "AUTO"})
+    d.say(f"Rider reached the clinic on {C}; {B}'s trip CANCELLED with MISSED_CONNECTION")
+
+
 def supervised_rider_custody_handoff(d: Demo, day: date) -> None:
     """A rider who must not be left alone (HAND_TO_HAND, supervision_required). Custody passes
     caregiver → feeder driver → onward driver → clinic staff, with a record at each handoff."""
@@ -367,6 +470,7 @@ SCENARIOS = {
     "two-provider-transfer": two_provider_transfer,
     "late-first-leg-hold": late_first_leg_hold,
     "tender-expired-retender": tender_expired_retender,
+    "missed-connection-reprotect": missed_connection_reprotect,
     "supervised-rider-custody-handoff": supervised_rider_custody_handoff,
 }
 

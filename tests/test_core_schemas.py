@@ -92,6 +92,24 @@ def test_example_not_in_manifest_is_reported(tmp_path: Path):
     assert any("not listed" in e for e in results[scenario / "stray.json"])
 
 
+@pytest.mark.parametrize(
+    ("change", "reqs", "problem"),
+    [
+        ({}, ["HAND_TO_HAND"], None),
+        ({"supervision_required": False}, ["HAND_TO_HAND"], "supervision_required"),
+        ({"supervision_required": False, "protection": "BEST_EFFORT"}, ["HAND_TO_HAND"], None),
+        ({"supervision_required": False}, ["WHEELCHAIR_LIFT"], None),
+        ({"auto_hold_s": 1000, "max_hold_s": 900}, [], "auto_hold_s"),
+    ],
+)
+def test_interchange_rules_on_tender_examples(change, reqs, problem):
+    tender = copy.deepcopy(REGISTRY.contents(ve.ID_BASE + "transfer/tender-request.yaml")["examples"][0])
+    tender["interchange"] |= {"supervision_required": True} | change
+    tender["trip"]["legs"][0]["service_requirements"] = reqs
+    found = ve.interchange_problems(tender["interchange"], tender["trip"]["legs"])
+    assert any(problem in e for e in found) if problem else found == []
+
+
 def test_cancel_reason_is_a_code_not_free_text():
     assert errors("cancel-request.yaml", {"reason": "RIDER_REQUEST"}) == []
     assert errors("cancel-request.yaml", {"reason": "rider changed plans"})

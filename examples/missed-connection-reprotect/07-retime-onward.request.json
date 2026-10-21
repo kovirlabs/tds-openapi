@@ -1,0 +1,7 @@
+{
+  "hold_id": "hd-rp-2",
+  "interchange_id": "ix-rp",
+  "action": "RETIME",
+  "requested_until": "2026-11-10T10:15:00-05:00",
+  "respond_by": "2026-11-10T09:08:00-05:00"
+}

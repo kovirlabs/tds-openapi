@@ -10,7 +10,9 @@ Checks:
      and validates against the schema the manifest names. An entry with
      `kind: event-stream` is a JSON array of events: each validates against the
      schema spec/asyncapi.yaml gives its event_type, and the stream follows the
-     milestone order and custody rules (SPEC.md §10.3, §10.7).
+     milestone order and custody rules (SPEC.md §10.3, §10.7). Tender requests
+     also follow the interchange rules (auto_hold_s ≤ max_hold_s; HAND_TO_HAND on a
+     PROTECTED interchange needs supervision_required, SPEC.md §10.1).
   5. Manifest entries that name an `operation` are wired into spec/openapi.yaml at
      that operation and status (so the mock serves them), the operation declares
      the same schema, and every example the spec references has such an entry.
@@ -188,7 +190,26 @@ def check_examples(registry: Registry, examples_root: Path = EXAMPLES, events: d
                 continue
             instance = json.loads(json_path.read_text())
             results[json_path] = [format_error(e) for e in validator_for(schema, registry).iter_errors(instance)]
+            if not results[json_path] and schema_id in RULES:
+                results[json_path] = RULES[schema_id](instance)
     return results
+
+
+def interchange_problems(interchange: dict, legs: list[dict]) -> list[str]:
+    """Interchange rules JSON Schema can't express (SPEC.md §10.1)."""
+    errors = []
+    if interchange.get("auto_hold_s", 0) > interchange.get("max_hold_s", 0):
+        errors.append("interchange: auto_hold_s exceeds max_hold_s")
+    hand_to_hand = any("HAND_TO_HAND" in leg.get("service_requirements", []) for leg in legs)
+    if hand_to_hand and interchange["protection"] == "PROTECTED" and not interchange.get("supervision_required"):
+        errors.append("interchange: HAND_TO_HAND leg on a PROTECTED interchange needs supervision_required: true")
+    return errors
+
+
+RULES = {
+    f"{ID_BASE}transfer/tender-request.yaml": lambda t: interchange_problems(t["interchange"], t["trip"]["legs"]),
+    f"{ID_BASE}transfer/interchange.yaml": lambda ix: interchange_problems(ix, []),
+}
 
 
 def _resolve(node, base: Path):

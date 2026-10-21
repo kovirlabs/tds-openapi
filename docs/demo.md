@@ -81,10 +81,10 @@ Vehicles don't move on their own. `/_sim` (no auth) moves legs and changes how a
 | `GET /_sim/{provider}/events?trip_id=…` | everything that provider emitted |
 | `GET /_sim/deliveries` | webhook delivery attempts and outcomes |
 
-## Rehearse the four scenarios
+## Rehearse the transfer scenarios
 
 ```sh
-uv run tds-demo run                                    # all four, 1 demo minute = 1 s
+uv run tds-demo run                                    # all five, 1 demo minute = 1 s
 uv run tds-demo run --scenario late-first-leg-hold --callback-url http://localhost:8000/tds/events
 ```
 
