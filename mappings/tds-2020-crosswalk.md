@@ -156,7 +156,7 @@ cite; don't paste definitions (reuse terms not yet confirmed, see SPEC.md §16 Q
 | `leg.dropoff_window` | TODO(crosswalk) | | TODO |  |
 | `leg.scheduled_pickup` | TODO(crosswalk) | | TODO |  |
 | `leg.scheduled_dropoff` | TODO(crosswalk) | | TODO |  |
-| `leg.service_requirements` | TODO(crosswalk) | | TODO | Enum values unverified against TDS; check especially `HAND_TO_HAND`, `CHILD_SEAT` |
+| `leg.service_requirements` | TODO(crosswalk) | | TODO | Enum values unverified against TDS; check especially `HAND_TO_HAND`, `CHILD_SEAT`, `STRETCHER` |
 | `leg.vehicle_ref` | TODO(crosswalk) | | TODO |  |
 
 ### Location (`profiles/core/location.yaml`)

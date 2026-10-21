@@ -1,0 +1,63 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/nemt/trip-request.yaml
+title: NemtTripRequest
+x-profile: nemt
+description: >-
+  Body of `POST /trips` for a non-emergency medical transportation trip (SPEC.md
+  §11.2): a core TripRequest plus a `nemt` object. Sent only to providers whose
+  /health lists NEMT. Strict minimum necessary: no diagnosis, condition,
+  procedure, visit type or member id anywhere in the request; needs are leg
+  service_requirements; the authorization is a reference. The `nemt` object is
+  closed and has no free-text fields. Use fare_funding.funding_source
+  MEDICAID_NEMT when Medicaid pays; its authorization_ref, if given, must equal
+  the one here.
+allOf:
+  - $ref: ../core/trip-request.yaml
+type: object
+required: [nemt]
+properties:
+  nemt:
+    description: NEMT-specific booking details.
+    type: object
+    required: [authorization, level_of_service]
+    additionalProperties: false
+    properties:
+      authorization:
+        description: The payer's authorization, by reference.
+        $ref: ./authorization.yaml
+      level_of_service:
+        description: Authorized vehicle class.
+        $ref: ./level-of-service.yaml
+      mobility_devices:
+        description: Devices the rider travels with (size and weight only).
+        type: array
+        items:
+          $ref: ../paratransit/mobility-device.yaml
+      will_call:
+        description: >-
+          The pickup time is not fixed: the rider or facility calls when ready
+          (typical for return legs). The leg's pickup_window is then the earliest
+          expected window, not a commitment.
+        type: boolean
+        default: false
+examples:
+  - trip_id: "tr-20261112-nm1"
+    requester_id: "throughride-demo"
+    provider_id: "county-connector"
+    rider_ref: { rider_ref_id: "r-coun-4d10" }
+    legs:
+      - leg_id: "leg-1"
+        pickup: { lat: 42.4802, lon: -83.4755 }
+        dropoff: { lat: 42.6064, lon: -83.1498, name: "Corewell Health Troy" }
+        dropoff_window: { earliest: "2026-11-12T10:15:00-05:00", latest: "2026-11-12T10:45:00-05:00" }
+        service_requirements: [WHEELCHAIR_LIFT]
+    fare_funding:
+      funding_source: "MEDICAID_NEMT"
+      authorization_ref: "PA-EXAMPLE-0001"
+    nemt:
+      authorization:
+        authorization_ref: "PA-EXAMPLE-0001"
+        payer_ref: "payer-example"
+        valid_from: "2026-11-01"
+        valid_until: "2026-11-30"
+      level_of_service: "WHEELCHAIR"

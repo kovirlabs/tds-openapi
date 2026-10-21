@@ -1,0 +1,8 @@
+# Draft profile example (SPEC.md §11). POST /trips declares the core TripRequest, so this
+# profile body is listed by schema only, without an operation.
+description: 'A complementary paratransit trip: the rider''s ADA eligibility is an attestation by reference,
+  a personal care attendant rides along, and the power wheelchair is described by size and weight so the
+  provider can check its lift. Needs travel as service requirements.'
+files:
+  01-request-trip.request.json:
+    schema: https://tds-openapi.org/schemas/paratransit/trip-request.yaml

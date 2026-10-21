@@ -1,0 +1,64 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/paratransit/trip-request.yaml
+title: ParatransitTripRequest
+x-profile: paratransit
+description: >-
+  Body of `POST /trips` for a complementary paratransit trip (SPEC.md §11.1): a
+  core TripRequest plus a `paratransit` object. Sent only to providers whose
+  /health lists PARATRANSIT. Eligibility is an attestation by reference (the
+  rider's `eligibility` must include program ADA_PARATRANSIT); the evidence
+  behind it is never sent. Needs travel as `service_requirements` on the leg,
+  devices as dimensions and weight.
+allOf:
+  - $ref: ../core/trip-request.yaml
+type: object
+required: [paratransit]
+properties:
+  paratransit:
+    description: Paratransit-specific booking details.
+    type: object
+    required: [eligibility_category]
+    properties:
+      eligibility_category:
+        description: >-
+          ADA paratransit eligibility category of the rider, as attested.
+          CONDITIONAL and TEMPORARY carry no conditions here; the provider asks
+          the attesting agency if it needs to know whether this trip qualifies.
+        type: string
+        enum: [UNCONDITIONAL, CONDITIONAL, TEMPORARY]
+      mobility_devices:
+        description: Devices the rider travels with.
+        type: array
+        items:
+          $ref: ./mobility-device.yaml
+      pca_authorized:
+        description: >-
+          The rider's eligibility allows a personal care attendant to ride with
+          them (count in party.attendants).
+        type: boolean
+        default: false
+examples:
+  - trip_id: "tr-20261112-pt1"
+    requester_id: "throughride-demo"
+    provider_id: "aaata-a-ride"
+    rider_ref:
+      rider_ref_id: "r-aaat-91c2"
+      eligibility:
+        - program: "ADA_PARATRANSIT"
+          attested_by: "aaata"
+          valid_until: "2027-06-30"
+    party: { attendants: 1 }
+    legs:
+      - leg_id: "leg-1"
+        pickup: { lat: 42.2459, lon: -83.6157 }
+        dropoff: { lat: 42.2808, lon: -83.7430, name: "Blake Transit Center" }
+        pickup_window: { earliest: "2026-11-12T09:00:00-05:00", latest: "2026-11-12T09:30:00-05:00" }
+        service_requirements: [WHEELCHAIR_LIFT, DOOR_TO_DOOR]
+    paratransit:
+      eligibility_category: "UNCONDITIONAL"
+      mobility_devices:
+        - type: "POWER_WHEELCHAIR"
+          width_cm: 66
+          length_cm: 112
+          occupied_weight_kg: 210
+      pca_authorized: true

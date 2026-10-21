@@ -1,0 +1,8 @@
+# Draft profile example (SPEC.md §11). POST /trips declares the core TripRequest, so this
+# profile body is listed by schema only, without an operation.
+description: 'A Medicaid NEMT trip to a clinic appointment: the payer''s authorization by reference, the
+  authorized level of service matching the leg''s service requirements, and nothing about why the rider
+  travels.'
+files:
+  01-request-trip.request.json:
+    schema: https://tds-openapi.org/schemas/nemt/trip-request.yaml

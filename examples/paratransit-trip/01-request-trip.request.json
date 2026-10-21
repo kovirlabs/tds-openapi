@@ -1,0 +1,52 @@
+{
+  "trip_id": "tr-20261112-pt1",
+  "requester_id": "throughride-demo",
+  "provider_id": "aaata-a-ride",
+  "rider_ref": {
+    "rider_ref_id": "r-aaat-91c2",
+    "eligibility": [
+      {
+        "program": "ADA_PARATRANSIT",
+        "attested_by": "aaata",
+        "valid_until": "2027-06-30"
+      }
+    ]
+  },
+  "party": {
+    "attendants": 1
+  },
+  "legs": [
+    {
+      "leg_id": "leg-1",
+      "pickup": {
+        "lat": 42.2459,
+        "lon": -83.6157
+      },
+      "dropoff": {
+        "lat": 42.2808,
+        "lon": -83.743,
+        "name": "Blake Transit Center"
+      },
+      "pickup_window": {
+        "earliest": "2026-11-12T09:00:00-05:00",
+        "latest": "2026-11-12T09:30:00-05:00"
+      },
+      "service_requirements": [
+        "WHEELCHAIR_LIFT",
+        "DOOR_TO_DOOR"
+      ]
+    }
+  ],
+  "paratransit": {
+    "eligibility_category": "UNCONDITIONAL",
+    "mobility_devices": [
+      {
+        "type": "POWER_WHEELCHAIR",
+        "width_cm": 66,
+        "length_cm": 112,
+        "occupied_weight_kg": 210
+      }
+    ],
+    "pca_authorized": true
+  }
+}

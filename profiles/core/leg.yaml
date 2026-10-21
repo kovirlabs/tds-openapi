@@ -39,7 +39,8 @@ properties:
       Services the vehicle and driver must provide. Expresses what is needed, not
       why: no diagnoses or conditions. HAND_TO_HAND means the driver may release
       the rider only to a responsible person at the destination. CHILD_SEAT means
-      the vehicle must carry an appropriate child restraint.
+      the vehicle must carry an appropriate child restraint. STRETCHER means the
+      vehicle carries the rider lying down, with staff to load them.
     type: array
     uniqueItems: true
     items:
@@ -52,6 +53,7 @@ properties:
         - ATTENDANT_REQUIRED
         - NO_STEPS
         - CHILD_SEAT
+        - STRETCHER
   vehicle_ref:
     description: Assigned vehicle, once known.
     $ref: ./vehicle-ref.yaml

@@ -20,6 +20,14 @@ Toward **0.5.0** (SPEC.md §15). Version fields stay at 0.4.2 until 0.5.0 is cut
 - Example `settlement-split` with splits for the `two-provider-transfer` and
   `missed-connection-reprotect` journeys (a test checks they match the generated trips).
 
+- **Draft paratransit and NEMT profiles** (SPEC.md §11): `paratransit/trip-request` (eligibility
+  category, mobility devices, PCA) and `nemt/trip-request` (authorization by reference, level of
+  service, will-call), each a core TripRequest plus one profile object. The NEMT object is closed
+  and has no free-text fields (a test enforces it). `tds_conform.profiles.profile_problems()`
+  holds the cross-field rules; `tds-mock` validates both objects when present. Examples
+  `paratransit-trip` and `nemt-trip`.
+- `leg.service_requirements`: `STRETCHER`.
+
 ### Changed
 - `fare-funding.funding_source` references `core/funding-source.yaml` (same values).
 - SPEC.md Draft 3: §10.8 written out; §7 notes settlement endpoints stay deferred.

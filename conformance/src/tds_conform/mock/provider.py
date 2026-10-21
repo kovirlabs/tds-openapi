@@ -24,6 +24,7 @@ from tds_conform import SPEC_VERSION
 from tds_conform.data import schema_errors
 from tds_conform.mock.common import TERMINAL, Response, _invalid_state, _not_found, _ts, _window_problem, problem
 from tds_conform.mock.transfer import TransferMixin
+from tds_conform.profiles import profile_problems
 
 __all__ = ["Provider", "ProviderConfig", "problem"]
 
@@ -182,6 +183,11 @@ class Provider(TransferMixin):
     def _check_trip_request(self, requester: str, body) -> Response | None:
         if errors := schema_errors(body, "trip-request"):
             return problem(400, "INVALID_REQUEST", "; ".join(errors))
+        for profile in ("paratransit", "nemt"):  # draft profiles (SPEC.md §11): validated when present
+            if profile in body:
+                errors = schema_errors(body, f"{profile}/trip-request") or profile_problems(body)
+                if errors:
+                    return problem(400, "INVALID_REQUEST", "; ".join(errors))
         if body["requester_id"] != requester:
             return problem(400, "INVALID_REQUEST", "requester_id does not match the authenticated client.")
         if self.config.provider_id and body["provider_id"] != self.config.provider_id:
