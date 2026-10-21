@@ -1,0 +1,23 @@
+{
+  "split_id": "ss-tpt",
+  "requester_id": "throughride-demo",
+  "service_date": "2026-11-10",
+  "interchange_ids": ["ix-tpt"],
+  "legs": [
+    {
+      "leg": { "provider_id": "aaata-a-ride", "trip_id": "tr-tpt-a", "leg_id": "leg-1" },
+      "trip_status": "COMPLETED",
+      "cost": { "amount": "18.50", "currency": "USD" },
+      "funding_source": "SECTION_5310"
+    },
+    {
+      "leg": { "provider_id": "oakland-go", "trip_id": "tr-tpt-b", "leg_id": "leg-1" },
+      "trip_status": "COMPLETED",
+      "cost": { "amount": "22.00", "currency": "USD" },
+      "funding_source": "SPONSOR",
+      "sponsor_ref": "sponsor-example"
+    }
+  ],
+  "total": { "amount": "40.50", "currency": "USD" },
+  "created_at": "2026-11-10T18:00:00-05:00"
+}

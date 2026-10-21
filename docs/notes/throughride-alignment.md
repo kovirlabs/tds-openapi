@@ -172,3 +172,17 @@ guide: `docs/demo.md`. Decisions ThroughRide's adapters should follow:
   `Interchange.max_hold_min` × 60 → `max_hold_s`.
 
 New mismatches go under *Open* as before.
+
+## v0.5 in progress: notes for ThroughRide (2026-10-21)
+
+- **Settlement split** (SPEC.md §10.8, `transfer/settlement-split.yaml`): one line per leg
+  tendered for a journey, cancelled ones included. ThroughRide's per-leg funding record maps
+  directly: `funding_source` (same enum, now `core/funding-source.yaml`), sponsor →
+  `sponsor_ref`, authorization → `authorization_ref`; leg terminal state → `trip_status`;
+  cancel reason → `cancellation_reason`; `Leg.delay_cause` → `delay_cause` (`rider` →
+  `BOARDING`). Money is a decimal string plus ISO 4217 currency. No endpoint yet; a report or
+  file export in this shape is enough. `tds_conform.settlement.settlement_problems()` checks
+  the totals.
+- **Using the kit as a dependency** (v0.4.2): `tds_conform.examples` and `tds_conform.mock`
+  are the public API (see `docs/demo.md`). `binding_version()` reports the last release
+  (0.4.2) until 0.5.0 is cut, so vendor examples from a tag, not from `main`.

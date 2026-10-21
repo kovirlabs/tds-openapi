@@ -126,9 +126,14 @@ cite; don't paste definitions (reuse terms not yet confirmed, see SPEC.md §16 Q
 | Field | TDS 2020 element | TDS section | Status | Notes |
 |---|---|---|---|---|
 | `fare-funding.fare` | TODO(crosswalk) | | TODO |  |
-| `fare-funding.funding_source` | TODO(crosswalk) | | TODO | Enum values unverified against TDS |
+| `fare-funding.funding_source` | TODO(crosswalk) | | TODO | Enum values (`funding-source.yaml`) unverified against TDS |
 | `fare-funding.sponsor_ref` | TODO(crosswalk) | | TODO |  |
 | `fare-funding.authorization_ref` | TODO(crosswalk) | | TODO |  |
+
+### FundingSource (`profiles/core/funding-source.yaml`)
+
+| Field | TDS 2020 element | TDS section | Status | Notes |
+|---|---|---|---|---|
 
 ### Health (`profiles/core/health.yaml`)
 

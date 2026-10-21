@@ -1,0 +1,13 @@
+# Maps each example file to the schema ($id) it must validate against. Settlement has no
+# API operation yet (SPEC.md §7: settlement endpoints deferred), so no `operation`.
+description: >-
+  After-trip settlement splits (SPEC.md §10.8) for two generated journeys.
+  two-provider-transfer: both legs completed, funded by different programs.
+  missed-connection-reprotect: the feeder completed late (delay_cause recorded), the
+  first onward leg was cancelled with MISSED_CONNECTION and owes nothing, and the
+  re-protected onward leg completed under a Medicaid authorization.
+files:
+  missed-connection-reprotect.json:
+    schema: https://tds-openapi.org/schemas/transfer/settlement-split.yaml
+  two-provider-transfer.json:
+    schema: https://tds-openapi.org/schemas/transfer/settlement-split.yaml
