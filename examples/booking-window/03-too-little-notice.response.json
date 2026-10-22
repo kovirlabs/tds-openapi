@@ -1,0 +1,7 @@
+{
+  "type": "about:blank",
+  "title": "Outside booking window",
+  "status": 422,
+  "detail": "Trips need at least 1 day of notice.",
+  "code": "OUTSIDE_BOOKING_WINDOW"
+}

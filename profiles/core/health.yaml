@@ -2,8 +2,10 @@ $schema: https://json-schema.org/draft/2020-12/schema
 $id: https://tds-openapi.org/schemas/core/health.yaml
 title: Health
 description: >-
-  Body of `GET /health`: liveness plus what the endpoint supports and how fast
-  it usually decides. Requesters use typical_response_s to set deadlines.
+  Body of `GET /health`: liveness plus what the endpoint supports, how fast it
+  usually decides and how far ahead it takes bookings. Requesters use
+  typical_response_s to set deadlines and booking_window to plan when to
+  submit each trip.
 type: object
 required: [status, spec_versions, profiles, operated_via]
 properties:
@@ -40,6 +42,32 @@ properties:
       means decisions are synchronous.
     type: integer
     minimum: 0
+  booking_window:
+    description: >-
+      When this provider accepts requests, relative to the trip time (SPEC.md
+      §7.1). Applies to every request unless booking_window_by_profile has an
+      entry for the request's profile. Absent: the provider states no limit
+      (it may still refuse with OUTSIDE_BOOKING_WINDOW, but SHOULD advertise it).
+    $ref: ./booking-window.yaml
+  booking_window_by_profile:
+    description: >-
+      Booking windows that replace booking_window (not merged with it) for
+      requests of one profile: `paratransit` or `nemt` when the trip request
+      carries that object, otherwise `transfer` for a tender. For a provider
+      running services with different rules, e.g. same-day dial-a-ride and
+      next-day ADA paratransit.
+    type: object
+    additionalProperties: false
+    properties:
+      paratransit:
+        description: Booking window for trip requests carrying a `paratransit` object.
+        $ref: ./booking-window.yaml
+      nemt:
+        description: Booking window for trip requests carrying an `nemt` object.
+        $ref: ./booking-window.yaml
+      transfer:
+        description: Booking window for tenders (POST /tenders).
+        $ref: ./booking-window.yaml
 examples:
   - status: "OK"
     spec_versions: ["0.2.0"]
@@ -50,3 +78,15 @@ examples:
     profiles: [CORE, TRANSFER]
     operated_via: "BROKER_PROXY"
     typical_response_s: 900
+  - status: "OK"
+    spec_versions: ["0.5.3"]
+    profiles: [CORE, PARATRANSIT]
+    operated_via: "DIRECT"
+    booking_window:
+      max_advance_s: 1209600
+      time_zone: "America/Detroit"
+    booking_window_by_profile:
+      paratransit:
+        max_advance_s: 172800
+        same_day: false
+        time_zone: "America/Detroit"

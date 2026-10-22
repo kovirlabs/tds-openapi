@@ -1,0 +1,23 @@
+{
+  "status": "OK",
+  "spec_versions": [
+    "0.5.3"
+  ],
+  "profiles": [
+    "CORE",
+    "PARATRANSIT"
+  ],
+  "operated_via": "DIRECT",
+  "booking_window": {
+    "max_advance_s": 1209600,
+    "min_notice_s": 86400,
+    "time_zone": "America/Detroit"
+  },
+  "booking_window_by_profile": {
+    "paratransit": {
+      "max_advance_s": 172800,
+      "same_day": false,
+      "time_zone": "America/Detroit"
+    }
+  }
+}

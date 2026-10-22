@@ -1,0 +1,26 @@
+# Maps each example file to the schema ($id) it must validate against and, when it
+# is an API payload, the operation and status it illustrates (status omitted = request body).
+description: >-
+  A provider that books trips up to 14 days ahead with at least 24 hours' notice, and
+  its ADA paratransit service up to 2 days ahead, next day only (no same-day trips),
+  advertised on /health (SPEC.md §7.1). On 1 November a broker asks for a trip on
+  18 November: too early, so the provider refuses with OUTSIDE_BOOKING_WINDOW and
+  bookable_from (4 November, 13:00), when the broker can submit the leg again as a
+  new trip. A request for a trip a few hours away is refused the same way, without
+  bookable_from, because waiting will not help.
+files:
+  01-health.json:
+    schema: https://tds-openapi.org/schemas/core/health.yaml
+    operation: GET /health
+    status: 200
+  02-request-too-early.request.json:
+    schema: https://tds-openapi.org/schemas/core/trip-request.yaml
+    operation: POST /trips
+  02-request-too-early.response.json:
+    schema: https://tds-openapi.org/schemas/core/error.yaml
+    operation: POST /trips
+    status: 422
+  03-too-little-notice.response.json:
+    schema: https://tds-openapi.org/schemas/core/error.yaml
+    operation: POST /trips
+    status: 422

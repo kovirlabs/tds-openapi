@@ -115,7 +115,7 @@ Why `RESIDENT_US_<county FIPS>`: funders restrict by county; the 5-digit code al
 `fare` (`amount`, `currency`); `funding_source` enum (`RIDER`, `SECTION_5310`, `SECTION_5311`, `MEDICAID_NEMT`, `AGENCY`, `SPONSOR`, `OTHER`); `sponsor_ref`; `authorization_ref`. TODO(crosswalk).
 
 ### 6.7 Error
-RFC 9457 Problem Details (`type`, `title`, `status`, `detail`, `instance`) + `code` enum: protocol errors (`INVALID_REQUEST`, `UNAUTHORIZED`, `NOT_FOUND`, `INVALID_STATE`, `IDEMPOTENCY_KEY_REUSED`, `TRIP_ID_IN_USE`) and booking refusals (e.g. `NO_CAPACITY`, `OUTSIDE_SERVICE_AREA`, `OUTSIDE_SERVICE_HOURS`, `ELIGIBILITY_REQUIRED`, `ELIGIBILITY_NOT_ACCEPTED` (§6.5.1), `INVALID_WINDOW`, `UNSUPPORTED_REQUIREMENT`).
+RFC 9457 Problem Details (`type`, `title`, `status`, `detail`, `instance`) + `code` enum: protocol errors (`INVALID_REQUEST`, `UNAUTHORIZED`, `NOT_FOUND`, `INVALID_STATE`, `IDEMPOTENCY_KEY_REUSED`, `TRIP_ID_IN_USE`) and booking refusals (e.g. `NO_CAPACITY`, `OUTSIDE_SERVICE_AREA`, `OUTSIDE_SERVICE_HOURS`, `ELIGIBILITY_REQUIRED`, `ELIGIBILITY_NOT_ACCEPTED` (§6.5.1), `OUTSIDE_BOOKING_WINDOW` (§7.1), `INVALID_WINDOW`, `UNSUPPORTED_REQUIREMENT`). With `OUTSIDE_BOOKING_WINDOW`, optional `bookable_from` (date-time, §7.1).
 
 ## 7. Core operations (OpenAPI)
 | Method | Path | Purpose |
@@ -126,11 +126,20 @@ RFC 9457 Problem Details (`type`, `title`, `status`, `detail`, `instance`) + `co
 | PATCH | `/trips/{trip_id}` | Modify windows/party. Provider may re-offer. |
 | POST | `/trips/{trip_id}/cancel` | Cancel with `reason` enum (`RIDER_REQUEST`, `PROVIDER_UNABLE`, `DUPLICATE`, `MISSED_CONNECTION`, `OTHER`), `cancelled_by`, optional `detail` (free text, no health data). |
 | POST | `/subscriptions` | Register webhook URL + event types. |
-| GET | `/health` | Liveness, supported profiles and spec versions, `operated_via` (`DIRECT` / `BROKER_PROXY`), `typical_response_s` (how long an asynchronous decision usually takes). |
+| GET | `/health` | Liveness, supported profiles and spec versions, `operated_via` (`DIRECT` / `BROKER_PROXY`), `typical_response_s` (how long an asynchronous decision usually takes), `booking_window` and `booking_window_by_profile` (§7.1). |
 
 All mutating calls require `Idempotency-Key` header. Settlement endpoints are deferred; v0.5 defines the settlement split format only (§10.8).
 
 Requesters should set deadlines (`respond_by`) no shorter than the provider's declared `typical_response_s`.
+
+### 7.1 Booking windows
+Providers accept requests only within a window before the trip: up to 14 days ahead, at least 24 hours' notice, next day only. A provider SHOULD advertise its window on `/health` as `booking_window` (`profiles/core/booking-window.yaml`), so a broker composing a multi-provider journey can plan and submit each leg when that provider's window opens:
+
+- `max_advance_s`: furthest ahead, in seconds before the trip time; `min_notice_s`: least notice; `same_day` (default `true`): `false` means a trip must be requested by the end of the previous service day; `time_zone` (IANA): the provider's service day for `same_day`, else the offset written in the trip's window. Absent fields set no limit; `min_notice_s` ≤ `max_advance_s`.
+- The **trip time** is the `earliest` of the leg's `pickup_window`, or of its `dropoff_window` when it has none. The **request time** is when the provider receives `POST /trips`, `POST /tenders` or a `PATCH` that changes a window.
+- `booking_window_by_profile` replaces (does not merge with) `booking_window` for one profile: `paratransit` or `nemt` when the request carries that object, else `transfer` for a tender.
+- A request outside the window is refused with `OUTSIDE_BOOKING_WINDOW` (422; a rejected tender's `reason`; a `PATCH` refusal leaves the previous terms), checked after request validation and `INVALID_WINDOW` and before any other refusal, so a requester knows that only timing is wrong. When the request came too early the Problem Details carry `bookable_from` (trip time − `max_advance_s`). As with any 422 on `POST /trips` the trip is `REJECTED`; the later request is a new trip with a new `trip_id`.
+- `tds_conform.booking` (`booking_window_for`, `trip_time`, `opens_at`, `closes_at`, `booking_window_problem`) implements these rules for requesters and providers; conformance scenario `booking_window`.
 
 ## 8. State machines
 
@@ -245,7 +254,7 @@ Both profiles extend `POST /trips`: the body is a core TripRequest plus one prof
 - SemVer on the spec. `schema_version` in every event; `/health` lists supported versions and profiles.
 - Conformance levels: **Core**, **Core + Transfer**, **Core + Paratransit**, **Core + NEMT** (`tds-conform run --profile core|transfer|paratransit|nemt`). A run produces an HTML/JSON report a vendor can attach to an RFP response. A level is met only if every scenario for it passes; INCONCLUSIVE (the provider refused the test trip) does not count as a pass.
 - The kit ships with a stateful reference provider (`tds-mock`) that passes every scenario; it is the executable reading of this spec where prose is ambiguous.
-- Conformance scenarios (initial): `book_confirm_cancel`, `modify_window`, `idempotency`, `eligibility_attestation`, `webhook_delivery`, `tender_deadline`, `milestone_sequence`, `eta_heartbeat_staleness`, `hold_request`, `custody_required`; profiles: `paratransit_booking`, `paratransit_rules`, `nemt_booking`, `nemt_rules`.
+- Conformance scenarios (initial): `book_confirm_cancel`, `modify_window`, `idempotency`, `eligibility_attestation`, `booking_window`, `webhook_delivery`, `tender_deadline`, `milestone_sequence`, `eta_heartbeat_staleness`, `hold_request`, `custody_required`; profiles: `paratransit_booking`, `paratransit_rules`, `nemt_booking`, `nemt_rules`.
 - Synchronous (201) and asynchronous (202 → later `OFFERED`/`REJECTED`) decisions are equally conformant. Timing checks use the provider's declared `typical_response_s`, not a fixed number of seconds; a broker-proxied provider is tested the same way (the kit may stand in for its staff).
 - Scenarios that need a vehicle to move (`milestone_sequence`, `custody_required`, `eta_heartbeat_staleness`) cannot be triggered on a live provider; they are checked on a captured event log (`tds-conform check-events`). `webhook_delivery`, `tender_deadline` and `hold_request` run live against any endpoint.
 - Fuzzing (`tds-conform fuzz`, schemathesis) complements the scenarios: generated valid and invalid requests to every operation must get documented status codes, media types and schema-valid bodies, never a 5xx. It is a diagnostic, not part of a level.
@@ -264,7 +273,7 @@ Both profiles extend `POST /trips`: the body is a core TripRequest plus one prof
 | **v0.2** | Core paths (§7); 2 examples (`single-trip`, `cancellation`); Prism mock server; CI lint + validate. |
 | **v0.3** | `tds-conform` CLI running `book_confirm_cancel` + `idempotency` against mock; report output. |
 | **v0.4** | Transfer profile (§10) draft; examples `two-provider-transfer`, `late-first-leg-hold`, `tender-expired-retender`, `supervised-rider-custody-handoff` (v0.4.1 adds `missed-connection-reprotect`, v0.5 `refusals-and-failures`); mock simulating two providers; ThroughRide adapters pointed at mock. **SE Michigan pilot demo target.** |
-| **v0.5** | Settlement split (§10.8); paratransit and NEMT drafts with conformance levels (§11); AsyncAPI completeness incl. broker exception events (§9); `tds-conform fuzz`; `docs/for-agencies.md` RFP language. v0.5.1 adds exception type `ESCALATED`; v0.5.2 eligibility verification methods and fact codes (§6.5.1). |
+| **v0.5** | Settlement split (§10.8); paratransit and NEMT drafts with conformance levels (§11); AsyncAPI completeness incl. broker exception events (§9); `tds-conform fuzz`; `docs/for-agencies.md` RFP language. v0.5.1 adds exception type `ESCALATED`; v0.5.2 eligibility verification methods and fact codes (§6.5.1); v0.5.3 rider-category fact codes (§6.5.2) and booking windows (§7.1). |
 | v0.6+ | Settlement exchange (API operation or events, undecided), profile vocabularies checked against TDS 2020 and payers, outreach to MobilityData/OMF. |
 
 ## 16. Open questions

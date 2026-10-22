@@ -43,9 +43,23 @@ properties:
           - IDEMPOTENCY_KEY_REUSED
           - TRIP_ID_IN_USE
       - $ref: ./refusal-reason.yaml
+  bookable_from:
+    description: >-
+      With code OUTSIDE_BOOKING_WINDOW, when the request came too early: the
+      first moment a request for this trip will be inside the provider's
+      booking window (trip time minus max_advance_s). Absent when waiting will
+      not help (too little notice).
+    type: string
+    format: date-time
 examples:
   - type: "about:blank"
     title: "No capacity"
     status: 409
     detail: "No vehicle with a wheelchair lift is available in the requested window."
     code: "NO_CAPACITY"
+  - type: "about:blank"
+    title: "Outside booking window"
+    status: 422
+    detail: "Trips are booked up to 14 days ahead."
+    code: "OUTSIDE_BOOKING_WINDOW"
+    bookable_from: "2026-11-20T09:30:00-05:00"

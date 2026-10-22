@@ -1,8 +1,9 @@
 """Core profile scenarios (SPEC.md §7, §8.1, §13)."""
 
-from datetime import date
+from datetime import UTC, date, datetime, timedelta
 
-from tds_conform.runner import Context, Inconclusive, scenario
+from tds_conform.booking import booking_window_for, booking_window_problem, health_booking_problems, opens_at, trip_time
+from tds_conform.runner import Context, Inconclusive, scenario, shift_days, shift_windows
 
 TRIP = "/trips/{trip_id}"
 
@@ -149,6 +150,85 @@ def eligibility_attestation(ctx: Context) -> None:
     got = (step.body.get("rider_ref") or {}).get("eligibility") if isinstance(step.body, dict) else None
     step.check_equal(got, rider["eligibility"], "rider_ref.eligibility kept as sent")
     ctx.call("clean up", "POST", TRIP + "/cancel", body={"reason": "OTHER"}, expect=(200,), trip_id=trip["trip_id"])
+
+
+OUTSIDE = "OUTSIDE_BOOKING_WINDOW"
+
+
+@scenario(
+    "booking_window",
+    "core",
+    "Requests outside the advertised booking window are refused with OUTSIDE_BOOKING_WINDOW; inside ones are not",
+)
+def booking_window(ctx: Context) -> None:
+    step = ctx.call("health", "GET", "/health", expect=(200,), auth=False)
+    ctx.health = step.body if isinstance(step.body, dict) else {}
+    problems = health_booking_problems(ctx.health)
+    step.check(
+        not problems,
+        "booking windows are consistent (min_notice_s <= max_advance_s, IANA time_zone)",
+        "; ".join(problems),
+    )
+    window = booking_window_for(ctx.health, ctx.new_trip())
+    if not window:
+        ctx.result.note = "no booking_window advertised; nothing to check"
+        return
+
+    inside = ctx.new_trip()
+    if booking_window_problem(window, trip_time(inside), datetime.now(UTC)) is None:
+        step = ctx.call("request a trip inside the window", "POST", "/trips", body=inside, expect=(201, 202, 422))
+        step.check(
+            _code(step.body) != OUTSIDE,
+            "a trip inside the advertised window is not refused for timing",
+            f"refused with {OUTSIDE}",
+        )
+        if step.status in (201, 202):
+            ctx.call(
+                "clean up", "POST", TRIP + "/cancel", body={"reason": "OTHER"}, expect=(200,), trip_id=inside["trip_id"]
+            )
+
+    if window.get("max_advance_s") is not None:
+        early = ctx.new_trip()
+        now = datetime.now(UTC)
+        start = opens_at(window, trip_time(early))
+        if start <= now + timedelta(hours=1):
+            shift_days(early["legs"], (now + timedelta(days=1) - start).days + 1)
+        step = ctx.call("request a trip beyond max_advance_s", "POST", "/trips", body=early, expect=(422,))
+        step.check_equal(_code(step.body), OUTSIDE, "refused with OUTSIDE_BOOKING_WINDOW")
+        bookable = step.body.get("bookable_from") if isinstance(step.body, dict) else None
+        if step.check(bookable is not None, "bookable_from says when to retry", "missing bookable_from"):
+            moment = datetime.fromisoformat(bookable)
+            step.check(
+                now < moment <= trip_time(early),
+                "bookable_from is after now and not after the trip time",
+                f"bookable_from {bookable}",
+            )
+
+    late = _too_late_trip(ctx, window)
+    if late is None:
+        if window.get("min_notice_s") or window.get("same_day") is False:
+            ctx.result.note = "could not build a future trip with too little notice; notice not checked"
+        return
+    step = ctx.call("request a trip with too little notice", "POST", "/trips", body=late, expect=(422,))
+    step.check_equal(_code(step.body), OUTSIDE, "refused with OUTSIDE_BOOKING_WINDOW")
+
+
+def _too_late_trip(ctx: Context, window: dict) -> dict | None:
+    """A trip still in the future that breaks min_notice_s or same_day; None if the window has neither."""
+    if not window.get("min_notice_s") and window.get("same_day") is not False:
+        return None
+    trip, now = ctx.new_trip(), datetime.now(UTC)
+    margin = now + timedelta(minutes=10)
+    for _ in range(400):  # whole days first: keeps the template's time of day (service hours)
+        if booking_window_problem(window, trip_time(trip), now) and trip_time(trip) > margin:
+            return trip
+        if trip_time(trip) - timedelta(days=1) <= margin:
+            break
+        shift_days(trip["legs"], -1)
+    notice = window.get("min_notice_s") or 0
+    target = now + timedelta(seconds=max(notice // 2, 1200))
+    shift_windows(trip["legs"], target - trip_time(trip))
+    return trip if booking_window_problem(window, trip_time(trip), now) else None
 
 
 def _code(body) -> str | None:

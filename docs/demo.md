@@ -78,7 +78,7 @@ Vehicles don't move on their own. `/_sim` (no auth) moves legs and changes how a
 | `POST /_sim/{provider}/trips/{trip_id}/no-show` | rider no-show (after `ARRIVED_PICKUP`) |
 | `POST /_sim/{provider}/trips/{trip_id}/fail` | `{"cause": "VEHICLE"}`: leg fails |
 | `POST /_sim/{provider}/trips/{trip_id}/cancel` | `{"reason": "PROVIDER_UNABLE"}`: the provider cancels the trip itself |
-| `POST /_sim/{provider}/policy` | e.g. `{"tender_decision": "IGNORE"}` (or `REJECT`), `{"hold_decision": "PARTIAL"}` (`AUTO`, `GRANT`, `DENY`, `IGNORE`), `{"decision": "async"}`, `{"offer_ttl_s": 600}` (offers lapse to `EXPIRED`), `{"unsupported_requirements": ["STRETCHER"]}` (refused with 422), `{"refused_verification_methods": ["SELF_DECLARED", "UNSTATED"]}` (attestations verified that way, or without a method, refused with 422 `ELIGIBILITY_NOT_ACCEPTED`) |
+| `POST /_sim/{provider}/policy` | e.g. `{"tender_decision": "IGNORE"}` (or `REJECT`), `{"hold_decision": "PARTIAL"}` (`AUTO`, `GRANT`, `DENY`, `IGNORE`), `{"decision": "async"}`, `{"offer_ttl_s": 600}` (offers lapse to `EXPIRED`), `{"unsupported_requirements": ["STRETCHER"]}` (refused with 422), `{"refused_verification_methods": ["SELF_DECLARED", "UNSTATED"]}` (attestations verified that way, or without a method, refused with 422 `ELIGIBILITY_NOT_ACCEPTED`), `{"booking_window": {"max_advance_s": 1209600, "min_notice_s": 86400}}` or `{"booking_window_by_profile": {"paratransit": {"same_day": false}}}` (advertised on `/health`; requests outside refused with 422 `OUTSIDE_BOOKING_WINDOW`, tenders rejected with that reason; `null` clears) |
 | `GET /_sim/{provider}/events?trip_id=…` | everything that provider emitted |
 | `GET /_sim/deliveries` | webhook delivery attempts and outcomes |
 

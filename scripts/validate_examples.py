@@ -225,6 +225,8 @@ RULES = {
     ),
     f"{ID_BASE}transfer/interchange.yaml": lambda ix: interchange_problems(ix, []),
     f"{ID_BASE}transfer/settlement-split.yaml": lambda split: _settlement_problems(split),
+    f"{ID_BASE}core/health.yaml": lambda health: _booking_problems(health),
+    f"{ID_BASE}core/booking-window.yaml": lambda window: _booking_problems({"booking_window": window}),
     f"{ID_BASE}core/trip-request.yaml": lambda trip: _eligibility_problems(trip),
     f"{ID_BASE}core/trip.yaml": lambda trip: _eligibility_problems(trip),
     f"{ID_BASE}core/rider.yaml": lambda rider: _eligibility_problems({"rider_ref": rider}),
@@ -232,6 +234,13 @@ RULES = {
     f"{ID_BASE}paratransit/trip-request.yaml": lambda trip: _profile_problems(trip) + _eligibility_problems(trip),
     f"{ID_BASE}nemt/trip-request.yaml": lambda trip: _profile_problems(trip) + _eligibility_problems(trip),
 }
+
+
+def _booking_problems(health: dict) -> list[str]:
+    """Booking windows: min_notice_s <= max_advance_s and IANA time zones (SPEC.md §7.1)."""
+    from tds_conform.booking import health_booking_problems
+
+    return health_booking_problems(health)
 
 
 def _eligibility_problems(trip: dict) -> list[str]:

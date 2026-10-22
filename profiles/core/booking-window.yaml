@@ -1,0 +1,51 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/core/booking-window.yaml
+title: BookingWindow
+description: >-
+  How far ahead, and how late, a provider accepts a request for a trip
+  (SPEC.md §7.1). Measured from when the provider receives the request
+  (POST /trips, POST /tenders, or a PATCH that changes a window) to the trip
+  time: the `earliest` of the leg's pickup_window, or of its dropoff_window when
+  it has none. A request is inside the window when min_notice_s <= trip time -
+  request time <= max_advance_s and, if same_day is false, the trip is not on
+  the request's service day. Outside it the provider refuses with
+  OUTSIDE_BOOKING_WINDOW, before any other refusal. Every field is optional;
+  an absent field sets no limit of that kind. Rule JSON Schema can't express
+  (checked by the conformance kit): min_notice_s <= max_advance_s.
+type: object
+properties:
+  max_advance_s:
+    description: >-
+      Furthest ahead a trip can be requested, in seconds before the trip time
+      (e.g. 1209600 for 14 days). A request made earlier is refused with
+      OUTSIDE_BOOKING_WINDOW and `bookable_from`.
+    type: integer
+    minimum: 0
+  min_notice_s:
+    description: >-
+      Least notice the provider needs, in seconds before the trip time (e.g.
+      86400 for 24 hours). A request made later is refused with
+      OUTSIDE_BOOKING_WINDOW.
+    type: integer
+    minimum: 0
+  same_day:
+    description: >-
+      Whether trips on the day the request is made are accepted. false: a trip
+      must be requested by the end of the previous service day, whatever
+      min_notice_s says (next-day booking, as many paratransit services require).
+      Absent means true.
+    type: boolean
+  time_zone:
+    description: >-
+      IANA time zone of the provider's service day (e.g. America/Detroit), used
+      to decide what "the same day" is. Absent: the UTC offset written in the
+      trip's window.
+    type: string
+    pattern: "^[A-Za-z][A-Za-z0-9_+-]*(/[A-Za-z0-9_+-]+)*$"
+examples:
+  - max_advance_s: 1209600
+    min_notice_s: 86400
+    time_zone: "America/Detroit"
+  - max_advance_s: 172800
+    same_day: false
+    time_zone: "America/Detroit"

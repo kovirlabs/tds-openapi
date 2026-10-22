@@ -5,10 +5,11 @@ import time
 import uuid
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 
 import httpx
 
+from tds_conform.booking import booking_window_for, closes_at, trip_time
 from tds_conform.data import example, schema_errors
 
 # Schema each successful response must satisfy, by (operation, status). Error statuses
@@ -107,6 +108,7 @@ class Context:
     def __init__(self, settings: Settings, result: ScenarioResult, client: httpx.Client):
         self.settings, self.result, self.client = settings, result, client
         self.typical_response_s = 0
+        self.health: dict = {}  # the provider's /health body, read once per run
 
     def call(
         self,
@@ -182,14 +184,32 @@ class Context:
         )
         return step
 
-    def new_trip(self, **overrides) -> dict:
-        """A fresh trip request from the published example, with a unique id and future dates."""
+    def new_trip(self, tender: bool = False, **overrides) -> dict:
+        """A fresh trip request from the published example, with a unique id and future dates.
+
+        Dates move by whole days until the provider's advertised booking window (SPEC.md §7.1)
+        accepts them; `tender` picks the window for tenders.
+        """
         trip = copy.deepcopy(self.settings.trip_template)
         trip["trip_id"] = f"conform-{uuid.uuid4().hex[:12]}"
         trip["requester_id"] = self.settings.requester_id
         trip["provider_id"] = self.settings.provider_id
         _shift_to_future(trip["legs"])
-        return trip | overrides
+        trip |= overrides
+        self.fit_booking_window(trip, tender)
+        return trip
+
+    def fit_booking_window(self, trip: dict, tender: bool = False) -> None:
+        """Move a trip by whole days (keeping times of day) past the window's notice limits."""
+        window = booking_window_for(self.health, trip, tender) if isinstance(self.health, dict) else None
+        if not window:
+            return
+        now = datetime.now(UTC)
+        for _ in range(60):
+            end = closes_at(window, trip_time(trip))
+            if end is None or end >= now + timedelta(minutes=5):
+                return
+            shift_days(trip["legs"], 1)
 
 
 def default_trip_template() -> dict:
@@ -200,11 +220,22 @@ def _shift_to_future(legs: list[dict]) -> None:
     """Move every window by whole days so the trip is tomorrow or later, keeping times and offsets."""
     windows = [leg[k] for leg in legs for k in ("pickup_window", "dropoff_window") if k in leg]
     first = min(datetime.fromisoformat(w["earliest"]) for w in windows)
-    days = max(0, (date.today() + timedelta(days=1) - first.date()).days)
-    for window in windows:
-        for k in ("earliest", "preferred", "latest"):
-            if k in window:
-                window[k] = (datetime.fromisoformat(window[k]) + timedelta(days=days)).isoformat()
+    shift_days(legs, max(0, (date.today() + timedelta(days=1) - first.date()).days))
+
+
+def shift_days(legs: list[dict], days: int) -> None:
+    """Move every pickup and dropoff window by whole days (negative: earlier), keeping times and offsets."""
+    shift_windows(legs, timedelta(days=days))
+
+
+def shift_windows(legs: list[dict], delta: timedelta) -> None:
+    """Move every pickup and dropoff window by `delta`, keeping each window's offset."""
+    for leg in legs:
+        for name in ("pickup_window", "dropoff_window"):
+            if window := leg.get(name):
+                for k in ("earliest", "preferred", "latest"):
+                    if k in window:
+                        window[k] = (datetime.fromisoformat(window[k]) + delta).isoformat()
 
 
 Scenario = Callable[[Context], None]
@@ -219,11 +250,18 @@ def scenario(id: str, profile: str, title: str):  # noqa: A002
     return register
 
 
-def run_scenario(id: str, settings: Settings, client: httpx.Client, typical_response_s: int) -> ScenarioResult:  # noqa: A002
+def run_scenario(
+    id: str,  # noqa: A002
+    settings: Settings,
+    client: httpx.Client,
+    typical_response_s: int,
+    health: dict | None = None,
+) -> ScenarioResult:
     _, title, fn = SCENARIOS[id]
     result = ScenarioResult(id, title)
     ctx = Context(settings, result, client)
     ctx.typical_response_s = typical_response_s
+    ctx.health = health if isinstance(health, dict) else {}
     try:
         fn(ctx)
     except Abort as exc:

@@ -21,6 +21,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 
 from tds_conform import SPEC_VERSION
+from tds_conform.booking import booking_window_for, booking_window_problem, trip_time
 from tds_conform.data import schema_errors
 from tds_conform.eligibility import trip_eligibility_problems
 from tds_conform.mock.common import TERMINAL, Response, _invalid_state, _not_found, _ts, _window_problem, problem
@@ -42,6 +43,9 @@ class ProviderConfig:
     # with ELIGIBILITY_NOT_ACCEPTED. "UNSTATED" stands for an attestation without verification_method.
     refused_verification_methods: frozenset[str] = frozenset()
     profiles: tuple[str, ...] = ("CORE", "TRANSFER", "PARATRANSIT", "NEMT")  # declared on /health
+    # Booking windows (SPEC.md §7.1), advertised on /health and enforced with OUTSIDE_BOOKING_WINDOW.
+    booking_window: dict | None = None
+    booking_window_by_profile: dict | None = None
     offer_ttl_s: int | None = None  # set: offers carry offer_expires_at and EXPIRE if not confirmed
     # Transfer profile policies; adjustable at runtime through the /_sim API.
     tender_decision: str = "ACCEPT"  # ACCEPT | REJECT | IGNORE
@@ -110,6 +114,10 @@ class Provider(TransferMixin):
         }
         if self.config.decision == "async":
             body["typical_response_s"] = max(1, round(self.config.decision_delay_s))
+        if self.config.booking_window:
+            body["booking_window"] = copy.deepcopy(self.config.booking_window)
+        if self.config.booking_window_by_profile:
+            body["booking_window_by_profile"] = copy.deepcopy(self.config.booking_window_by_profile)
         return 200, body
 
     def request_trip(self, requester: str, key: str | None, body) -> Response:
@@ -251,6 +259,9 @@ class Provider(TransferMixin):
                 candidate[name] = body[name]
         if refusal := _window_problem(leg, self.clock()):
             return refusal
+        if any(name in body for name in ("pickup_window", "dropoff_window")):
+            if refusal := self._booking_refusal(candidate, tender=trip.interchange is not None):
+                return refusal
         trip.body, trip.schedule_at = candidate, None
         for name in ("scheduled_pickup", "scheduled_dropoff", "vehicle_ref"):
             leg.pop(name, None)
@@ -344,9 +355,11 @@ class Provider(TransferMixin):
         trip.body["updated_at"] = _ts(self.clock())
         self._emit(trip, "TRIP_STATUS_CHANGED", {"status": status, "previous_status": previous})
 
-    def _refusal(self, trip_request: dict) -> Response | None:
+    def _refusal(self, trip_request: dict, tender: bool = False) -> Response | None:
         leg = trip_request["legs"][0]
         if refusal := _window_problem(leg, self.clock()):
+            return refusal
+        if refusal := self._booking_refusal(trip_request, tender):
             return refusal
         unsupported = sorted(set(leg.get("service_requirements", [])) & self.config.unsupported_requirements)
         if unsupported:
@@ -360,6 +373,17 @@ class Provider(TransferMixin):
                 422, "ELIGIBILITY_NOT_ACCEPTED", f"Attestations verified by {', '.join(refused)} are not accepted."
             )
         return None
+
+    def _booking_refusal(self, trip_request: dict, tender: bool = False) -> Response | None:
+        """OUTSIDE_BOOKING_WINDOW (SPEC.md §7.1), with bookable_from when the request came too early."""
+        window = booking_window_for(self.health()[1], trip_request, tender)
+        outside = booking_window_problem(window, trip_time(trip_request), self.clock())
+        if not outside:
+            return None
+        status, body = problem(422, "OUTSIDE_BOOKING_WINDOW", outside["detail"])
+        if "bookable_from" in outside:
+            body["bookable_from"] = outside["bookable_from"]
+        return status, body
 
     # --- events -------------------------------------------------------------------
 

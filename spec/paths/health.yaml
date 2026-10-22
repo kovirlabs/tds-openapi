@@ -2,8 +2,9 @@ get:
   operationId: getHealth
   summary: Health and capabilities
   description: >-
-    Liveness, supported spec versions and profiles, and how the endpoint is
-    operated. No authentication required.
+    Liveness, supported spec versions and profiles, how the endpoint is
+    operated, and the booking windows within which it accepts requests
+    (SPEC.md §7.1). No authentication required.
   tags: [Meta]
   security: []
   responses:
@@ -20,3 +21,6 @@ get:
             broker_proxy:
               summary: Broker fronts a provider without software
               externalValue: ../../examples/health/broker-proxy.json
+            booking_window:
+              summary: Books 14 days ahead with 24 hours' notice; paratransit next day only
+              externalValue: ../../examples/booking-window/01-health.json

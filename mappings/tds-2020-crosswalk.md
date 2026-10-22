@@ -30,6 +30,15 @@ cite; don't paste definitions (reuse terms not yet confirmed, see SPEC.md §16 Q
 | `address.postal_code` | TODO(crosswalk) | | TODO |  |
 | `address.country` | TODO(crosswalk) | | TODO |  |
 
+### BookingWindow (`profiles/core/booking-window.yaml`)
+
+| Field | TDS 2020 element | TDS section | Status | Notes |
+|---|---|---|---|---|
+| `booking-window.max_advance_s` | TODO(crosswalk) | | TODO | Provider booking policy (advance reservation limit). Check whether TDS 2020 describes provider service parameters such as advance booking; GTFS-Flex `booking_rules.txt` expresses it as `prior_notice_duration_max` (minutes, same-day booking) or `prior_notice_start_day` (prior-day booking). |
+| `booking-window.min_notice_s` | TODO(crosswalk) | | TODO | GTFS-Flex `booking_rules.prior_notice_duration_min` (minutes; here seconds). |
+| `booking-window.same_day` | TODO(crosswalk) | | TODO | GTFS-Flex `booking_type` 1 (same day) vs 2 (up to the prior day). The prior-day cutoff time (`prior_notice_last_time`) has no field here yet. |
+| `booking-window.time_zone` | TODO(crosswalk) | | TODO | IANA zone, as GTFS `agency_timezone`. Protocol field. |
+
 ### CancelReason (`profiles/core/cancel-reason.yaml`)
 
 | Field | TDS 2020 element | TDS section | Status | Notes |
@@ -78,6 +87,7 @@ cite; don't paste definitions (reuse terms not yet confirmed, see SPEC.md §16 Q
 | `error.detail` | TODO(crosswalk) | | TODO | RFC 9457 field |
 | `error.instance` | TODO(crosswalk) | | TODO | RFC 9457 field |
 | `error.code` | TODO(crosswalk) | | TODO |  |
+| `error.bookable_from` | TODO(crosswalk) | | TODO | Protocol field (retry hint on OUTSIDE_BOOKING_WINDOW); likely no TDS equivalent |
 
 ### TripCancelledEvent (`profiles/core/event-trip-cancelled.yaml`)
 
@@ -147,6 +157,11 @@ cite; don't paste definitions (reuse terms not yet confirmed, see SPEC.md §16 Q
 | `health.profiles` | TODO(crosswalk) | | TODO | Protocol field; likely no TDS equivalent |
 | `health.operated_via` | TODO(crosswalk) | | TODO | Protocol field; likely no TDS equivalent |
 | `health.typical_response_s` | TODO(crosswalk) | | TODO | Protocol field; likely no TDS equivalent |
+| `health.booking_window` | TODO(crosswalk) | | TODO | Protocol field; likely no TDS equivalent |
+| `health.booking_window_by_profile` | TODO(crosswalk) | | TODO | Protocol field; likely no TDS equivalent |
+| `health.booking_window_by_profile.paratransit` | TODO(crosswalk) | | TODO | Protocol field; likely no TDS equivalent |
+| `health.booking_window_by_profile.nemt` | TODO(crosswalk) | | TODO | Protocol field; likely no TDS equivalent |
+| `health.booking_window_by_profile.transfer` | TODO(crosswalk) | | TODO | Protocol field; likely no TDS equivalent |
 
 ### Leg (`profiles/core/leg.yaml`)
 
