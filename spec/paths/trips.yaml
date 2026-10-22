@@ -28,6 +28,9 @@ post:
           eligibility_attestation:
             summary: Senior ride with an AGE_60_PLUS fact verified by digital ID
             externalValue: ../../examples/eligibility-attestation/01-request-trip.request.json
+          rider_category_facts:
+            summary: Senior and disabled county resident, attested as facts for reporting
+            externalValue: ../../examples/rider-category-facts/01-request-trip.request.json
   responses:
     "201":
       description: Decided synchronously; the trip is OFFERED or CONFIRMED.
@@ -42,6 +45,9 @@ post:
             eligibility_attestation:
               summary: Offered; the provider accepts DIGITAL_ID attestations
               externalValue: ../../examples/eligibility-attestation/01-request-trip.response.json
+            rider_category_facts:
+              summary: Offered; attestations kept as sent
+              externalValue: ../../examples/rider-category-facts/01-request-trip.response.json
     "202":
       description: Accepted for an asynchronous decision; the trip is REQUESTED.
       content:

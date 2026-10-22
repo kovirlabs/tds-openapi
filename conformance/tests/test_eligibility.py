@@ -1,12 +1,13 @@
 """Eligibility attestations (SPEC.md §6.5.1): kit rules, the reference provider's policy, the kit scenario."""
 
 import copy
+from datetime import timedelta
 
 import pytest
 
 import tds_conform.scenarios  # noqa: F401  (registers the scenarios)
 from tds_conform.data import example, schema_errors
-from tds_conform.eligibility import age_code_problems, eligibility_problems
+from tds_conform.eligibility import age_code_problems, eligibility_problems, fact_code_problems
 from tds_conform.mock.provider import Provider, ProviderConfig
 from tds_conform.runner import run_scenario
 
@@ -67,6 +68,55 @@ def test_verified_after_valid_until_is_a_problem():
 )
 def test_age_code_convention(program, ok):
     assert (age_code_problems([{"program": program, "attested_by": REQ}]) == []) is ok
+
+
+@pytest.mark.parametrize(
+    ("program", "ok"),
+    [
+        ("DISABILITY", True),
+        ("LOW_INCOME", True),
+        ("RESIDENT_US_26161", True),
+        ("RESIDENT_CA_3506", True),
+        ("ADA_PARATRANSIT", True),
+        ("MEDICAID", True),
+        ("AGE_65_PLUS", True),
+        ("DISABILITY_VISUAL", False),
+        ("DISABILITY_YES", False),
+        ("LOW_INCOME_200_FPL", False),
+        ("RESIDENT_US_161", False),
+        ("RESIDENT_US_MI_161", False),
+        ("RESIDENT_US_WASHTENAW", False),
+        ("RESIDENT_WASHTENAW", False),
+        ("AGE_SENIOR", False),
+    ],
+)
+def test_fact_code_conventions(program, ok):
+    assert (fact_code_problems([{"program": program, "attested_by": REQ}]) == []) is ok
+
+
+def test_fact_code_problem_says_what_never_why():
+    [message] = fact_code_problems([{"program": "DISABILITY_COGNITIVE", "attested_by": REQ}])
+    assert "never a condition" in message
+
+
+def test_rider_category_example_attests_facts_only():
+    trip = example("rider-category-facts", "01-request-trip.request.json")
+    assert schema_errors(trip, "trip-request") == []
+    attestations = trip["rider_ref"]["eligibility"]
+    assert {a["program"] for a in attestations} == {"AGE_65_PLUS", "DISABILITY", "RESIDENT_US_26161"}
+    assert fact_code_problems(attestations) == eligibility_problems(attestations) == []
+
+
+def test_mock_keeps_fact_attestations_as_sent(clock):
+    provider = Provider(ProviderConfig(), clock=clock)
+    trip = example("rider-category-facts", "01-request-trip.request.json")
+    trip["legs"][0]["pickup_window"] = {
+        "earliest": (clock() + timedelta(days=2)).isoformat(),
+        "latest": (clock() + timedelta(days=2, minutes=30)).isoformat(),
+    }
+    status, body = provider.request_trip(REQ, "k-facts", trip)
+    assert status == 201, body
+    assert body["rider_ref"]["eligibility"] == trip["rider_ref"]["eligibility"]
 
 
 def test_mock_refuses_verified_after_valid_until(clock):

@@ -1,0 +1,62 @@
+{
+  "trip_id": "tr-20261118-0107",
+  "requester_id": "throughride-demo",
+  "provider_id": "county-connector",
+  "rider_ref": {
+    "rider_ref_id": "r-5b19",
+    "display_name": "Walter",
+    "language": "en",
+    "eligibility": [
+      {
+        "program": "AGE_65_PLUS",
+        "attested_by": "throughride-demo",
+        "verification_method": "STAFF_VERIFIED",
+        "verified_at": "2026-09-02"
+      },
+      {
+        "program": "DISABILITY",
+        "attested_by": "throughride-demo",
+        "verification_method": "STAFF_VERIFIED",
+        "verified_at": "2026-09-02",
+        "valid_until": "2027-09-01"
+      },
+      {
+        "program": "RESIDENT_US_26161",
+        "attested_by": "throughride-demo",
+        "verification_method": "STAFF_VERIFIED",
+        "verified_at": "2026-09-02",
+        "valid_until": "2027-09-01"
+      }
+    ]
+  },
+  "legs": [
+    {
+      "leg_id": "leg-1",
+      "pickup": {
+        "lat": 42.2411,
+        "lon": -83.613,
+        "name": "Ypsilanti Transit Center"
+      },
+      "dropoff": {
+        "lat": 42.2808,
+        "lon": -83.743,
+        "name": "Blake Transit Center",
+        "gtfs_stop_id": "BTC"
+      },
+      "pickup_window": {
+        "earliest": "2026-11-18T13:00:00-05:00",
+        "latest": "2026-11-18T13:30:00-05:00"
+      },
+      "service_requirements": [
+        "WHEELCHAIR_LIFT"
+      ]
+    }
+  ],
+  "fare_funding": {
+    "fare": {
+      "amount": "0.00",
+      "currency": "USD"
+    },
+    "funding_source": "SECTION_5310"
+  }
+}

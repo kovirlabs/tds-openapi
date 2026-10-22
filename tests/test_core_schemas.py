@@ -195,6 +195,8 @@ def test_event_coverage_reports_missing_states():
     [
         ({"verified_at": "2027-07-01"}, "verified_at 2027-07-01 is after valid_until 2027-06-30"),
         ({"program": "AGE_SENIOR"}, "does not follow AGE_<N>_PLUS or AGE_UNDER_<N>"),
+        ({"program": "DISABILITY_VISUAL"}, "takes no qualifier"),
+        ({"program": "RESIDENT_US_MI_161"}, "RESIDENT_US_<5-digit county FIPS code>"),
     ],
 )
 def test_eligibility_rules_on_trip_examples(change, problem):

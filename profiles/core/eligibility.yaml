@@ -3,7 +3,8 @@ $id: https://tds-openapi.org/schemas/core/eligibility.yaml
 title: Eligibility
 description: >-
   An attestation that the rider is eligible for a program, or meets a fact a
-  program depends on (such as an age threshold). Carries the program or fact,
+  program depends on (an age threshold, disability status, low income or
+  county of residence). Carries the program or fact,
   who vouches for it and how it was verified, never the evidence behind it: no
   date of birth, document or card numbers, document images, credentials or
   diagnoses. A provider decides which combinations of `attested_by` and
@@ -15,10 +16,15 @@ required: [program, attested_by]
 properties:
   program:
     description: >-
-      Program code (e.g. ADA_PARATRANSIT, SENIOR_5310) or fact code. Fact codes
-      for age thresholds SHOULD follow AGE_<N>_PLUS (AGE_60_PLUS, AGE_65_PLUS) or
-      AGE_UNDER_<N> (AGE_UNDER_18), so a provider learns the threshold without
-      the birth date. Open vocabulary until the crosswalk settles a list.
+      Program code (e.g. ADA_PARATRANSIT, SENIOR_5310) or fact code: what is true
+      of the rider for program purposes, never why (SPEC.md §6.5.2). Fact codes
+      SHOULD follow AGE_<N>_PLUS / AGE_UNDER_<N> (an age threshold, never the
+      birth date), DISABILITY (yes/no only, with no qualifier: never a condition,
+      diagnosis or type), LOW_INCOME (meets the named program's income test,
+      never the income) or RESIDENT_<country>_<area> (RESIDENT_US_<5-digit county
+      FIPS>, e.g. RESIDENT_US_26161; never the address). Send only the facts the
+      receiving provider's agreement asks for. Open vocabulary until the
+      crosswalk settles a list.
     type: string
     pattern: "^[A-Z][A-Z0-9_]*$"
   attested_by:
@@ -67,3 +73,7 @@ examples:
     verification_method: "DIGITAL_ID"
     verified_at: "2026-10-15"
     verifier_ref: "state-mdl-issuer"
+  - program: "RESIDENT_US_26161"
+    attested_by: "throughride-demo"
+    verification_method: "STAFF_VERIFIED"
+    verified_at: "2026-09-02"

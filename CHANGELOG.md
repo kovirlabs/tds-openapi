@@ -4,6 +4,25 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+- Fact codes for rider categories and funder rules (SPEC.md §6.5.2): `DISABILITY` (counts as a
+  person with a disability for program purposes; yes/no, never the condition or type),
+  `LOW_INCOME` (meets the named program's income test) and `RESIDENT_<CC>_<area>`, in the US
+  `RESIDENT_US_<5-digit county FIPS>` (e.g. `RESIDENT_US_26161`). Medicaid enrollment stays a
+  program code. Guidance on reporting by rider category: providers derive categories from
+  attested facts, a missing fact means general/unknown, and requesters send only the facts the
+  receiving provider's agreement asks for.
+- `tds_conform.eligibility.fact_code_problems` (SHOULD-level pattern checks for `AGE_`,
+  `DISABILITY`, `LOW_INCOME` and `RESIDENT_` codes); the example validator now uses it in place
+  of `age_code_problems` (kept).
+- Example `rider-category-facts`: a senior and disabled county resident attested as
+  `AGE_65_PLUS`, `DISABILITY`, `RESIDENT_US_26161`, with the wheelchair lift as a service
+  requirement. `eligibility` schema example for residency.
+
+### Changed
+- `eligibility.program` and `rider.eligibility` descriptions state the "what, never why" rule
+  for every fact code and the minimum-necessary rule.
+
 ## [0.5.2] - 2026-10-21
 
 Eligibility attestations say how eligibility was verified and can attest a fact (an age

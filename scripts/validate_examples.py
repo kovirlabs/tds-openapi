@@ -235,11 +235,11 @@ RULES = {
 
 
 def _eligibility_problems(trip: dict) -> list[str]:
-    """Attestation MUST (verified_at not after valid_until) and the AGE_ code convention (SPEC.md §6.5.1)."""
-    from tds_conform.eligibility import age_code_problems, eligibility_problems
+    """Attestation MUST (verified_at not after valid_until) and the fact-code conventions (SPEC.md §6.5.1-2)."""
+    from tds_conform.eligibility import eligibility_problems, fact_code_problems
 
     attestations = trip.get("rider_ref", {}).get("eligibility", [])
-    return eligibility_problems(attestations) + age_code_problems(attestations)
+    return eligibility_problems(attestations) + fact_code_problems(attestations)
 
 
 def _profile_problems(trip: dict) -> list[str]:

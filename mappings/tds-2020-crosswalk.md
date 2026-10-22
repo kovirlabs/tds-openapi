@@ -61,7 +61,7 @@ cite; don't paste definitions (reuse terms not yet confirmed, see SPEC.md §16 Q
 
 | Field | TDS 2020 element | TDS section | Status | Notes |
 |---|---|---|---|---|
-| `eligibility.program` | TODO(crosswalk) | | TODO | Also carries fact codes (`AGE_<N>_PLUS`, `AGE_UNDER_<N>`), modelled on the ISO/IEC 18013-5 mDL `age_over_NN` element: the threshold is shared, never the birth date. Check whether TDS 2020 has an age or eligibility-category element. |
+| `eligibility.program` | TODO(crosswalk) | | TODO | Also carries fact codes (`AGE_<N>_PLUS`, `AGE_UNDER_<N>`), modelled on the ISO/IEC 18013-5 mDL `age_over_NN` element: the threshold is shared, never the birth date. `DISABILITY`, `LOW_INCOME` and `RESIDENT_<CC>_<area>` (US: 5-digit county FIPS / census GEOID) follow SPEC.md §6.5.2. Check whether TDS 2020 has an age, disability, income or residency eligibility-category element, or a rider-category element for reporting. |
 | `eligibility.attested_by` | TODO(crosswalk) | | TODO |  |
 | `eligibility.valid_until` | TODO(crosswalk) | | TODO |  |
 | `eligibility.verification_method` | TODO(crosswalk) | | TODO | Coarse version of OpenID Connect for Identity Assurance `verification` (trust framework, evidence type), without the evidence itself. Probably an extension. |

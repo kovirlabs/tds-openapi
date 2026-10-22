@@ -83,7 +83,7 @@ A **broker proxy** may expose the provider API on behalf of a provider that has 
 `earliest`, `latest` (datetime, required); `preferred` (optional). Validation: earliest ≤ preferred ≤ latest.
 
 ### 6.5 Rider (reference)
-`rider_ref_id` (opaque, required; the requester SHOULD issue a different, stable value per provider so providers cannot link a rider across services); `display_name` (first name / initial, optional); `contact` (phone for SMS, optional, requester-controlled consent flag `contact_consent`); `language` (BCP 47); `eligibility` (array of attestations `{program, attested_by, valid_until, verification_method, verified_at, verifier_ref}`, §6.5.1 — e.g. `ADA_PARATRANSIT`, `SENIOR_5310`, `AGE_60_PLUS`). **No diagnoses, DOB, or health data in core.**
+`rider_ref_id` (opaque, required; the requester SHOULD issue a different, stable value per provider so providers cannot link a rider across services); `display_name` (first name / initial, optional); `contact` (phone for SMS, optional, requester-controlled consent flag `contact_consent`); `language` (BCP 47); `eligibility` (array of attestations `{program, attested_by, valid_until, verification_method, verified_at, verifier_ref}`, §6.5.1 — e.g. `ADA_PARATRANSIT`, `SENIOR_5310`, `AGE_60_PLUS`, `DISABILITY`, `RESIDENT_US_26161`, §6.5.2). **No diagnoses, DOB, or health data in core.**
 
 #### 6.5.1 Eligibility attestations
 An attestation says that a party vouches for the rider's eligibility, and how it knows; it never carries the evidence. No date of birth, document or card numbers, document images, credential tokens or diagnoses, in any field (including `verifier_ref` and Problem Details `detail`).
@@ -96,6 +96,20 @@ An attestation says that a party vouches for the rider's eligibility, and how it
 - `valid_until` (optional, date): last day the attestation holds.
 
 **Acceptance policy.** Each provider decides which `(attested_by, verification_method)` combinations it accepts for each program, typically in its agreement with the requester (for example: `AGE_60_PLUS` from this broker by `DIGITAL_ID` or `STAFF_VERIFIED`; `ADA_PARATRANSIT` only by `AGENCY_DETERMINATION` from the certifying agency). The binding does not carry the policy. A provider that needs an attestation the request lacks refuses with `ELIGIBILITY_REQUIRED`; one that gets an attestation it does not accept (unknown attester, method, stale `verified_at`, expired `valid_until`) refuses with `ELIGIBILITY_NOT_ACCEPTED` (422, or a rejected tender's `reason`). It does not ask for the evidence instead; if it must verify for itself, that happens outside this API. A provider MAY refuse a request whose attestation breaks the `verified_at` rule with 400 `INVALID_REQUEST`. A provider that accepts the trip keeps the attestations exactly as sent (conformance scenario `eligibility_attestation`).
+
+#### 6.5.2 Fact codes and reporting by rider category
+Fact codes say **what** is true of the rider for program purposes, never **why**. Besides the age codes above, a `program` SHOULD use these patterns:
+
+| Fact code | Meaning | Never |
+|---|---|---|
+| `AGE_<N>_PLUS`, `AGE_UNDER_<N>` | At or over / under an age threshold (§6.5.1). | The birth date. |
+| `DISABILITY` | The rider counts as a person with a disability for the program's purposes. Yes/no only: the code takes no qualifier. | The condition, diagnosis, type or severity (no `DISABILITY_VISUAL`, no `DISABILITY_COGNITIVE`). What the vehicle and driver must do goes in `service_requirements`. |
+| `LOW_INCOME` | The rider meets the low-income test of the program the agreement names. The threshold belongs to the program, not the code. | Income, household size, benefit amounts or case numbers. |
+| `RESIDENT_<CC>_<area>` | The rider lives in an area. `<CC>` is the ISO 3166-1 alpha-2 country code; `<area>` is the country's official code for the area. In the US it is the 5-digit county FIPS code (2-digit state + 3-digit county, the census GEOID), e.g. `RESIDENT_US_26161`. | The address. |
+
+Why `RESIDENT_US_<county FIPS>`: funders restrict by county; the 5-digit code already contains the state, so it is unambiguous without an ISO 3166-2 subdivision (which stops at states and would only repeat it); it is the code public funding and census data use; and it fits the `program` pattern (`^[A-Z][A-Z0-9_]*$`). Medicaid enrollment is not a fact code: attest it with the program code (or, for NEMT, `authorization_ref`, §11).
+
+**Reporting by rider category.** Each provider counts and reports the trips it provides, often by rider category (for example general, senior, disabled, senior and disabled). It derives the category from the attested facts it received, by its funder's definitions: senior from an `AGE_` code at or over the funder's threshold, disabled from `DISABILITY` (or from a program that implies it, such as `ADA_PARATRANSIT`, where the funder allows). Absent a fact, the rider is reported as general (or unknown, if the funder distinguishes them); a provider does not ask for evidence to fill a category. **Minimum necessary:** a requester sends only the facts the receiving provider's agreement asks for, for that trip: residency only to a provider whose funding depends on it, `LOW_INCOME` only where a program needs it. The example validator checks these patterns as a SHOULD (`tds_conform.eligibility.fact_code_problems`); example `rider-category-facts`.
 
 ### 6.6 FareFunding
 `fare` (`amount`, `currency`); `funding_source` enum (`RIDER`, `SECTION_5310`, `SECTION_5311`, `MEDICAID_NEMT`, `AGENCY`, `SPONSOR`, `OTHER`); `sponsor_ref`; `authorization_ref`. TODO(crosswalk).
