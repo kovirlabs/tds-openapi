@@ -78,7 +78,7 @@ Vehicles don't move on their own. `/_sim` (no auth) moves legs and changes how a
 | `POST /_sim/{provider}/trips/{trip_id}/no-show` | rider no-show (after `ARRIVED_PICKUP`) |
 | `POST /_sim/{provider}/trips/{trip_id}/fail` | `{"cause": "VEHICLE"}`: leg fails |
 | `POST /_sim/{provider}/trips/{trip_id}/cancel` | `{"reason": "PROVIDER_UNABLE"}`: the provider cancels the trip itself |
-| `POST /_sim/{provider}/policy` | e.g. `{"tender_decision": "IGNORE"}` (or `REJECT`), `{"hold_decision": "PARTIAL"}` (`AUTO`, `GRANT`, `DENY`, `IGNORE`), `{"decision": "async"}`, `{"offer_ttl_s": 600}` (offers lapse to `EXPIRED`), `{"unsupported_requirements": ["STRETCHER"]}` (refused with 422) |
+| `POST /_sim/{provider}/policy` | e.g. `{"tender_decision": "IGNORE"}` (or `REJECT`), `{"hold_decision": "PARTIAL"}` (`AUTO`, `GRANT`, `DENY`, `IGNORE`), `{"decision": "async"}`, `{"offer_ttl_s": 600}` (offers lapse to `EXPIRED`), `{"unsupported_requirements": ["STRETCHER"]}` (refused with 422), `{"refused_verification_methods": ["SELF_DECLARED", "UNSTATED"]}` (attestations verified that way, or without a method, refused with 422 `ELIGIBILITY_NOT_ACCEPTED`) |
 | `GET /_sim/{provider}/events?trip_id=…` | everything that provider emitted |
 | `GET /_sim/deliveries` | webhook delivery attempts and outcomes |
 
@@ -121,7 +121,7 @@ Then use the public accessors rather than paths into this repo:
 
 ```python
 from tds_conform.examples import (
-    binding_version,  # "0.5.1": the binding version these examples and schemas belong to
+    binding_version,  # "0.5.2": the binding version these examples and schemas belong to
     examples_dir,  # Path to examples/ (one folder per scenario)
     profiles_dir,  # Path to profiles/ (JSON Schemas)
     scenarios,  # ["cancellation", ..., "two-provider-transfer"]

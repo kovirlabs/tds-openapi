@@ -220,12 +220,26 @@ def interchange_problems(interchange: dict, legs: list[dict]) -> list[str]:
 
 
 RULES = {
-    f"{ID_BASE}transfer/tender-request.yaml": lambda t: interchange_problems(t["interchange"], t["trip"]["legs"]),
+    f"{ID_BASE}transfer/tender-request.yaml": lambda t: (
+        interchange_problems(t["interchange"], t["trip"]["legs"]) + _eligibility_problems(t["trip"])
+    ),
     f"{ID_BASE}transfer/interchange.yaml": lambda ix: interchange_problems(ix, []),
     f"{ID_BASE}transfer/settlement-split.yaml": lambda split: _settlement_problems(split),
-    f"{ID_BASE}paratransit/trip-request.yaml": lambda trip: _profile_problems(trip),
-    f"{ID_BASE}nemt/trip-request.yaml": lambda trip: _profile_problems(trip),
+    f"{ID_BASE}core/trip-request.yaml": lambda trip: _eligibility_problems(trip),
+    f"{ID_BASE}core/trip.yaml": lambda trip: _eligibility_problems(trip),
+    f"{ID_BASE}core/rider.yaml": lambda rider: _eligibility_problems({"rider_ref": rider}),
+    f"{ID_BASE}core/eligibility.yaml": lambda a: _eligibility_problems({"rider_ref": {"eligibility": [a]}}),
+    f"{ID_BASE}paratransit/trip-request.yaml": lambda trip: _profile_problems(trip) + _eligibility_problems(trip),
+    f"{ID_BASE}nemt/trip-request.yaml": lambda trip: _profile_problems(trip) + _eligibility_problems(trip),
 }
+
+
+def _eligibility_problems(trip: dict) -> list[str]:
+    """Attestation MUST (verified_at not after valid_until) and the AGE_ code convention (SPEC.md §6.5.1)."""
+    from tds_conform.eligibility import age_code_problems, eligibility_problems
+
+    attestations = trip.get("rider_ref", {}).get("eligibility", [])
+    return eligibility_problems(attestations) + age_code_problems(attestations)
 
 
 def _profile_problems(trip: dict) -> list[str]:

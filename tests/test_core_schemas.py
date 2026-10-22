@@ -188,3 +188,19 @@ def test_event_coverage_reports_missing_states():
     assert any("TRIP_STATUS_CHANGED" in p and "NO_SHOW" in p for p in problems)
     assert any(p.startswith("EXCEPTION_RESOLVED: no example event") for p in problems)
     assert ve.check_event_coverage(manifests, REGISTRY) == []
+
+
+@pytest.mark.parametrize(
+    ("change", "problem"),
+    [
+        ({"verified_at": "2027-07-01"}, "verified_at 2027-07-01 is after valid_until 2027-06-30"),
+        ({"program": "AGE_SENIOR"}, "does not follow AGE_<N>_PLUS or AGE_UNDER_<N>"),
+    ],
+)
+def test_eligibility_rules_on_trip_examples(change, problem):
+    trip = trip_example()
+    trip["rider_ref"]["eligibility"] = [{"program": "AGE_60_PLUS", "attested_by": "b", "valid_until": "2027-06-30"}]
+    assert ve.RULES[CORE + "trip.yaml"](trip) == []
+    trip["rider_ref"]["eligibility"][0] |= change
+    assert not errors("trip.yaml", trip)
+    assert any(problem in p for p in ve.RULES[CORE + "trip.yaml"](trip))

@@ -2,15 +2,23 @@ $schema: https://json-schema.org/draft/2020-12/schema
 $id: https://tds-openapi.org/schemas/core/eligibility.yaml
 title: Eligibility
 description: >-
-  An attestation that the rider is eligible for a program. Carries the program
-  and who vouches for it, never the evidence behind it.
+  An attestation that the rider is eligible for a program, or meets a fact a
+  program depends on (such as an age threshold). Carries the program or fact,
+  who vouches for it and how it was verified, never the evidence behind it: no
+  date of birth, document or card numbers, document images, credentials or
+  diagnoses. A provider decides which combinations of `attested_by` and
+  `verification_method` it accepts (SPEC.md §6.5.1) and refuses others with
+  ELIGIBILITY_NOT_ACCEPTED. Rule JSON Schema can't express (checked by the
+  conformance kit): `verified_at` is not after `valid_until`.
 type: object
 required: [program, attested_by]
 properties:
   program:
     description: >-
-      Program code, e.g. ADA_PARATRANSIT or SENIOR_5310. Open vocabulary until the
-      crosswalk settles a list.
+      Program code (e.g. ADA_PARATRANSIT, SENIOR_5310) or fact code. Fact codes
+      for age thresholds SHOULD follow AGE_<N>_PLUS (AGE_60_PLUS, AGE_65_PLUS) or
+      AGE_UNDER_<N> (AGE_UNDER_18), so a provider learns the threshold without
+      the birth date. Open vocabulary until the crosswalk settles a list.
     type: string
     pattern: "^[A-Z][A-Z0-9_]*$"
   attested_by:
@@ -20,7 +28,42 @@ properties:
     description: Last date the attestation is valid, if it expires.
     type: string
     format: date
+  verification_method:
+    description: >-
+      How the attesting party established eligibility. STAFF_VERIFIED: a person
+      checked documents. DIGITAL_ID: an identity platform, mobile ID or verifiable
+      credential disclosed the fact (e.g. an age-over claim) without the
+      underlying data. AGENCY_DETERMINATION: a formal eligibility determination,
+      such as ADA paratransit certification. SELF_DECLARED: the rider's own
+      statement, unchecked. OTHER: none of these. Absent means not stated; a
+      provider may treat that like SELF_DECLARED.
+    type: string
+    enum:
+      - STAFF_VERIFIED
+      - DIGITAL_ID
+      - AGENCY_DETERMINATION
+      - SELF_DECLARED
+      - OTHER
+  verified_at:
+    description: Date the attesting party last verified eligibility.
+    type: string
+    format: date
+  verifier_ref:
+    description: >-
+      Opaque identifier of the identity platform or credential issuer that
+      verified the fact, when it is not `attested_by` (e.g. a state mobile ID
+      issuer or an OpenID provider). Names the verifier only; never a credential,
+      token, document number or anything that identifies the rider.
+    type: string
+    maxLength: 200
 examples:
   - program: "ADA_PARATRANSIT"
     attested_by: "aaata"
     valid_until: "2027-06-30"
+    verification_method: "AGENCY_DETERMINATION"
+    verified_at: "2025-07-01"
+  - program: "AGE_60_PLUS"
+    attested_by: "throughride-demo"
+    verification_method: "DIGITAL_ID"
+    verified_at: "2026-10-15"
+    verifier_ref: "state-mdl-issuer"

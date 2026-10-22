@@ -64,7 +64,7 @@ def test_cli_writes_reports(serve, sync_provider, tmp_path, capsys):
     settings, _ = serve(sync_provider)
     assert conform_main(["run", "--url", settings.url, "--report-dir", str(tmp_path)]) == 0
     data = json.loads((tmp_path / "report.json").read_text())
-    assert data["conformant"] and data["summary"]["PASS"] == 3
+    assert data["conformant"] and data["summary"]["PASS"] == 4
     assert "Conformant: Core" in (tmp_path / "report.html").read_text()
 
 

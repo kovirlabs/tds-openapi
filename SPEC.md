@@ -1,6 +1,6 @@
 # SPEC.md — tds-openapi
 
-Status: **Draft 3 (v0.5.1)** · Owner: Evan / Kovir Labs · Date: 2026-10-20
+Status: **Draft 3 (v0.5.2)** · Owner: Evan / Kovir Labs · Date: 2026-10-20
 
 Field lists below are **proposed**. Names for `profiles/core` must be reconciled with TDS 2020 (TCRP Report 210) in `mappings/tds-2020-crosswalk.md`; anything marked `TODO(crosswalk)` is unverified.
 
@@ -83,13 +83,25 @@ A **broker proxy** may expose the provider API on behalf of a provider that has 
 `earliest`, `latest` (datetime, required); `preferred` (optional). Validation: earliest ≤ preferred ≤ latest.
 
 ### 6.5 Rider (reference)
-`rider_ref_id` (opaque, required; the requester SHOULD issue a different, stable value per provider so providers cannot link a rider across services); `display_name` (first name / initial, optional); `contact` (phone for SMS, optional, requester-controlled consent flag `contact_consent`); `language` (BCP 47); `eligibility` (array of `{program, attested_by, valid_until}` — e.g. `ADA_PARATRANSIT`, `SENIOR_5310`). **No diagnoses, DOB, or health data in core.**
+`rider_ref_id` (opaque, required; the requester SHOULD issue a different, stable value per provider so providers cannot link a rider across services); `display_name` (first name / initial, optional); `contact` (phone for SMS, optional, requester-controlled consent flag `contact_consent`); `language` (BCP 47); `eligibility` (array of attestations `{program, attested_by, valid_until, verification_method, verified_at, verifier_ref}`, §6.5.1 — e.g. `ADA_PARATRANSIT`, `SENIOR_5310`, `AGE_60_PLUS`). **No diagnoses, DOB, or health data in core.**
+
+#### 6.5.1 Eligibility attestations
+An attestation says that a party vouches for the rider's eligibility, and how it knows; it never carries the evidence. No date of birth, document or card numbers, document images, credential tokens or diagnoses, in any field (including `verifier_ref` and Problem Details `detail`).
+
+- `program` (required): a program code (`ADA_PARATRANSIT`, `SENIOR_5310`) or a **fact code** for what a program depends on. Age thresholds SHOULD be written `AGE_<N>_PLUS` (`AGE_60_PLUS`, `AGE_65_PLUS`) or `AGE_UNDER_<N>` (`AGE_UNDER_18`), with `N` a whole number of years and no leading zeros. Attesting the fact a program needs, instead of sending the data behind it, lets a provider decide without determining eligibility itself. Identity platforms already disclose such facts on their own: ISO/IEC 18013-5 mobile driver's licences (`age_over_NN`), OpenID Connect providers with verified claims (OpenID Connect for Identity Assurance), and verifiable credentials presented with selective disclosure (OpenID4VP, SD-JWT).
+- `attested_by` (required): the party that vouches (agency, provider or broker).
+- `verification_method` (optional): `STAFF_VERIFIED` (a person checked documents), `DIGITAL_ID` (identity platform, mobile ID or verifiable credential), `AGENCY_DETERMINATION` (formal eligibility determination, e.g. ADA paratransit certification), `SELF_DECLARED` (the rider's statement, unchecked), `OTHER`. Absent means not stated.
+- `verified_at` (optional, date): when `attested_by` last verified it. MUST NOT be after `valid_until`.
+- `verifier_ref` (optional): opaque id of the identity platform or credential issuer that verified the fact, when it is not `attested_by`. It names the verifier, never the credential.
+- `valid_until` (optional, date): last day the attestation holds.
+
+**Acceptance policy.** Each provider decides which `(attested_by, verification_method)` combinations it accepts for each program, typically in its agreement with the requester (for example: `AGE_60_PLUS` from this broker by `DIGITAL_ID` or `STAFF_VERIFIED`; `ADA_PARATRANSIT` only by `AGENCY_DETERMINATION` from the certifying agency). The binding does not carry the policy. A provider that needs an attestation the request lacks refuses with `ELIGIBILITY_REQUIRED`; one that gets an attestation it does not accept (unknown attester, method, stale `verified_at`, expired `valid_until`) refuses with `ELIGIBILITY_NOT_ACCEPTED` (422, or a rejected tender's `reason`). It does not ask for the evidence instead; if it must verify for itself, that happens outside this API. A provider MAY refuse a request whose attestation breaks the `verified_at` rule with 400 `INVALID_REQUEST`. A provider that accepts the trip keeps the attestations exactly as sent (conformance scenario `eligibility_attestation`).
 
 ### 6.6 FareFunding
 `fare` (`amount`, `currency`); `funding_source` enum (`RIDER`, `SECTION_5310`, `SECTION_5311`, `MEDICAID_NEMT`, `AGENCY`, `SPONSOR`, `OTHER`); `sponsor_ref`; `authorization_ref`. TODO(crosswalk).
 
 ### 6.7 Error
-RFC 9457 Problem Details (`type`, `title`, `status`, `detail`, `instance`) + `code` enum: protocol errors (`INVALID_REQUEST`, `UNAUTHORIZED`, `NOT_FOUND`, `INVALID_STATE`, `IDEMPOTENCY_KEY_REUSED`, `TRIP_ID_IN_USE`) and booking refusals (e.g. `NO_CAPACITY`, `OUTSIDE_SERVICE_AREA`, `OUTSIDE_SERVICE_HOURS`, `ELIGIBILITY_REQUIRED`, `INVALID_WINDOW`, `UNSUPPORTED_REQUIREMENT`).
+RFC 9457 Problem Details (`type`, `title`, `status`, `detail`, `instance`) + `code` enum: protocol errors (`INVALID_REQUEST`, `UNAUTHORIZED`, `NOT_FOUND`, `INVALID_STATE`, `IDEMPOTENCY_KEY_REUSED`, `TRIP_ID_IN_USE`) and booking refusals (e.g. `NO_CAPACITY`, `OUTSIDE_SERVICE_AREA`, `OUTSIDE_SERVICE_HOURS`, `ELIGIBILITY_REQUIRED`, `ELIGIBILITY_NOT_ACCEPTED` (§6.5.1), `INVALID_WINDOW`, `UNSUPPORTED_REQUIREMENT`).
 
 ## 7. Core operations (OpenAPI)
 | Method | Path | Purpose |
@@ -219,7 +231,7 @@ Both profiles extend `POST /trips`: the body is a core TripRequest plus one prof
 - SemVer on the spec. `schema_version` in every event; `/health` lists supported versions and profiles.
 - Conformance levels: **Core**, **Core + Transfer**, **Core + Paratransit**, **Core + NEMT** (`tds-conform run --profile core|transfer|paratransit|nemt`). A run produces an HTML/JSON report a vendor can attach to an RFP response. A level is met only if every scenario for it passes; INCONCLUSIVE (the provider refused the test trip) does not count as a pass.
 - The kit ships with a stateful reference provider (`tds-mock`) that passes every scenario; it is the executable reading of this spec where prose is ambiguous.
-- Conformance scenarios (initial): `book_confirm_cancel`, `modify_window`, `idempotency`, `webhook_delivery`, `tender_deadline`, `milestone_sequence`, `eta_heartbeat_staleness`, `hold_request`, `custody_required`; profiles: `paratransit_booking`, `paratransit_rules`, `nemt_booking`, `nemt_rules`.
+- Conformance scenarios (initial): `book_confirm_cancel`, `modify_window`, `idempotency`, `eligibility_attestation`, `webhook_delivery`, `tender_deadline`, `milestone_sequence`, `eta_heartbeat_staleness`, `hold_request`, `custody_required`; profiles: `paratransit_booking`, `paratransit_rules`, `nemt_booking`, `nemt_rules`.
 - Synchronous (201) and asynchronous (202 → later `OFFERED`/`REJECTED`) decisions are equally conformant. Timing checks use the provider's declared `typical_response_s`, not a fixed number of seconds; a broker-proxied provider is tested the same way (the kit may stand in for its staff).
 - Scenarios that need a vehicle to move (`milestone_sequence`, `custody_required`, `eta_heartbeat_staleness`) cannot be triggered on a live provider; they are checked on a captured event log (`tds-conform check-events`). `webhook_delivery`, `tender_deadline` and `hold_request` run live against any endpoint.
 - Fuzzing (`tds-conform fuzz`, schemathesis) complements the scenarios: generated valid and invalid requests to every operation must get documented status codes, media types and schema-valid bodies, never a 5xx. It is a diagnostic, not part of a level.
@@ -238,7 +250,7 @@ Both profiles extend `POST /trips`: the body is a core TripRequest plus one prof
 | **v0.2** | Core paths (§7); 2 examples (`single-trip`, `cancellation`); Prism mock server; CI lint + validate. |
 | **v0.3** | `tds-conform` CLI running `book_confirm_cancel` + `idempotency` against mock; report output. |
 | **v0.4** | Transfer profile (§10) draft; examples `two-provider-transfer`, `late-first-leg-hold`, `tender-expired-retender`, `supervised-rider-custody-handoff` (v0.4.1 adds `missed-connection-reprotect`, v0.5 `refusals-and-failures`); mock simulating two providers; ThroughRide adapters pointed at mock. **SE Michigan pilot demo target.** |
-| **v0.5** | Settlement split (§10.8); paratransit and NEMT drafts with conformance levels (§11); AsyncAPI completeness incl. broker exception events (§9); `tds-conform fuzz`; `docs/for-agencies.md` RFP language. |
+| **v0.5** | Settlement split (§10.8); paratransit and NEMT drafts with conformance levels (§11); AsyncAPI completeness incl. broker exception events (§9); `tds-conform fuzz`; `docs/for-agencies.md` RFP language. v0.5.1 adds exception type `ESCALATED`; v0.5.2 eligibility verification methods and fact codes (§6.5.1). |
 | v0.6+ | Settlement exchange (API operation or events, undecided), profile vocabularies checked against TDS 2020 and payers, outreach to MobilityData/OMF. |
 
 ## 16. Open questions

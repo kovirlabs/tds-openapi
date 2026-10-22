@@ -36,6 +36,7 @@ open API", and it can be checked before contract award.
 | Small providers without software can take part | Acceptance of providers answered through a broker proxy | `/health` reports `operated_via: BROKER_PROXY`; asynchronous answers are conformant |
 | Cost allocation across funders | Settlement split records per leg (SPEC.md §10.8) | Sample export validated against `settlement-split.yaml` |
 | Escalations visible to partners | Broker exception events, including `ESCALATED` (who is already acting on a problem) | Sample `EXCEPTION_RAISED` / `EXCEPTION_RESOLVED` events; counts in the vendor's reports |
+| Eligibility without re-collecting personal data | Acceptance of eligibility attestations, including fact codes such as `AGE_60_PLUS`, with a stated policy of which attesting parties and `verification_method` values the provider accepts (SPEC.md §6.5.1); refusals as `ELIGIBILITY_NOT_ACCEPTED`, not a request for date of birth | The policy in the agreement; Core report includes `eligibility_attestation` |
 | Privacy | Data minimization as specified, no health data on the wire | Review of sample payloads and the vendor's data-handling statement |
 
 A conformance report comes from running the open-source kit against the vendor's endpoint:

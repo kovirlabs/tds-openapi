@@ -1,0 +1,46 @@
+{
+  "trip_id": "tr-20261112-0031",
+  "requester_id": "throughride-demo",
+  "provider_id": "aaata-a-ride",
+  "rider_ref": {
+    "rider_ref_id": "r-c40e",
+    "display_name": "Ruth",
+    "language": "en",
+    "eligibility": [
+      {
+        "program": "AGE_60_PLUS",
+        "attested_by": "throughride-demo",
+        "verification_method": "DIGITAL_ID",
+        "verified_at": "2026-10-15",
+        "verifier_ref": "state-mdl-issuer"
+      }
+    ]
+  },
+  "legs": [
+    {
+      "leg_id": "leg-1",
+      "pickup": {
+        "lat": 42.167,
+        "lon": -83.7816,
+        "name": "Saline District Library"
+      },
+      "dropoff": {
+        "lat": 42.2808,
+        "lon": -83.743,
+        "name": "Blake Transit Center",
+        "gtfs_stop_id": "BTC"
+      },
+      "pickup_window": {
+        "earliest": "2026-11-12T09:30:00-05:00",
+        "latest": "2026-11-12T10:00:00-05:00"
+      }
+    }
+  ],
+  "fare_funding": {
+    "fare": {
+      "amount": "0.00",
+      "currency": "USD"
+    },
+    "funding_source": "SECTION_5310"
+  }
+}

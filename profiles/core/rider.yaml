@@ -33,7 +33,10 @@ properties:
     type: string
     pattern: "^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$"
   eligibility:
-    description: Program eligibility attestations relevant to this trip.
+    description: >-
+      Program eligibility and fact attestations (e.g. AGE_60_PLUS) relevant to
+      this trip, each saying who attests it and how it was verified. Attest the
+      fact a program needs instead of sending the data behind it.
     type: array
     items:
       $ref: ./eligibility.yaml
@@ -57,3 +60,8 @@ examples:
       - program: "ADA_PARATRANSIT"
         attested_by: "aaata"
         valid_until: "2027-06-30"
+        verification_method: "AGENCY_DETERMINATION"
+      - program: "AGE_60_PLUS"
+        attested_by: "throughride-demo"
+        verification_method: "DIGITAL_ID"
+        verified_at: "2026-10-15"
