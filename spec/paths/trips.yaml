@@ -31,6 +31,9 @@ post:
           rider_category_facts:
             summary: Senior and disabled county resident, attested as facts for reporting
             externalValue: ../../examples/rider-category-facts/01-request-trip.request.json
+          booking_window_too_early:
+            summary: Trip 17 days ahead, beyond the provider's 14-day booking window
+            externalValue: ../../examples/booking-window/02-request-too-early.request.json
   responses:
     "201":
       description: Decided synchronously; the trip is OFFERED or CONFIRMED.
@@ -83,3 +86,9 @@ post:
             eligibility_not_accepted:
               summary: The provider does not accept the attestation's verification method
               externalValue: ../../examples/eligibility-attestation/02-eligibility-not-accepted.json
+            outside_booking_window:
+              summary: Too early; bookable_from says when to submit again
+              externalValue: ../../examples/booking-window/02-request-too-early.response.json
+            too_little_notice:
+              summary: Too late for the provider's minimum notice; no retry hint
+              externalValue: ../../examples/booking-window/03-too-little-notice.response.json

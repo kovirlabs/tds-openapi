@@ -8,6 +8,10 @@ description: >-
   does not carry. ELIGIBILITY_NOT_ACCEPTED: the request carries one, but the
   provider does not accept its attesting party or verification method (SPEC.md
   §6.5.1); the detail may say which, never anything about the rider.
+  OUTSIDE_BOOKING_WINDOW: the request came too early or too late for the
+  provider's booking window (SPEC.md §7.1, `/health` booking_window); when too
+  early, the Problem Details carry `bookable_from`. A later request is a new
+  trip (new trip_id).
 type: string
 enum:
   - NO_CAPACITY
@@ -15,8 +19,10 @@ enum:
   - OUTSIDE_SERVICE_HOURS
   - ELIGIBILITY_REQUIRED
   - ELIGIBILITY_NOT_ACCEPTED
+  - OUTSIDE_BOOKING_WINDOW
   - INVALID_WINDOW
   - UNSUPPORTED_REQUIREMENT
 examples:
   - NO_CAPACITY
   - ELIGIBILITY_NOT_ACCEPTED
+  - OUTSIDE_BOOKING_WINDOW

@@ -61,7 +61,7 @@ def _tender(ctx: Context, body: dict):
 
 @scenario("tender_deadline", "transfer", "Tenders are answered or expire by respond_by; acceptance creates the trip")
 def tender_deadline(ctx: Context) -> None:
-    trip = ctx.new_trip()
+    trip = ctx.new_trip(tender=True)
     body = _tender_body(ctx, trip)
     tender = _tender(ctx, body)
     status = tender.get("status")
@@ -107,7 +107,7 @@ def tender_deadline(ctx: Context) -> None:
 
 @scenario("hold_request", "transfer", "Hold requests on an onward leg are answered or expire; grants move the pickup")
 def hold_request(ctx: Context) -> None:
-    trip = ctx.new_trip()
+    trip = ctx.new_trip(tender=True)
     body = _tender_body(ctx, trip, max_hold_s=900, auto_hold_s=120)
     tender = _tender(ctx, body)
     if tender.get("status") != "ACCEPTED":

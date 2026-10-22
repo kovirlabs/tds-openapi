@@ -18,8 +18,30 @@ All notable changes to this project are documented here. The format follows [Kee
 - Example `rider-category-facts`: a senior and disabled county resident attested as
   `AGE_65_PLUS`, `DISABILITY`, `RESIDENT_US_26161`, with the wheelchair lift as a service
   requirement. `eligibility` schema example for residency.
+- Booking windows (SPEC.md §7.1): `/health` may advertise `booking_window` (new schema
+  `core/booking-window.yaml`: `max_advance_s`, `min_notice_s`, `same_day`, `time_zone`) and
+  `booking_window_by_profile` (`paratransit`, `nemt`, `transfer`; replaces the default). The
+  trip time is the `earliest` of the pickup window, else the dropoff window. Crosswalk rows
+  (TODO, with the GTFS-Flex `booking_rules` fields borrowed).
+- Refusal reason `OUTSIDE_BOOKING_WINDOW`, checked after `INVALID_WINDOW` and before any other
+  refusal; Problem Details field `bookable_from` (when a too-early request can be made, as a
+  new trip). Tenders are rejected with the same reason.
+- `tds_conform.booking`: `booking_window_for`, `trip_time`, `opens_at`, `closes_at`,
+  `booking_window_problem`, `health_booking_problems`, for requesters planning submissions
+  and for providers; the example validator checks `/health` examples with it.
+- `tds-mock`: `ProviderConfig.booking_window` / `booking_window_by_profile` (also `/_sim`
+  policies), advertised on `/health` and enforced on `POST /trips`, tenders and `PATCH`.
+- Core scenario `booking_window`: with a window advertised, a trip inside it is not refused
+  for timing, one beyond `max_advance_s` is refused with `OUTSIDE_BOOKING_WINDOW` and a
+  sensible `bookable_from`, and one with too little notice (or same day, when `same_day` is
+  false) is refused too. Passes with a note when no window is advertised. Faulty-provider
+  tests included.
+- Example `booking-window` (health, a too-early request and both refusals).
 
 ### Changed
+- Kit: test trips are moved forward by whole days into the provider's advertised booking
+  window, so providers needing several days' notice can run every scenario.
+  `run_scenario` takes an optional `health` argument (the CLI passes `/health`).
 - `eligibility.program` and `rider.eligibility` descriptions state the "what, never why" rule
   for every fact code and the minimum-necessary rule.
 

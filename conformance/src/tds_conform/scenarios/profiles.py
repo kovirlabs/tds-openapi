@@ -26,6 +26,7 @@ def profile_trip(ctx: Context, profile: str) -> dict:
     trip["requester_id"] = ctx.settings.requester_id
     trip["provider_id"] = ctx.settings.provider_id
     _shift_to_future(trip["legs"])
+    ctx.fit_booking_window(trip)
     leg = trip["legs"][0]
     day = datetime.fromisoformat((leg.get("pickup_window") or leg["dropoff_window"])["earliest"]).date()
     for attestation in trip["rider_ref"].get("eligibility", []):

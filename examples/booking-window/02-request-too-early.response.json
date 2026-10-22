@@ -1,0 +1,8 @@
+{
+  "type": "about:blank",
+  "title": "Outside booking window",
+  "status": 422,
+  "detail": "Trips are booked at most 14 days ahead.",
+  "code": "OUTSIDE_BOOKING_WINDOW",
+  "bookable_from": "2026-11-04T13:00:00-05:00"
+}

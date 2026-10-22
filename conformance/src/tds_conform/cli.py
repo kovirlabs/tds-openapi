@@ -111,7 +111,7 @@ def conform_main(argv: list[str] | None = None) -> int:
         typical = health.get("typical_response_s", 0) if isinstance(health, dict) else 0
         results = []
         for sid in wanted:
-            result = run_scenario(sid, settings, client, typical)
+            result = run_scenario(sid, settings, client, typical, health)
             print(f"{result.outcome:13} {sid}{'  (' + result.note + ')' if result.note else ''}")
             results.append(result)
 
