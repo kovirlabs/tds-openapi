@@ -34,9 +34,12 @@ properties:
     pattern: "^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$"
   eligibility:
     description: >-
-      Program eligibility and fact attestations (e.g. AGE_60_PLUS) relevant to
-      this trip, each saying who attests it and how it was verified. Attest the
-      fact a program needs instead of sending the data behind it.
+      Program eligibility and fact attestations (e.g. AGE_60_PLUS, DISABILITY,
+      RESIDENT_US_26161) relevant to this trip, each saying who attests it and
+      how it was verified. Attest the fact a program needs instead of sending the
+      data behind it, and only the facts the receiving provider asks for
+      (SPEC.md §6.5.2). Providers derive reporting categories (senior,
+      disabled) from these facts; a missing fact means general or unknown.
     type: array
     items:
       $ref: ./eligibility.yaml

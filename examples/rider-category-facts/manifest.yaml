@@ -1,0 +1,19 @@
+# Maps each example file to the schema ($id) it must validate against and, when it
+# is an API payload, the operation and status it illustrates (status omitted = request body).
+description: >-
+  A rider who counts as both senior and disabled, and lives in the county that funds
+  the provider (Washtenaw County, Michigan, FIPS 26161). The broker attests three facts,
+  AGE_65_PLUS, DISABILITY and RESIDENT_US_26161, because the receiving provider's
+  agreement asks for them to report the trip by rider category (senior and disabled)
+  and to bill its county funder. No birth date, condition or address is sent: the
+  wheelchair lift is a service requirement (what the vehicle must do), and DISABILITY
+  says only that the rider counts as disabled for program purposes (SPEC.md §6.5.2).
+  The provider offers the trip and keeps the attestations as sent.
+files:
+  01-request-trip.request.json:
+    schema: https://tds-openapi.org/schemas/core/trip-request.yaml
+    operation: POST /trips
+  01-request-trip.response.json:
+    schema: https://tds-openapi.org/schemas/core/trip.yaml
+    operation: POST /trips
+    status: 201
