@@ -25,6 +25,9 @@ post:
           cancellation:
             summary: Local pickup-anchored trip
             externalValue: ../../examples/cancellation/01-request-trip.request.json
+          eligibility_attestation:
+            summary: Senior ride with an AGE_60_PLUS fact verified by digital ID
+            externalValue: ../../examples/eligibility-attestation/01-request-trip.request.json
   responses:
     "201":
       description: Decided synchronously; the trip is OFFERED or CONFIRMED.
@@ -36,6 +39,9 @@ post:
             single_trip:
               summary: Offered with a scheduled pickup
               externalValue: ../../examples/single-trip/01-request-trip.response.json
+            eligibility_attestation:
+              summary: Offered; the provider accepts DIGITAL_ID attestations
+              externalValue: ../../examples/eligibility-attestation/01-request-trip.response.json
     "202":
       description: Accepted for an asynchronous decision; the trip is REQUESTED.
       content:
@@ -68,3 +74,6 @@ post:
           examples:
             no_capacity:
               externalValue: ../../examples/errors/no-capacity.json
+            eligibility_not_accepted:
+              summary: The provider does not accept the attestation's verification method
+              externalValue: ../../examples/eligibility-attestation/02-eligibility-not-accepted.json

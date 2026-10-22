@@ -4,6 +4,38 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.5.2] - 2026-10-21
+
+Eligibility attestations say how eligibility was verified and can attest a fact (an age
+threshold) instead of the data behind it. Additive: new optional fields, a new refusal code and
+a new Core scenario that any provider keeping trips as sent already passes.
+
+### Added
+- `eligibility.verification_method` (`STAFF_VERIFIED`, `DIGITAL_ID`, `AGENCY_DETERMINATION`,
+  `SELF_DECLARED`, `OTHER`), `verified_at` (date) and `verifier_ref` (the identity platform or
+  credential issuer, never the credential). Descriptions now say explicitly that no evidence,
+  document number or date of birth is carried. Crosswalk rows added (TODO, with notes on the
+  borrowed ISO/IEC 18013-5 and OpenID Connect for Identity Assurance concepts).
+- Fact codes for `eligibility.program`: SHOULD be `AGE_<N>_PLUS` / `AGE_UNDER_<N>`
+  (SPEC.md §6.5.1), alongside program codes.
+- SPEC.md §6.5.1: eligibility attestations and the provider's acceptance policy (which
+  `attested_by` and `verification_method` combinations it accepts, set in its agreement with
+  the requester).
+- Refusal reason `ELIGIBILITY_NOT_ACCEPTED`: the request carries an attestation the provider
+  does not accept (vs `ELIGIBILITY_REQUIRED`: none was sent).
+- `tds_conform.eligibility`: `eligibility_problems` (`verified_at` not after `valid_until`) and
+  `age_code_problems` (the `AGE_` convention); the example validator applies both to trip,
+  tender and profile trip examples.
+- `tds-mock`: refuses an attestation with `verified_at` after `valid_until` (400), and
+  `ProviderConfig.refused_verification_methods` (also a `/_sim` policy; `UNSTATED` = no method)
+  refuses trips and tenders with `ELIGIBILITY_NOT_ACCEPTED`.
+- Core scenario `eligibility_attestation`: a request with an `AGE_60_PLUS` / `DIGITAL_ID`
+  attestation is accepted with the attestations kept as sent, or refused with an eligibility
+  code; 400 fails, another refusal code is INCONCLUSIVE. Faulty-provider tests included.
+- Example `eligibility-attestation` (request, offer, and the `ELIGIBILITY_NOT_ACCEPTED`
+  refusal); `single-trip` attestation now states `AGENCY_DETERMINATION`.
+- `docs/for-agencies.md`: ask for an attestation acceptance policy.
+
 ## [0.5.1] - 2026-10-21
 
 ThroughRide alignment proposal "No exception type for 'a person has been asked to act'". Additive.

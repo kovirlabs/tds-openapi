@@ -22,6 +22,7 @@ from datetime import UTC, datetime, timedelta
 
 from tds_conform import SPEC_VERSION
 from tds_conform.data import schema_errors
+from tds_conform.eligibility import trip_eligibility_problems
 from tds_conform.mock.common import TERMINAL, Response, _invalid_state, _not_found, _ts, _window_problem, problem
 from tds_conform.mock.transfer import TransferMixin
 from tds_conform.profiles import profile_problems
@@ -37,6 +38,9 @@ class ProviderConfig:
     schedule_delay_s: float = 1.0
     operated_via: str = "DIRECT"
     unsupported_requirements: frozenset[str] = frozenset()
+    # Eligibility acceptance policy (SPEC.md §6.5.1): attestations verified this way are refused
+    # with ELIGIBILITY_NOT_ACCEPTED. "UNSTATED" stands for an attestation without verification_method.
+    refused_verification_methods: frozenset[str] = frozenset()
     profiles: tuple[str, ...] = ("CORE", "TRANSFER", "PARATRANSIT", "NEMT")  # declared on /health
     offer_ttl_s: int | None = None  # set: offers carry offer_expires_at and EXPIRE if not confirmed
     # Transfer profile policies; adjustable at runtime through the /_sim API.
@@ -173,7 +177,7 @@ class Provider(TransferMixin):
         if refusal := self._check_trip_request(requester, body):
             return refusal
         trip = self._create_trip(requester, body)
-        if refusal := self._refusal(trip.leg):
+        if refusal := self._refusal(trip.body):
             self._set_status(trip, "REJECTED")
             return refusal
         if self.config.decision == "async":
@@ -187,6 +191,8 @@ class Provider(TransferMixin):
             return problem(400, "INVALID_REQUEST", "; ".join(errors))
         if refusal := self._check_profiles(body):
             return refusal
+        if errors := trip_eligibility_problems(body):
+            return problem(400, "INVALID_REQUEST", "; ".join(errors))
         if body["requester_id"] != requester:
             return problem(400, "INVALID_REQUEST", "requester_id does not match the authenticated client.")
         if self.config.provider_id and body["provider_id"] != self.config.provider_id:
@@ -338,12 +344,21 @@ class Provider(TransferMixin):
         trip.body["updated_at"] = _ts(self.clock())
         self._emit(trip, "TRIP_STATUS_CHANGED", {"status": status, "previous_status": previous})
 
-    def _refusal(self, leg: dict) -> Response | None:
+    def _refusal(self, trip_request: dict) -> Response | None:
+        leg = trip_request["legs"][0]
         if refusal := _window_problem(leg, self.clock()):
             return refusal
         unsupported = sorted(set(leg.get("service_requirements", [])) & self.config.unsupported_requirements)
         if unsupported:
             return problem(422, "UNSUPPORTED_REQUIREMENT", f"Cannot provide: {', '.join(unsupported)}.")
+        refused = sorted(
+            {a.get("verification_method", "UNSTATED") for a in trip_request.get("rider_ref", {}).get("eligibility", [])}
+            & self.config.refused_verification_methods
+        )
+        if refused:
+            return problem(
+                422, "ELIGIBILITY_NOT_ACCEPTED", f"Attestations verified by {', '.join(refused)} are not accepted."
+            )
         return None
 
     # --- events -------------------------------------------------------------------

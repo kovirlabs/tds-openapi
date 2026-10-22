@@ -1,0 +1,7 @@
+{
+  "type": "about:blank",
+  "title": "Eligibility attestation not accepted",
+  "status": 422,
+  "detail": "This provider accepts AGE_60_PLUS attestations verified by STAFF_VERIFIED or AGENCY_DETERMINATION only.",
+  "code": "ELIGIBILITY_NOT_ACCEPTED"
+}

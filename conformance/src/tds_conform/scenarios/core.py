@@ -1,5 +1,7 @@
 """Core profile scenarios (SPEC.md §7, §8.1, §13)."""
 
+from datetime import date
+
 from tds_conform.runner import Context, Inconclusive, scenario
 
 TRIP = "/trips/{trip_id}"
@@ -109,6 +111,44 @@ def idempotency(ctx: Context) -> None:
         trip_id=trip["trip_id"],
     )
     again.check_equal(again.body, first.body, "retried cancel replays the original 200, not a 409")
+
+
+ELIGIBILITY_REFUSALS = ("ELIGIBILITY_NOT_ACCEPTED", "ELIGIBILITY_REQUIRED")
+
+
+@scenario(
+    "eligibility_attestation",
+    "core",
+    "Attestations with a verification method are kept as sent, or refused with an eligibility code",
+)
+def eligibility_attestation(ctx: Context) -> None:
+    trip = ctx.new_trip()
+    rider = trip.setdefault("rider_ref", {"rider_ref_id": "conform-rider"})
+    attestation = {
+        "program": "AGE_60_PLUS",
+        "attested_by": ctx.settings.requester_id,
+        "verification_method": "DIGITAL_ID",
+        "verified_at": date.today().isoformat(),
+        "verifier_ref": "conform-identity-platform",
+    }
+    rider["eligibility"] = [*rider.get("eligibility", []), attestation]
+    step = ctx.call("request trip with a DIGITAL_ID attestation", "POST", "/trips", body=trip, expect=(201, 202, 422))
+    if step.status == 422:
+        code = _code(step.body)
+        if code not in ELIGIBILITY_REFUSALS:
+            raise Inconclusive(f"provider refused the test trip ({code}); supply --trip-template")
+        step.check(True, "refusal over the attestation uses an eligibility refusal code")
+        return
+    step.require(step.status in (201, 202), "attestation fields accepted")
+    body = step.body
+    if isinstance(body, dict) and body.get("status") == "REQUESTED":
+        body = ctx.wait_for_decision(trip["trip_id"]).body
+    if body.get("status") == "REJECTED":
+        raise Inconclusive("provider rejected the test trip asynchronously; supply --trip-template")
+    step = ctx.call("read trip", "GET", TRIP, expect=(200,), trip_id=trip["trip_id"])
+    got = (step.body.get("rider_ref") or {}).get("eligibility") if isinstance(step.body, dict) else None
+    step.check_equal(got, rider["eligibility"], "rider_ref.eligibility kept as sent")
+    ctx.call("clean up", "POST", TRIP + "/cancel", body={"reason": "OTHER"}, expect=(200,), trip_id=trip["trip_id"])
 
 
 def _code(body) -> str | None:

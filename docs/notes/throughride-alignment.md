@@ -241,3 +241,31 @@ ThroughRide's outbound `EXCEPTION_RAISED` for its ladder: `type: ESCALATED`,
 `escalates_exception_id` = the condition exception (`HOLD_UNANSWERED`, …), `escalation_level` =
 ladder step, severity `AT_RISK` or `CRITICAL`, nothing about who was contacted; send
 `EXCEPTION_RESOLVED` for each escalation when the condition resolves.
+
+## v0.5.2 released (2026-10-21, local tag `v0.5.2`)
+
+Eligibility attestations (SPEC.md §6.5.1). Re-vendor from tag `v0.5.2` (`binding_version()` =
+`0.5.2`; generated event streams carry `schema_version: "0.5.2"`, nothing else changed in them).
+
+- **Why:** receiving providers often determine eligibility themselves and ask for a date of
+  birth, which the binding deliberately never carries. Whether a provider trusts another
+  party's attestation depends on how it was verified, so attestations now say so.
+- **New optional fields** on `rider_ref.eligibility[]`: `verification_method`
+  (`STAFF_VERIFIED`, `DIGITAL_ID`, `AGENCY_DETERMINATION`, `SELF_DECLARED`, `OTHER`),
+  `verified_at` (date, not after `valid_until`) and `verifier_ref` (the identity platform or
+  credential issuer, when it is not `attested_by`; never a credential or document number).
+- **Fact codes:** `program` may be a fact such as `AGE_60_PLUS`, `AGE_65_PLUS` or
+  `AGE_UNDER_18` (`AGE_<N>_PLUS` / `AGE_UNDER_<N>`), next to program codes like
+  `ADA_PARATRANSIT` and `SENIOR_5310`.
+- **Refusals:** a provider that does not accept an attestation's attester or method answers
+  422 `ELIGIBILITY_NOT_ACCEPTED` (tenders: `reason: ELIGIBILITY_NOT_ACCEPTED`);
+  `ELIGIBILITY_REQUIRED` still means none was sent. Which combinations a provider accepts is
+  agreement data, not on the wire.
+- **For ThroughRide (behaviour, nothing breaks):** the `tds` adapter sends no eligibility today,
+  which stays valid. To use this it needs a per-rider attestation record holding only program
+  or fact code, attester, method, `verified_at`, `valid_until` and optional verifier id (no
+  date of birth or document data), sent as-is in `rider_ref.eligibility`. Map a provider's
+  `ELIGIBILITY_NOT_ACCEPTED` / `ELIGIBILITY_REQUIRED` refusal to a coordinator-facing
+  rejection reason; per rule 1, offering the leg elsewhere stays a proposal. A provider's
+  accepted (attester, method) list belongs with the agreement data (`ContinuationAgreement`
+  or provider config), if ThroughRide wants to warn before sending.

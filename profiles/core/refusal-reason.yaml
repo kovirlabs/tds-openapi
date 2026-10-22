@@ -4,13 +4,19 @@ title: RefusalReason
 description: >-
   Why a provider refuses to serve a trip, tender or change. Used as the `code`
   of a 422 Problem Details response and as the `reason` on a rejected tender.
+  ELIGIBILITY_REQUIRED: the trip needs an eligibility attestation the request
+  does not carry. ELIGIBILITY_NOT_ACCEPTED: the request carries one, but the
+  provider does not accept its attesting party or verification method (SPEC.md
+  §6.5.1); the detail may say which, never anything about the rider.
 type: string
 enum:
   - NO_CAPACITY
   - OUTSIDE_SERVICE_AREA
   - OUTSIDE_SERVICE_HOURS
   - ELIGIBILITY_REQUIRED
+  - ELIGIBILITY_NOT_ACCEPTED
   - INVALID_WINDOW
   - UNSUPPORTED_REQUIREMENT
 examples:
   - NO_CAPACITY
+  - ELIGIBILITY_NOT_ACCEPTED

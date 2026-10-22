@@ -61,9 +61,12 @@ cite; don't paste definitions (reuse terms not yet confirmed, see SPEC.md §16 Q
 
 | Field | TDS 2020 element | TDS section | Status | Notes |
 |---|---|---|---|---|
-| `eligibility.program` | TODO(crosswalk) | | TODO |  |
+| `eligibility.program` | TODO(crosswalk) | | TODO | Also carries fact codes (`AGE_<N>_PLUS`, `AGE_UNDER_<N>`), modelled on the ISO/IEC 18013-5 mDL `age_over_NN` element: the threshold is shared, never the birth date. Check whether TDS 2020 has an age or eligibility-category element. |
 | `eligibility.attested_by` | TODO(crosswalk) | | TODO |  |
 | `eligibility.valid_until` | TODO(crosswalk) | | TODO |  |
+| `eligibility.verification_method` | TODO(crosswalk) | | TODO | Coarse version of OpenID Connect for Identity Assurance `verification` (trust framework, evidence type), without the evidence itself. Probably an extension. |
+| `eligibility.verified_at` | TODO(crosswalk) | | TODO | Date only, like OIDC4IDA `verification.time` reduced to a day. |
+| `eligibility.verifier_ref` | TODO(crosswalk) | | TODO | Names the issuer (mDL issuing authority, OpenID provider, verifiable-credential issuer), never the credential. Probably an extension. |
 
 ### Error (`profiles/core/error.yaml`)
 

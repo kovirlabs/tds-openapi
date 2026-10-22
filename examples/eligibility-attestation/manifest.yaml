@@ -1,0 +1,20 @@
+# Maps each example file to the schema ($id) it must validate against and, when it
+# is an API payload, the operation and status it illustrates (status omitted = request body).
+description: >-
+  A senior ride funded under Section 5310. The broker attests a fact, AGE_60_PLUS,
+  verified through a digital identity (a mobile ID's age-over disclosure), instead
+  of sending a date of birth. A provider that accepts DIGITAL_ID attestations offers
+  the trip; one whose policy does not accept them answers the same request with
+  422 ELIGIBILITY_NOT_ACCEPTED (SPEC.md §6.5.1).
+files:
+  01-request-trip.request.json:
+    schema: https://tds-openapi.org/schemas/core/trip-request.yaml
+    operation: POST /trips
+  01-request-trip.response.json:
+    schema: https://tds-openapi.org/schemas/core/trip.yaml
+    operation: POST /trips
+    status: 201
+  02-eligibility-not-accepted.json:
+    schema: https://tds-openapi.org/schemas/core/error.yaml
+    operation: POST /trips
+    status: 422

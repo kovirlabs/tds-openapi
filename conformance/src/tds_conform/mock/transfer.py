@@ -31,6 +31,7 @@ POLICY_FIELDS = {
     "hold_decision": str,
     "offer_ttl_s": int,
     "unsupported_requirements": frozenset,
+    "refused_verification_methods": frozenset,
     "max_hold_s": int,
     "max_auto_hold_s": int,
     "heartbeat_s": int,
@@ -108,7 +109,7 @@ class TransferMixin:
     def _decide_tender(self, state: dict) -> None:
         tender, request, requester = state["tender"], state["request"], state["requester"]
         trip_req, interchange = request["trip"], request["interchange"]
-        refusal = self._refusal(trip_req["legs"][0])
+        refusal = self._refusal(trip_req)
         if self.config.tender_decision == "REJECT" or refusal:
             tender["status"] = "REJECTED"
             tender["reason"] = refusal[1]["code"] if refusal else self.config.reject_reason
