@@ -269,3 +269,53 @@ Eligibility attestations (SPEC.md §6.5.1). Re-vendor from tag `v0.5.2` (`bindin
   rejection reason; per rule 1, offering the leg elsewhere stays a proposal. A provider's
   accepted (attester, method) list belongs with the agreement data (`ContinuationAgreement`
   or provider config), if ThroughRide wants to warn before sending.
+
+## v0.5.3 released (2026-10-21, local tag `v0.5.3`)
+
+Rider-category fact codes (SPEC.md §6.5.2) and provider booking windows (§7.1). Re-vendor from
+tag `v0.5.3` (`binding_version()` = `0.5.3`; generated event streams change only in
+`schema_version`). New example folders: `rider-category-facts/`, `booking-window/`.
+
+**Fact codes for reporting and funder rules.**
+- New `program` fact codes next to `AGE_<N>_PLUS`: `DISABILITY` (the rider counts as a person
+  with a disability for program purposes; yes/no, never a qualifier such as a condition or
+  type), `LOW_INCOME` (meets the income test of the program the agreement names; never the
+  income) and `RESIDENT_<CC>_<area>`, in the US `RESIDENT_US_<5-digit county FIPS>` (e.g.
+  `RESIDENT_US_26161`). The county FIPS code already contains the state, so no ISO 3166-2 part
+  is needed. Medicaid enrollment stays a program code.
+- Each provider derives its reporting category (general, senior, disabled, both) from the
+  facts it received; a missing fact means general/unknown. Requesters send only the facts the
+  receiving provider's agreement asks for.
+- `tds_conform.eligibility.fact_code_problems` checks the patterns (SHOULD).
+- **For ThroughRide (behaviour, nothing breaks):** the per-rider attestation record (v0.5.2
+  note) can hold these codes as-is. Add per provider (agreement or provider config) the list of
+  facts it needs, and send only those in `rider_ref.eligibility` for that provider's legs.
+  Store county of residence as a FIPS code, not derived from the address at send time; never
+  store or send a disability type in this record (needs stay `service_requirements`).
+  ThroughRide's own reports can use the same derivation for per-provider counts.
+
+**Booking windows.**
+- `/health` may carry `booking_window` (`max_advance_s`, `min_notice_s`, `same_day`,
+  `time_zone`) and `booking_window_by_profile` (`paratransit`, `nemt`, `transfer`, each
+  replacing the default). Trip time = `earliest` of the pickup window, else the dropoff window;
+  request time = when the provider receives `POST /trips`, `POST /tenders` or a window-changing
+  `PATCH`.
+- Outside the window: 422 `OUTSIDE_BOOKING_WINDOW` (tender `reason` likewise; `PATCH` keeps the
+  previous terms), checked before other refusals. Too early: `bookable_from` on the Problem
+  Details. The trip is `REJECTED`; resubmit later as a new trip with a new `trip_id`.
+- `tds_conform.booking` (`booking_window_for`, `trip_time`, `opens_at`, `closes_at`,
+  `booking_window_problem`) can be imported to plan submissions. `tds-mock` takes
+  `ProviderConfig.booking_window` / `booking_window_by_profile` (or the `/_sim` policy).
+- Not covered yet: a prior-day cutoff time (book by 17:00 the day before, GTFS-Flex
+  `prior_notice_last_time`). `same_day: false` approximates it as "by the end of the previous
+  day". Propose it here if a provider needs it.
+- **For ThroughRide:** read each provider's `/health` booking window (cache it with the
+  provider config; a manual window on `AdapterConfig` for providers without an endpoint). When a
+  journey is composed, compute each leg's `opens_at`/`closes_at` and warn the coordinator about a
+  leg that cannot be booked in time. A leg whose window has not opened stays planned with a
+  scheduled submit at `opens_at` (a Celery beat task, idempotent per leg and action); sending it
+  is the same action the coordinator already approved, so rule 1 is not touched. Map
+  `OUTSIDE_BOOKING_WINDOW` to a coordinator-facing rejection reason; when `bookable_from` is
+  present, offer "resubmit at that time" (new `trip_id`), never resubmit to another provider
+  without approval.
+

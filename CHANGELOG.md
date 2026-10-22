@@ -4,6 +4,13 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.5.3] - 2026-10-21
+
+Rider-category fact codes for reporting and funder rules, and provider booking windows.
+Additive: new optional fields, a new refusal code, conventions checked on examples only, and a
+new Core scenario that passes with a note for a provider advertising no booking window.
+Generated event streams change only in `schema_version`.
+
 ### Added
 - Fact codes for rider categories and funder rules (SPEC.md §6.5.2): `DISABILITY` (counts as a
   person with a disability for program purposes; yes/no, never the condition or type),
