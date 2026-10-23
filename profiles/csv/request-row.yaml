@@ -1,0 +1,324 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/csv/request-row.yaml
+title: CsvRequestRow
+description: >-
+  One row of a requests file (`tds_requests_<UTC time>.csv`, SPEC.md §9.2),
+  sent by a requester to a provider that exchanges files instead of calling
+  the API. Each row is one action on one leg: REQUEST is `POST /trips`, CONFIRM
+  is `POST /trips/{trip_id}/confirm`, MODIFY is `PATCH /trips/{trip_id}` and
+  CANCEL is `POST /trips/{trip_id}/cancel`. Cells are text; this schema gives
+  each column's value after parsing (numbers, `true`/`false`, `|`-separated
+  lists; an empty cell is an absent value). `x-maps-to` gives, per action, the
+  JSON Pointer of the column in that operation's body; a column without an
+  entry for the row's action is ignored. The idempotency key of a row is
+  (requester_id, provider_id, trip_id, leg_id, action, revision). Eligibility
+  attestations, the fare amount and rider e-mail are not carried in this
+  profile; use the API for trips that need them.
+x-profile: csv
+x-csv-discriminator: action
+type: object
+required: [requester_id, provider_id, trip_id, leg_id, action]
+properties:
+  requester_id:
+    description: Party sending the request. Same as trip-request.requester_id.
+    type: string
+    minLength: 1
+    x-maps-to: {REQUEST: /requester_id}
+  provider_id:
+    description: Provider asked to serve the trip. Same as trip-request.provider_id.
+    type: string
+    minLength: 1
+    x-maps-to: {REQUEST: /provider_id}
+  trip_id:
+    description: >-
+      Requester-assigned trip id, unique per requester_id. For CONFIRM, MODIFY
+      and CANCEL it is the `{trip_id}` of the operation's path.
+    type: string
+    minLength: 1
+    x-maps-to: {REQUEST: /trip_id}
+  leg_id:
+    description: Leg id, unique within the trip (core trips have one leg).
+    type: string
+    minLength: 1
+    x-maps-to: {REQUEST: /legs/0/leg_id}
+  action:
+    description: What the row asks for; selects the operation and which columns apply.
+    type: string
+    enum: [REQUEST, CONFIRM, MODIFY, CANCEL]
+  revision:
+    description: >-
+      Integer that tells apart repeated actions of the same kind on the same
+      leg, e.g. a second MODIFY. Starts at 1 (an empty cell means 1); a
+      resent row keeps its revision, so the provider applies it once.
+    type: integer
+    minimum: 1
+    default: 1
+  rider_ref_id:
+    description: Pairwise rider reference (rider.rider_ref_id). Required for REQUEST.
+    type: string
+    minLength: 1
+    x-maps-to: {REQUEST: /rider_ref/rider_ref_id}
+  rider_display_name:
+    description: How the driver addresses the rider (rider.display_name).
+    type: string
+    maxLength: 60
+    x-maps-to: {REQUEST: /rider_ref/display_name}
+  rider_language:
+    description: Preferred language, BCP 47 (rider.language).
+    type: string
+    pattern: "^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$"
+    x-maps-to: {REQUEST: /rider_ref/language}
+  rider_contact_consent:
+    description: >-
+      `true` if the rider agreed to be contacted by the provider
+      (rider.contact_consent). Required, and `true`, when rider_phone is given.
+    type: boolean
+    x-maps-to: {REQUEST: /rider_ref/contact_consent}
+  rider_phone:
+    description: Rider phone in E.164, only with consent (rider.contact.phone).
+    type: string
+    pattern: "^\\+[1-9][0-9]{1,14}$"
+    x-maps-to: {REQUEST: /rider_ref/contact/phone}
+  companions:
+    description: >-
+      Companions travelling with the rider (party.companions). For MODIFY,
+      give all three party columns: together they replace the party.
+    type: integer
+    minimum: 0
+    x-maps-to: {REQUEST: /party/companions, MODIFY: /party/companions}
+  attendants:
+    description: Personal care attendants travelling with the rider (party.attendants).
+    type: integer
+    minimum: 0
+    x-maps-to: {REQUEST: /party/attendants, MODIFY: /party/attendants}
+  service_animals:
+    description: Service animals travelling with the rider (party.service_animals).
+    type: integer
+    minimum: 0
+    x-maps-to: {REQUEST: /party/service_animals, MODIFY: /party/service_animals}
+  pickup_lat:
+    description: Pickup latitude, WGS84 decimal degrees (leg.pickup.lat).
+    type: number
+    minimum: -90
+    maximum: 90
+    x-maps-to: {REQUEST: /legs/0/pickup/lat}
+  pickup_lon:
+    description: Pickup longitude, WGS84 decimal degrees (leg.pickup.lon).
+    type: number
+    minimum: -180
+    maximum: 180
+    x-maps-to: {REQUEST: /legs/0/pickup/lon}
+  pickup_name:
+    description: Pickup place name (leg.pickup.name).
+    type: string
+    maxLength: 200
+    x-maps-to: {REQUEST: /legs/0/pickup/name}
+  pickup_street:
+    description: Pickup street and number (leg.pickup.address.street).
+    type: string
+    maxLength: 200
+    x-maps-to: {REQUEST: /legs/0/pickup/address/street}
+  pickup_city:
+    description: Pickup city (leg.pickup.address.city).
+    type: string
+    maxLength: 100
+    x-maps-to: {REQUEST: /legs/0/pickup/address/city}
+  pickup_region:
+    description: Pickup state or region (leg.pickup.address.region).
+    type: string
+    maxLength: 100
+    x-maps-to: {REQUEST: /legs/0/pickup/address/region}
+  pickup_postal_code:
+    description: Pickup postal code (leg.pickup.address.postal_code).
+    type: string
+    maxLength: 20
+    x-maps-to: {REQUEST: /legs/0/pickup/address/postal_code}
+  pickup_country:
+    description: Pickup country, ISO 3166-1 alpha-2 (leg.pickup.address.country).
+    type: string
+    pattern: "^[A-Z]{2}$"
+    x-maps-to: {REQUEST: /legs/0/pickup/address/country}
+  pickup_gtfs_stop_id:
+    description: GTFS stop_id of the pickup, if it is a stop (leg.pickup.gtfs_stop_id).
+    type: string
+    x-maps-to: {REQUEST: /legs/0/pickup/gtfs_stop_id}
+  pickup_flex_location_id:
+    description: GTFS-Flex location id of the pickup (leg.pickup.flex_location_id).
+    type: string
+    x-maps-to: {REQUEST: /legs/0/pickup/flex_location_id}
+  pickup_access_notes:
+    description: Wayfinding at the pickup, never health information (leg.pickup.access_notes).
+    type: string
+    maxLength: 300
+    x-maps-to: {REQUEST: /legs/0/pickup/access_notes}
+  dropoff_lat:
+    description: Dropoff latitude, WGS84 decimal degrees (leg.dropoff.lat).
+    type: number
+    minimum: -90
+    maximum: 90
+    x-maps-to: {REQUEST: /legs/0/dropoff/lat}
+  dropoff_lon:
+    description: Dropoff longitude, WGS84 decimal degrees (leg.dropoff.lon).
+    type: number
+    minimum: -180
+    maximum: 180
+    x-maps-to: {REQUEST: /legs/0/dropoff/lon}
+  dropoff_name:
+    description: Dropoff place name (leg.dropoff.name).
+    type: string
+    maxLength: 200
+    x-maps-to: {REQUEST: /legs/0/dropoff/name}
+  dropoff_street:
+    description: Dropoff street and number (leg.dropoff.address.street).
+    type: string
+    maxLength: 200
+    x-maps-to: {REQUEST: /legs/0/dropoff/address/street}
+  dropoff_city:
+    description: Dropoff city (leg.dropoff.address.city).
+    type: string
+    maxLength: 100
+    x-maps-to: {REQUEST: /legs/0/dropoff/address/city}
+  dropoff_region:
+    description: Dropoff state or region (leg.dropoff.address.region).
+    type: string
+    maxLength: 100
+    x-maps-to: {REQUEST: /legs/0/dropoff/address/region}
+  dropoff_postal_code:
+    description: Dropoff postal code (leg.dropoff.address.postal_code).
+    type: string
+    maxLength: 20
+    x-maps-to: {REQUEST: /legs/0/dropoff/address/postal_code}
+  dropoff_country:
+    description: Dropoff country, ISO 3166-1 alpha-2 (leg.dropoff.address.country).
+    type: string
+    pattern: "^[A-Z]{2}$"
+    x-maps-to: {REQUEST: /legs/0/dropoff/address/country}
+  dropoff_gtfs_stop_id:
+    description: GTFS stop_id of the dropoff, if it is a stop (leg.dropoff.gtfs_stop_id).
+    type: string
+    x-maps-to: {REQUEST: /legs/0/dropoff/gtfs_stop_id}
+  dropoff_flex_location_id:
+    description: GTFS-Flex location id of the dropoff (leg.dropoff.flex_location_id).
+    type: string
+    x-maps-to: {REQUEST: /legs/0/dropoff/flex_location_id}
+  dropoff_access_notes:
+    description: Wayfinding at the dropoff, never health information (leg.dropoff.access_notes).
+    type: string
+    maxLength: 300
+    x-maps-to: {REQUEST: /legs/0/dropoff/access_notes}
+  pickup_earliest:
+    description: Start of the requested pickup window, RFC 3339 with offset (leg.pickup_window.earliest).
+    type: string
+    format: date-time
+    x-maps-to: {REQUEST: /legs/0/pickup_window/earliest, MODIFY: /pickup_window/earliest}
+  pickup_latest:
+    description: End of the requested pickup window, RFC 3339 with offset (leg.pickup_window.latest).
+    type: string
+    format: date-time
+    x-maps-to: {REQUEST: /legs/0/pickup_window/latest, MODIFY: /pickup_window/latest}
+  pickup_preferred:
+    description: Preferred pickup time inside the window (leg.pickup_window.preferred).
+    type: string
+    format: date-time
+    x-maps-to: {REQUEST: /legs/0/pickup_window/preferred, MODIFY: /pickup_window/preferred}
+  dropoff_earliest:
+    description: Start of the requested dropoff window, RFC 3339 with offset (leg.dropoff_window.earliest).
+    type: string
+    format: date-time
+    x-maps-to: {REQUEST: /legs/0/dropoff_window/earliest, MODIFY: /dropoff_window/earliest}
+  dropoff_latest:
+    description: End of the requested dropoff window, e.g. the appointment time (leg.dropoff_window.latest).
+    type: string
+    format: date-time
+    x-maps-to: {REQUEST: /legs/0/dropoff_window/latest, MODIFY: /dropoff_window/latest}
+  dropoff_preferred:
+    description: Preferred dropoff time inside the window (leg.dropoff_window.preferred).
+    type: string
+    format: date-time
+    x-maps-to: {REQUEST: /legs/0/dropoff_window/preferred, MODIFY: /dropoff_window/preferred}
+  service_requirements:
+    description: >-
+      Services the vehicle and driver must provide, `|`-separated, e.g.
+      `WHEELCHAIR_LIFT|DOOR_TO_DOOR` (leg.service_requirements). What is
+      needed, never why.
+    $ref: ../core/leg.yaml#/properties/service_requirements
+    x-maps-to: {REQUEST: /legs/0/service_requirements}
+  notes_to_driver:
+    description: Operational notes; no health or diagnosis information (trip-request.notes_to_driver).
+    type: string
+    maxLength: 500
+    x-maps-to: {REQUEST: /notes_to_driver, MODIFY: /notes_to_driver}
+  funding_source:
+    description: Primary funding source (fare_funding.funding_source).
+    $ref: ../core/funding-source.yaml
+    x-maps-to: {REQUEST: /fare_funding/funding_source}
+  sponsor_ref:
+    description: Sponsoring organization, when funding_source is SPONSOR (fare_funding.sponsor_ref).
+    type: string
+    x-maps-to: {REQUEST: /fare_funding/sponsor_ref}
+  authorization_ref:
+    description: >-
+      Funder's authorization reference, e.g. a prior-authorization number; no
+      clinical content (fare_funding.authorization_ref).
+    type: string
+    x-maps-to: {REQUEST: /fare_funding/authorization_ref}
+  cancel_reason:
+    description: Why the trip is cancelled (cancel-request.reason). Required for CANCEL.
+    $ref: ../core/cancel-reason.yaml
+    x-maps-to: {CANCEL: /reason}
+  cancel_detail:
+    description: Optional explanation; no health or diagnosis information (cancel-request.detail).
+    type: string
+    maxLength: 500
+    x-maps-to: {CANCEL: /detail}
+dependentRequired:
+  rider_phone: [rider_contact_consent]
+allOf:
+  - if:
+      properties: {action: {const: REQUEST}}
+    then:
+      required: [rider_ref_id, pickup_lat, pickup_lon, dropoff_lat, dropoff_lon]
+      anyOf:
+        - required: [pickup_earliest, pickup_latest]
+        - required: [dropoff_earliest, dropoff_latest]
+  - if:
+      properties: {action: {const: MODIFY}}
+    then:
+      anyOf:
+        - required: [pickup_earliest]
+        - required: [dropoff_earliest]
+        - required: [companions]
+        - required: [attendants]
+        - required: [service_animals]
+        - required: [notes_to_driver]
+  - if:
+      properties: {action: {const: CANCEL}}
+    then:
+      required: [cancel_reason]
+  - if:
+      required: [rider_phone]
+    then:
+      properties:
+        rider_contact_consent:
+          const: true
+examples:
+  - requester_id: "throughride-demo"
+    provider_id: "aaata-a-ride"
+    trip_id: "tr-20261103-0001"
+    leg_id: "leg-1"
+    action: "REQUEST"
+    revision: 1
+    rider_ref_id: "r-7f3a"
+    pickup_lat: 42.2808
+    pickup_lon: -83.7430
+    dropoff_lat: 42.2569
+    dropoff_lon: -83.6960
+    pickup_earliest: "2026-11-03T09:00:00-05:00"
+    pickup_latest: "2026-11-03T09:30:00-05:00"
+    service_requirements: [WHEELCHAIR_LIFT]
+  - requester_id: "throughride-demo"
+    provider_id: "aaata-a-ride"
+    trip_id: "tr-20261103-0001"
+    leg_id: "leg-1"
+    action: "CANCEL"
+    cancel_reason: "RIDER_REQUEST"

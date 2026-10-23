@@ -18,7 +18,10 @@ Manifest format (``examples/<scenario>/manifest.yaml``): ``description``, option
 and ``status`` (absent for a request body). Event logs have ``kind: event-stream`` and no
 ``schema``; one HTTP webhook delivery (``{method, url, headers, body}``, body as the raw
 string that was signed) has ``kind: webhook-delivery`` and names the subscription response
-holding its secret in ``subscription``. ``load_manifest`` always returns entries as dicts.
+holding its secret in ``subscription``. TDS CSV files (SPEC.md §9.2) have ``kind: csv`` and
+load as text; parse them with ``tds_conform.csvfile``. A JSON file with ``row_of:
+<file>:<line>`` is what that CSV row stands for in the API. ``load_manifest`` always returns
+entries as dicts.
 """
 
 from __future__ import annotations
@@ -74,16 +77,25 @@ def load_manifest(scenario: str) -> dict[str, Any]:
 
 
 def load_example(scenario: str, filename: str) -> Any:
-    """Parsed JSON of one example file. The file must be listed in the scenario's manifest."""
+    """Parsed JSON of one example file, or the text of a CSV file (``kind: csv``).
+
+    The file must be listed in the scenario's manifest.
+    """
     if filename not in load_manifest(scenario)["files"]:
         raise FileNotFoundError(f"{filename!r} is not listed in examples/{scenario}/manifest.yaml")
-    return json.loads((_scenario_dir(scenario) / filename).read_text())
+    return _read(_scenario_dir(scenario) / filename)
 
 
 def iter_examples(scenario: str) -> Iterator[tuple[str, dict[str, Any], Any]]:
-    """(filename, manifest entry, parsed JSON) for every file of a scenario, in manifest order."""
+    """(filename, manifest entry, parsed JSON or CSV text) for every file of a scenario, in manifest order."""
     for name, entry in load_manifest(scenario)["files"].items():
-        yield name, entry, json.loads((_scenario_dir(scenario) / name).read_text())
+        yield name, entry, _read(_scenario_dir(scenario) / name)
+
+
+def _read(path: Path) -> Any:
+    if path.suffix == ".csv":
+        return path.read_bytes().decode("utf-8-sig")
+    return json.loads(path.read_text())
 
 
 def _scenario_dir(scenario: str) -> Path:

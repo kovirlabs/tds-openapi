@@ -109,6 +109,19 @@ uv run tds-conform check-events received.json --interchange tender-onward.reques
 
 It checks schemas, milestone order, custody records and heartbeat gaps.
 
+## Check batch files
+
+Providers without an API exchange CSV files instead (SPEC.md §9.2; `examples/csv-batch/` shows
+two rounds of requests and answers and a statuses file):
+
+```sh
+uv run tds-conform check-csv tds_requests_20261104T150000Z.csv tds_answers_20261104T204000Z.csv
+```
+
+It checks each file's name, encoding, columns and rows, what each row stands for in the API,
+and that every answer row answers a request row. `tds_conform.csvfile` reads, writes and
+converts rows (`row_to_json`, `json_to_row`).
+
 ## Use tds-conform from another project
 
 Brokers can depend on the kit instead of copying it, for test fakes that replay
