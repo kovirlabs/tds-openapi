@@ -16,7 +16,12 @@ Checks:
      also follow the interchange rules (auto_hold_s ≤ max_hold_s; HAND_TO_HAND on a
      PROTECTED interchange needs supervision_required, SPEC.md §10.1); settlement
      splits add up in one currency (SPEC.md §10.8); paratransit and NEMT trip
-     requests follow their profile rules (SPEC.md §11).
+     requests follow their profile rules (SPEC.md §11). An entry with
+     `kind: webhook-delivery` is one HTTP delivery ({method, url, headers, body as a
+     raw string}): the body is a valid event, the headers match the AsyncAPI
+     DeliveryHeaders schema, the signatures verify with the secret of the
+     subscription response the entry names, and CloudEvents headers match the
+     envelope (SPEC.md §9.1, §12).
   5. Manifest entries that name an `operation` are wired into spec/openapi.yaml at
      that operation and status (so the mock serves them), the operation declares
      the same schema, and every example the spec references has such an entry.
@@ -179,6 +184,49 @@ def check_event_stream(events, registry: Registry, wiring: dict[str, str]) -> li
     )
 
 
+def delivery_headers_validator(asyncapi: Path = ASYNCAPI) -> Draft202012Validator:
+    """Validator for the AsyncAPI `DeliveryHeaders` schema (its internal refs resolved in place)."""
+    schemas = yaml.safe_load(asyncapi.read_text())["components"]["schemas"]
+    root = {"$ref": "#/components/schemas/DeliveryHeaders", "components": {"schemas": schemas}}
+    return Draft202012Validator(root)
+
+
+def check_delivery(path: Path, entry: dict, registry: Registry, wiring: dict[str, str]) -> list[str]:
+    """A `kind: webhook-delivery` example: {method, url, headers, body (raw string)}.
+
+    The body must be a valid event, the headers must match the AsyncAPI DeliveryHeaders schema,
+    and the signatures must verify with the secret from the subscription response the entry
+    names (`subscription:`), at the delivery's own timestamp.
+    """
+    from tds_conform.events import delivery_problems
+
+    delivery = json.loads(path.read_text())
+    if not isinstance(delivery, dict) or not {"method", "headers", "body"} <= delivery.keys():
+        return ["a webhook delivery is an object with method, url, headers and body"]
+    if delivery["method"] != "POST" or not isinstance(delivery["body"], str):
+        return ["a webhook delivery is a POST with the raw body as a string"]
+    try:
+        event = json.loads(delivery["body"])
+    except ValueError:
+        return ["body is not JSON"]
+    errors = check_event_stream([event], registry, wiring)
+    errors += [format_error(e) for e in delivery_headers_validator().iter_errors(delivery["headers"])]
+    subscription_path = path.parent / entry.get("subscription", "")
+    if not entry.get("subscription") or not subscription_path.is_file():
+        return [*errors, "manifest entry must name the subscription response that holds the signing secret"]
+    subscription = json.loads(subscription_path.read_text())
+    headers = delivery["headers"]
+    sent_at = next((v for k, v in headers.items() if k.lower() == "x-tds-timestamp"), "0")
+    errors += delivery_problems(
+        subscription["signing_secret"],
+        headers,
+        delivery["body"].encode(),
+        now=int(sent_at) if sent_at.isdigit() else 0,
+        cloudevents=subscription.get("cloudevents", False),
+    )
+    return list(dict.fromkeys(errors))
+
+
 def check_examples(registry: Registry, examples_root: Path = EXAMPLES, events: dict | None = None):
     results: dict[Path, list[str]] = {}
     for scenario, files in load_manifests(examples_root).items():
@@ -194,6 +242,9 @@ def check_examples(registry: Registry, examples_root: Path = EXAMPLES, events: d
             if entry.get("kind") == "event-stream":
                 stream = json.loads(json_path.read_text())
                 results[json_path] = check_event_stream(stream, registry, events or event_wiring())
+                continue
+            if entry.get("kind") == "webhook-delivery":
+                results[json_path] = check_delivery(json_path, entry, registry, events or event_wiring())
                 continue
             schema_id = entry["schema"]
             try:

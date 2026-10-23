@@ -206,3 +206,39 @@ def test_eligibility_rules_on_trip_examples(change, problem):
     trip["rider_ref"]["eligibility"][0] |= change
     assert not errors("trip.yaml", trip)
     assert any(problem in p for p in ve.RULES[CORE + "trip.yaml"](trip))
+
+
+DELIVERY = ve.EXAMPLES / "webhook-delivery"
+
+
+def _tampered_delivery(tmp_path: Path, change) -> list[str]:
+    import json
+    import shutil
+
+    scenario = tmp_path / "webhook-delivery"
+    shutil.copytree(DELIVERY, scenario)
+    path = scenario / "02-trip-status-changed.delivery.json"
+    delivery = json.loads(path.read_text())
+    change(delivery)
+    path.write_text(json.dumps(delivery))
+    entry = ve.load_manifests(tmp_path)[scenario][path.name]
+    return ve.check_delivery(path, entry, REGISTRY, ve.event_wiring())
+
+
+@pytest.mark.parametrize(
+    ("change", "problem"),
+    [
+        (lambda d: d.update(body=d["body"].replace("IN_PROGRESS", "COMPLETED")), "signature does not match"),
+        (lambda d: d["headers"].update({"ce-type": "org.tds-openapi.milestone"}), "ce-type"),
+        (lambda d: d["headers"].pop("ce-source"), "ce-source"),
+        (lambda d: [d["headers"].pop(k) for k in list(d["headers"]) if k.startswith("ce-")], "cloudevents: true"),
+        (lambda d: d["headers"].update({"ce-specversion": "0.3"}), "1.0"),
+    ],
+)
+def test_webhook_delivery_example_checks(tmp_path: Path, change, problem):
+    problems = _tampered_delivery(tmp_path, change)
+    assert any(problem in p for p in problems), problems
+
+
+def test_webhook_delivery_example_is_clean(tmp_path: Path):
+    assert _tampered_delivery(tmp_path, lambda d: None) == []

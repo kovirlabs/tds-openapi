@@ -4,6 +4,34 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+- CloudEvents rendering of webhook deliveries (SPEC.md §9.1): `POST /subscriptions` takes
+  optional `cloudevents: true`; the subscription answers whether the provider will add
+  CloudEvents 1.0 binary-mode headers (`ce-specversion`, `ce-id` = `event_id`, `ce-source` =
+  `urn:tds:provider:<provider_id>`, `ce-type` = `org.tds-openapi.<event_type lower case>`,
+  `ce-time`, `ce-subject` = `trips/<trip_id>[/legs/<leg_id>]`, `ce-dataschema` = the
+  versioned event schema, extensions `ce-providerid` and `ce-schemaversion`). The body and
+  `Content-Type` are unchanged. Crosswalk rows (TODO).
+- AsyncAPI: `components.schemas` `DeliveryHeaders` = `SignatureHeaders` + `CloudEventsHeaders`,
+  used by the `signed` message trait.
+- `tds_conform.cloudevents` (`render`, `cloudevents_headers`, `cloudevents_problems`,
+  `event_type_from_ce`, `dedupe_key`) and `tds_conform.events.delivery_problems` (body,
+  signature and CloudEvents headers of one delivery).
+- Example `webhook-delivery`: a subscription with `cloudevents: true` and one delivery as sent
+  on the wire (headers and raw body). Example manifests gain `kind: webhook-delivery`; the
+  validator checks the body, the headers against `DeliveryHeaders`, the signature and the
+  CloudEvents mapping.
+- `tds-mock` adds the headers for subscriptions with `cloudevents: true`. Core scenario
+  `webhook_delivery` subscribes with `cloudevents: true` and, when the provider agrees or sends
+  `ce-*` headers anyway, checks them against the envelope. Providers that answer
+  `cloudevents: false` pass as before.
+
+### Changed
+- Receivers dedupe on (`provider_id`, `event_id`), which equals CloudEvents (`source`, `id`);
+  senders keep `event_id` unique among their own events (SPEC.md §9). `tds_conform.events.dedupe`
+  uses the pair. Event ids that were already globally unique behave as before.
+- `tds_conform.events.verify` matches header names case-insensitively.
+
 ## [0.5.3] - 2026-10-21
 
 Rider-category fact codes for reporting and funder rules, and provider booking windows.

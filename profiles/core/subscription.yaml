@@ -21,6 +21,13 @@ properties:
       Returned only in the response that creates the subscription.
     type: string
     minLength: 32
+  cloudevents:
+    description: >-
+      True if every delivery carries CloudEvents 1.0 binary-mode `ce-*` headers
+      (SPEC.md §9.1). Absent or false: the provider may still add them, but the
+      subscriber must not rely on them.
+    type: boolean
+    default: false
   created_at:
     description: When the subscription was created, RFC 3339 with offset.
     type: string

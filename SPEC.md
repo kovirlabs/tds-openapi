@@ -159,7 +159,30 @@ Transfer event types: `TENDER_RESPONSE`, `HOLD_RESPONSE`, `MILESTONE`, `ETA_UPDA
 Broker event types: `EXCEPTION_RAISED`, `EXCEPTION_RESOLVED` (§10.6), sent by a broker to its own subscribers (coordinator tools, agency systems), never by providers; `provider_id` is then the broker's id.
 - **Completeness.** Every state change has a typed event: trip status (`TRIP_STATUS_CHANGED`, all statuses), schedule and vehicle (`TRIP_SCHEDULED`), cancellation by either side (`TRIP_CANCELLED`), tender and hold outcomes, milestones, ETA bands, custody, and exceptions. The example validator fails unless every event type and every state those events report appears in an example event stream.
 - Providers emit an event for **every** change, including changes the requester already saw in a synchronous response, so a receiver's event log is complete.
-- Delivery: one event per HTTPS POST to the subscription's `callback_url`; at least once, retries with exponential backoff; receivers return 2xx and dedupe on `event_id`; order by `occurred_at`. Plain `http://` callbacks are allowed only for loopback addresses (development and the conformance kit).
+- Delivery: one event per HTTPS POST to the subscription's `callback_url`; at least once, retries with exponential backoff; receivers return 2xx and dedupe on (`provider_id`, `event_id`); order by `occurred_at`. A sender keeps `event_id` unique among its own events and repeats it on every retry. Plain `http://` callbacks are allowed only for loopback addresses (development and the conformance kit).
+
+### 9.1 CloudEvents rendering (optional)
+A subscriber that routes events through CloudEvents tooling (event buses, integration platforms) asks for `cloudevents: true` in `POST /subscriptions`. The provider answers `cloudevents: true` if it will add the headers, else `false`; the subscription is created either way. Every delivery to such a subscription carries CloudEvents 1.0 **binary content mode** headers (CloudEvents HTTP protocol binding). The body stays the TDS event byte for byte and `Content-Type` stays `application/json`, so receivers that ignore the headers lose nothing. A provider MAY add the headers to any subscription.
+
+| CloudEvents attribute | Header | Value |
+|---|---|---|
+| `specversion` | `ce-specversion` | `1.0` |
+| `id` | `ce-id` | `event_id` |
+| `source` | `ce-source` | `urn:tds:provider:` + `provider_id` (percent-encoded as a URI component) |
+| `type` | `ce-type` | `org.tds-openapi.` + `event_type` in lower case, e.g. `org.tds-openapi.milestone`; upper-casing the suffix gives the event type back |
+| `time` | `ce-time` | `occurred_at` |
+| `subject` | `ce-subject` | `trips/<trip_id>` or `trips/<trip_id>/legs/<leg_id>` (ids percent-encoded); absent when the event has no `trip_id` |
+| `dataschema` | `ce-dataschema` | the event type's schema `$id` with `schema_version` inserted after `/schemas/`, e.g. `https://tds-openapi.org/schemas/0.6.0/core/event-trip-status-changed.yaml` |
+| `datacontenttype` | `Content-Type` | `application/json` (binary mode never sends `ce-datacontenttype`) |
+| extension `providerid` | `ce-providerid` | `provider_id` |
+| extension `schemaversion` | `ce-schemaversion` | `schema_version` |
+
+- Either every header above is sent (`ce-subject` only with a `trip_id`) or none. Values are percent-encoded as the HTTP binding requires (space, `"`, `%` and anything outside printable ASCII).
+- Extension names follow CloudEvents' rule (lower-case letters and digits only), hence `providerid`, not `provider_id`.
+- Deduplication is the same either way: CloudEvents (`source`, `id`) is (`provider_id`, `event_id`).
+- Signing does not change (§12): CloudEvents defines no payload signature, and the signature covers the body, which is the same in both renderings.
+- The `urn:tds:` namespace and the `org.tds-openapi` type prefix follow the placeholder schema domain and change with it (§16).
+- Structured mode (`application/cloudevents+json`, the envelope inside a CloudEvents object) is not defined; it would change the body.
 
 ## 10. Transfer profile (`profiles/transfer`)
 Enables protected connections between legs run by different providers. Patterns borrowed from freight visibility are documented in `mappings/logistics-patterns.md`.
@@ -284,3 +307,4 @@ Both profiles extend `POST /trips`: the body is a core TripRequest plus one prof
 5. ~~Synchronous vs asynchronous booking decisions as the default.~~ Resolved: both conformant; providers declare `typical_response_s` (§7, §13).
 6. Whether ETA `confidence` should be standardized to a specific percentile definition.
 7. Liability semantics for `PROTECTED` connections (what the outbound provider commits to).
+8. The CloudEvents `source` namespace (`urn:tds:`, not a registered URN namespace) and `type` prefix (`org.tds-openapi.`) follow the placeholder `$id` domain; settle them when the domain is chosen.

@@ -1,0 +1,18 @@
+# Webhook delivery on the wire (SPEC.md §9, §9.1, §12). Hand-written; signatures computed with
+# tds_conform.events and checked by scripts/validate_examples.py.
+description: >-
+  A broker subscribes with cloudevents: true and receives one TRIP_STATUS_CHANGED delivery. The
+  body is the TDS event unchanged; the headers carry the signature and the CloudEvents
+  binary-mode attributes derived from the envelope. The example signing secret is published
+  here only so the signatures can be checked.
+files:
+  01-subscribe.request.json:
+    schema: https://tds-openapi.org/schemas/core/subscription-request.yaml
+    operation: POST /subscriptions
+  01-subscribe.response.json:
+    schema: https://tds-openapi.org/schemas/core/subscription.yaml
+    operation: POST /subscriptions
+    status: 201
+  02-trip-status-changed.delivery.json:
+    kind: webhook-delivery
+    subscription: 01-subscribe.response.json

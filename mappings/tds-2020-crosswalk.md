@@ -226,6 +226,7 @@ cite; don't paste definitions (reuse terms not yet confirmed, see SPEC.md §16 Q
 |---|---|---|---|---|
 | `subscription-request.callback_url` | TODO(crosswalk) | | TODO | Protocol field; likely no TDS equivalent |
 | `subscription-request.event_types` | TODO(crosswalk) | | TODO | Protocol field; likely no TDS equivalent |
+| `subscription-request.cloudevents` | TODO(crosswalk) | | TODO | Protocol field; likely no TDS equivalent. Borrows the CloudEvents 1.0 HTTP binding (binary mode). |
 
 ### Subscription (`profiles/core/subscription.yaml`)
 
@@ -235,6 +236,7 @@ cite; don't paste definitions (reuse terms not yet confirmed, see SPEC.md §16 Q
 | `subscription.callback_url` | TODO(crosswalk) | | TODO | Protocol field; likely no TDS equivalent |
 | `subscription.event_types` | TODO(crosswalk) | | TODO | Protocol field; likely no TDS equivalent |
 | `subscription.signing_secret` | TODO(crosswalk) | | TODO | Protocol field; likely no TDS equivalent |
+| `subscription.cloudevents` | TODO(crosswalk) | | TODO | Protocol field; likely no TDS equivalent. Borrows the CloudEvents 1.0 HTTP binding (binary mode). |
 | `subscription.created_at` | TODO(crosswalk) | | TODO | Protocol field; likely no TDS equivalent |
 
 ### TimeWindow (`profiles/core/time-window.yaml`)

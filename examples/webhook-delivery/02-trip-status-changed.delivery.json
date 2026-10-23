@@ -1,0 +1,19 @@
+{
+  "method": "POST",
+  "url": "https://broker.example.org/tds/events",
+  "headers": {
+    "Content-Type": "application/json",
+    "X-TDS-Signature": "sha256=04238e40571146d1363ca682d6bae7cac58faa26730c82b7b33268d8a666cabc",
+    "X-TDS-Timestamp": "1793714702",
+    "ce-specversion": "1.0",
+    "ce-id": "evt-0001",
+    "ce-source": "urn:tds:provider:aaata-a-ride",
+    "ce-type": "org.tds-openapi.trip_status_changed",
+    "ce-time": "2026-11-03T09:05:00-05:00",
+    "ce-subject": "trips/tr-20261103-0001/legs/leg-1",
+    "ce-dataschema": "https://tds-openapi.org/schemas/0.6.0/core/event-trip-status-changed.yaml",
+    "ce-providerid": "aaata-a-ride",
+    "ce-schemaversion": "0.6.0"
+  },
+  "body": "{\"event_id\":\"evt-0001\",\"event_type\":\"TRIP_STATUS_CHANGED\",\"occurred_at\":\"2026-11-03T09:05:00-05:00\",\"provider_id\":\"aaata-a-ride\",\"trip_id\":\"tr-20261103-0001\",\"leg_id\":\"leg-1\",\"schema_version\":\"0.6.0\",\"payload\":{\"status\":\"IN_PROGRESS\",\"previous_status\":\"SCHEDULED\"}}"
+}

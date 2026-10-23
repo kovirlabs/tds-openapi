@@ -4,6 +4,8 @@ post:
   description: >-
     Register a callback URL for trip events. The response carries the signing
     secret once; events are signed with X-TDS-Signature (SPEC.md §9, §12).
+    With `cloudevents: true`, deliveries also carry CloudEvents binary-mode
+    `ce-*` headers (SPEC.md §9.1).
   tags: [Events]
   security:
     - oauth2: [events:subscribe]
@@ -21,6 +23,9 @@ post:
           with_transfer_events:
             summary: Subscribe to core and transfer events
             externalValue: ../../examples/two-provider-transfer/01-subscribe-aaata-a-ride.request.json
+          with_cloudevents_headers:
+            summary: Ask for CloudEvents binary-mode headers (SPEC.md §9.1)
+            externalValue: ../../examples/webhook-delivery/01-subscribe.request.json
   responses:
     "201":
       description: Subscription created.
@@ -33,6 +38,8 @@ post:
               externalValue: ../../examples/subscriptions/01-subscribe.response.json
             with_transfer_events:
               externalValue: ../../examples/two-provider-transfer/02-subscribe-aaata-a-ride.response.json
+            with_cloudevents_headers:
+              externalValue: ../../examples/webhook-delivery/01-subscribe.response.json
     "400":
       $ref: ../components/responses.yaml#/BadRequest
     "401":
