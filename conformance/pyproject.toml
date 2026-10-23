@@ -1,6 +1,6 @@
 [project]
 name = "tds-conform"
-version = "0.5.3"
+version = "0.6.0"
 description = "Conformance kit and reference mock provider for the TDS OpenAPI binding."
 readme = "README.md"
 requires-python = ">=3.12"

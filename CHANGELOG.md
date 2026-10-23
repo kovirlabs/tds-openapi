@@ -4,6 +4,14 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-23
+
+Event delivery that standard tooling understands, and a file format for providers without an
+API. Additive for existing integrations: deliveries keep their body and `X-TDS-*` headers,
+new subscription and file features are opt-in. Minor version because `X-TDS-Signature` and
+`X-TDS-Timestamp` are deprecated (still sent and accepted). Generated event streams change
+only in `schema_version`.
+
 ### Added
 - CloudEvents rendering of webhook deliveries (SPEC.md §9.1): `POST /subscriptions` takes
   optional `cloudevents: true`; the subscription answers whether the provider will add

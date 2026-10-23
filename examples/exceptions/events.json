@@ -4,7 +4,7 @@
     "event_type": "EXCEPTION_RAISED",
     "occurred_at": "2026-11-10T08:00:00-05:00",
     "provider_id": "throughride-demo",
-    "schema_version": "0.5.3",
+    "schema_version": "0.6.0",
     "payload": {
       "exception": {
         "exception_id": "ex-rt-1",
@@ -24,7 +24,7 @@
     "event_type": "EXCEPTION_RESOLVED",
     "occurred_at": "2026-11-10T08:02:00-05:00",
     "provider_id": "throughride-demo",
-    "schema_version": "0.5.3",
+    "schema_version": "0.6.0",
     "payload": {
       "exception": {
         "exception_id": "ex-rt-1",
@@ -45,7 +45,7 @@
     "event_type": "EXCEPTION_RAISED",
     "occurred_at": "2026-11-10T08:06:00-05:00",
     "provider_id": "throughride-demo",
-    "schema_version": "0.5.3",
+    "schema_version": "0.6.0",
     "payload": {
       "exception": {
         "exception_id": "ex-rf-1",
@@ -64,7 +64,7 @@
     "event_type": "EXCEPTION_RAISED",
     "occurred_at": "2026-11-10T08:20:00-05:00",
     "provider_id": "throughride-demo",
-    "schema_version": "0.5.3",
+    "schema_version": "0.6.0",
     "payload": {
       "exception": {
         "exception_id": "ex-rt-2",
@@ -83,7 +83,7 @@
     "event_type": "EXCEPTION_RAISED",
     "occurred_at": "2026-11-10T08:25:00-05:00",
     "provider_id": "throughride-demo",
-    "schema_version": "0.5.3",
+    "schema_version": "0.6.0",
     "payload": {
       "exception": {
         "exception_id": "ex-rt-2-esc-1",
@@ -104,7 +104,7 @@
     "event_type": "EXCEPTION_RAISED",
     "occurred_at": "2026-11-10T08:35:00-05:00",
     "provider_id": "throughride-demo",
-    "schema_version": "0.5.3",
+    "schema_version": "0.6.0",
     "payload": {
       "exception": {
         "exception_id": "ex-rt-2-esc-2",
@@ -125,7 +125,7 @@
     "event_type": "EXCEPTION_RAISED",
     "occurred_at": "2026-11-10T09:05:00-05:00",
     "provider_id": "throughride-demo",
-    "schema_version": "0.5.3",
+    "schema_version": "0.6.0",
     "payload": {
       "exception": {
         "exception_id": "ex-hold-1",
@@ -144,7 +144,7 @@
     "event_type": "EXCEPTION_RESOLVED",
     "occurred_at": "2026-11-10T09:06:00-05:00",
     "provider_id": "throughride-demo",
-    "schema_version": "0.5.3",
+    "schema_version": "0.6.0",
     "payload": {
       "exception": {
         "exception_id": "ex-hold-1",
@@ -164,7 +164,7 @@
     "event_type": "EXCEPTION_RAISED",
     "occurred_at": "2026-11-10T09:09:00-05:00",
     "provider_id": "throughride-demo",
-    "schema_version": "0.5.3",
+    "schema_version": "0.6.0",
     "payload": {
       "exception": {
         "exception_id": "ex-rp-1",
@@ -184,7 +184,7 @@
     "event_type": "EXCEPTION_RAISED",
     "occurred_at": "2026-11-10T09:10:00-05:00",
     "provider_id": "throughride-demo",
-    "schema_version": "0.5.3",
+    "schema_version": "0.6.0",
     "payload": {
       "exception": {
         "exception_id": "ex-rp-1-esc-1",
@@ -205,7 +205,7 @@
     "event_type": "EXCEPTION_RESOLVED",
     "occurred_at": "2026-11-10T09:12:00-05:00",
     "provider_id": "throughride-demo",
-    "schema_version": "0.5.3",
+    "schema_version": "0.6.0",
     "payload": {
       "exception": {
         "exception_id": "ex-rp-1-esc-1",
@@ -227,7 +227,7 @@
     "event_type": "EXCEPTION_RESOLVED",
     "occurred_at": "2026-11-10T09:12:00-05:00",
     "provider_id": "throughride-demo",
-    "schema_version": "0.5.3",
+    "schema_version": "0.6.0",
     "payload": {
       "exception": {
         "exception_id": "ex-rp-1",
@@ -248,7 +248,7 @@
     "event_type": "EXCEPTION_RAISED",
     "occurred_at": "2026-11-10T09:20:00-05:00",
     "provider_id": "throughride-demo",
-    "schema_version": "0.5.3",
+    "schema_version": "0.6.0",
     "payload": {
       "exception": {
         "exception_id": "ex-tpt-1",
@@ -267,7 +267,7 @@
     "event_type": "EXCEPTION_RESOLVED",
     "occurred_at": "2026-11-10T09:21:00-05:00",
     "provider_id": "throughride-demo",
-    "schema_version": "0.5.3",
+    "schema_version": "0.6.0",
     "payload": {
       "exception": {
         "exception_id": "ex-tpt-1",
@@ -287,7 +287,7 @@
     "event_type": "EXCEPTION_RAISED",
     "occurred_at": "2026-11-10T09:40:00-05:00",
     "provider_id": "throughride-demo",
-    "schema_version": "0.5.3",
+    "schema_version": "0.6.0",
     "payload": {
       "exception": {
         "exception_id": "ex-tpt-2",
@@ -306,7 +306,7 @@
     "event_type": "EXCEPTION_RESOLVED",
     "occurred_at": "2026-11-10T09:41:00-05:00",
     "provider_id": "throughride-demo",
-    "schema_version": "0.5.3",
+    "schema_version": "0.6.0",
     "payload": {
       "exception": {
         "exception_id": "ex-tpt-2",
@@ -326,7 +326,7 @@
     "event_type": "EXCEPTION_RAISED",
     "occurred_at": "2026-11-10T09:42:00-05:00",
     "provider_id": "throughride-demo",
-    "schema_version": "0.5.3",
+    "schema_version": "0.6.0",
     "payload": {
       "exception": {
         "exception_id": "ex-sup-1",
@@ -345,7 +345,7 @@
     "event_type": "EXCEPTION_RESOLVED",
     "occurred_at": "2026-11-10T09:43:00-05:00",
     "provider_id": "throughride-demo",
-    "schema_version": "0.5.3",
+    "schema_version": "0.6.0",
     "payload": {
       "exception": {
         "exception_id": "ex-sup-1",

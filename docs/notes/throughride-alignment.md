@@ -319,3 +319,83 @@ tag `v0.5.3` (`binding_version()` = `0.5.3`; generated event streams change only
   present, offer "resubmit at that time" (new `trip_id`), never resubmit to another provider
   without approval.
 
+
+## v0.6.0 released (2026-10-23, local tag `v0.6.0`)
+
+Answers ThroughRide's interline-switch proposals (its spec §8.2, "Events and envelopes" and
+"File adapter"; queue items TQ-16, TQ-17, TQ-18). Re-vendor from tag `v0.6.0`
+(`binding_version()` = `0.6.0`; generated event streams change only in `schema_version`). New
+example folders: `webhook-delivery/` (one delivery with headers and raw body) and `csv-batch/`
+(CSV files plus JSON equivalents). The vendored examples now include `.csv` files; load them
+as text (`tds_conform.examples.load_example` already does).
+
+**CloudEvents rendering (SPEC.md §9.1).** Agreed as proposed, as an opt-in extra rendering:
+- `POST /subscriptions` takes `cloudevents: true`; the response says whether the provider
+  will add the headers (`false` is not an error). Deliveries then carry `ce-specversion` `1.0`,
+  `ce-id` = `event_id`, `ce-source` = `urn:tds:provider:<provider_id>` (percent-encoded),
+  `ce-type` = `org.tds-openapi.<event_type lower case>` (e.g. `org.tds-openapi.eta_update`),
+  `ce-time` = `occurred_at`, `ce-subject` = `trips/<trip_id>[/legs/<leg_id>]`,
+  `ce-dataschema` = `https://tds-openapi.org/schemas/<schema_version>/<profile>/<schema>.yaml`,
+  and extensions `ce-providerid`, `ce-schemaversion`. Body and `Content-Type:
+  application/json` are unchanged; binary mode only (structured mode would change the body).
+- Dedup is now stated as (`provider_id`, `event_id`) = CloudEvents (`source`, `id`); senders
+  keep `event_id` unique among their own events. `tds_conform.events.dedupe` uses the pair.
+- Two choices differ from the proposal's wording: `ce-subject` names the trip as well as the
+  leg (leg ids are only unique within a trip), and the source/type prefixes follow the
+  placeholder `$id` domain, so they change if the domain does (SPEC.md §16 Q8, Evan's call).
+- `tds_conform.cloudevents.cloudevents_headers(event)` renders them;
+  `cloudevents_problems(headers, event)` checks them.
+- **For ThroughRide:** outbound webhooks (`apps/webhooks`) can offer `cloudevents` per
+  endpoint and add the headers with `cloudevents_headers`. Broker exception events carry the
+  broker's id as `provider_id`, so their `ce-source` is `urn:tds:provider:<broker id>`.
+  Inbound: if `TdsInboundEvent` dedupes on `event_id` alone, key it on (`provider_id`,
+  `event_id`).
+
+**Standard Webhooks signatures (SPEC.md §12).** Agreed; additive, with a deprecation:
+- Deliveries carry `webhook-id` (= `event_id`), `webhook-timestamp` (Unix s, per attempt) and
+  `webhook-signature` (space-separated `v1,<base64 HMAC-SHA256 of "id.timestamp.body">`, one
+  per active secret, newest first). The key is the base64-decoded part of a `whsec_` secret,
+  so Standard Webhooks libraries verify as they are. Senders SHOULD send them when the secret
+  is `whsec_` + base64 of 24–64 bytes.
+- `X-TDS-Signature` / `X-TDS-Timestamp` are deprecated but still sent on every delivery
+  (keyed, as before, with the UTF-8 bytes of the whole secret string); removal needs a major
+  version and an RFC.
+- Receivers MUST accept a delivery when either a `v1` entry or `X-TDS-Signature` verifies
+  within 300 s, and reject it otherwise; they ignore unknown versions (`v1a`).
+  `tds_conform.events.verify_any(secrets, headers, body)` is that rule (one or several
+  secrets); `sign_standard` / `verify_standard` / `new_standard_secret` are the pieces.
+  `tds-mock` now issues `whsec_` secrets.
+- Not yet in the binding: how a subscriber obtains a new secret (a rotation operation). The
+  headers support rotation; issuing the second secret is out of band for now. Proposed as a
+  follow-up.
+- **For ThroughRide:** outbound, issue new endpoint secrets as `new_standard_secret()` and
+  send both header sets (`sign` + `sign_standard`, same timestamp); existing secrets keep
+  working with `X-TDS-*` only. Inbound (`adapters/tds.py`), verify with `verify_any` so
+  providers can sign either way. Vendored fakes (`tests/fakes/tds.py`) can add the
+  `webhook-*` headers; the `webhook-delivery` example shows a full set.
+
+**TDS CSV profile (SPEC.md §9.2).** Agreed; new `profiles/csv`:
+- Files `tds_requests_…csv` (requester → provider), `tds_answers_…csv` and
+  `tds_statuses_…csv` (provider → requester), named with the UTC write time. RFC 4180, UTF-8
+  (BOM stripped on read, never written), RFC 3339 times, `lat`/`lon`, `UPPER_SNAKE` codes,
+  `|`-separated lists, empty cell = absent, columns matched by name.
+- Request rows: `REQUEST` / `CONFIRM` / `MODIFY` / `CANCEL`, idempotency key (`requester_id`,
+  `provider_id`, `trip_id`, `leg_id`, `action`, `revision`); `revision` was added so a second
+  `MODIFY` of the same leg is not dropped as a duplicate. Answer rows repeat the key, with
+  `result`, `status`, `provider_trip_id`, scheduled times, `reason` (refusal or
+  `INVALID_STATE`/`NOT_FOUND`), `answered_at`. Status rows are events (core plus transfer
+  `MILESTONE`), keyed on (`provider_id`, `event_id`).
+- A request row without an answer is pending; files are deltas, never snapshots, so a trip
+  missing from a file is never a cancellation. This matches ThroughRide's rule 1 approach.
+- Not carried (use the API): eligibility attestations, fare amount, rider e-mail, tenders,
+  holds, custody.
+- `tds_conform.csvfile` reads, writes and converts (`row_to_json`, `json_to_row`),
+  `idempotency_key(row)` gives an `Idempotency-Key` for bridges, and `file_problems` /
+  `exchange_problems` / `tds-conform check-csv` check files.
+- **For ThroughRide (spec §8.2 "File adapter", I4):** key applied rows on the binding's key
+  above, not on (provider, provider trip id, leg): the provider trip id is unknown until the
+  answer, and the action and revision are needed to tell a modify from a cancel. Store
+  `provider_trip_id` from the answer row as `external_ref`. Per-provider column profiles stay
+  adapter-local (Latin-1 fallback, other header names); the TDS profile is their default,
+  and `json_to_row` / `row_to_json` can do the mapping for that default. A REJECTED answer is a
+  rejection reason for the coordinator; offering the leg elsewhere stays a proposal (rule 1).

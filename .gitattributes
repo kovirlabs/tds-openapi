@@ -1,0 +1,2 @@
+# TDS CSV files (SPEC.md §9.2) use CRLF line ends; keep example bytes exactly as written.
+examples/**/*.csv -text

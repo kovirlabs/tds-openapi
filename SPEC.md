@@ -1,6 +1,6 @@
 # SPEC.md — tds-openapi
 
-Status: **Draft 3 (v0.5.3)** · Owner: Evan / Kovir Labs · Date: 2026-10-20
+Status: **Draft 3 (v0.6.0)** · Owner: Evan / Kovir Labs · Date: 2026-10-23
 
 Field lists below are **proposed**. Names for `profiles/core` must be reconciled with TDS 2020 (TCRP Report 210) in `mappings/tds-2020-crosswalk.md`; anything marked `TODO(crosswalk)` is unverified.
 
@@ -317,7 +317,8 @@ Both profiles extend `POST /trips`: the body is a core TripRequest plus one prof
 | **v0.3** | `tds-conform` CLI running `book_confirm_cancel` + `idempotency` against mock; report output. |
 | **v0.4** | Transfer profile (§10) draft; examples `two-provider-transfer`, `late-first-leg-hold`, `tender-expired-retender`, `supervised-rider-custody-handoff` (v0.4.1 adds `missed-connection-reprotect`, v0.5 `refusals-and-failures`); mock simulating two providers; ThroughRide adapters pointed at mock. **SE Michigan pilot demo target.** |
 | **v0.5** | Settlement split (§10.8); paratransit and NEMT drafts with conformance levels (§11); AsyncAPI completeness incl. broker exception events (§9); `tds-conform fuzz`; `docs/for-agencies.md` RFP language. v0.5.1 adds exception type `ESCALATED`; v0.5.2 eligibility verification methods and fact codes (§6.5.1); v0.5.3 rider-category fact codes (§6.5.2) and booking windows (§7.1). |
-| v0.6+ | Settlement exchange (API operation or events, undecided), profile vocabularies checked against TDS 2020 and payers, outreach to MobilityData/OMF. |
+| **v0.6** | CloudEvents binary-mode rendering of deliveries (§9.1); Standard Webhooks signature headers, `X-TDS-*` deprecated (§12); CSV profile for batch providers (§9.2) with `tds-conform check-csv`. |
+| v0.7+ | Settlement exchange (API operation or events, undecided), profile vocabularies checked against TDS 2020 and payers, outreach to MobilityData/OMF. |
 
 ## 16. Open questions
 1. Do DRCOG or NEORide already have TDS API schemas? (Ask before v0.2 to avoid divergence.)
