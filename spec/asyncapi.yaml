@@ -16,11 +16,19 @@ info:
     the requester already saw in a synchronous response.
 
 
-    **Signing.** `X-TDS-Timestamp` is Unix seconds at send time.
-    `X-TDS-Signature` is `sha256=` followed by the lowercase hex
-    HMAC-SHA256, keyed with the subscription's signing secret, of
-    `<X-TDS-Timestamp>.<raw request body>`. Receivers reject a bad signature
-    or a timestamp more than 300 seconds from their clock.
+    **Signing (SPEC.md §12).** Two header sets carry the same HMAC-SHA256
+    protection. *Standard Webhooks* (standardwebhooks.com): `webhook-id` =
+    `event_id`, `webhook-timestamp` = Unix seconds at send time, and
+    `webhook-signature` = space-separated `v1,<base64 HMAC-SHA256 of
+    "<webhook-id>.<webhook-timestamp>.<raw body>">`, one per active secret
+    (several during secret rotation), keyed with the base64-decoded part of a
+    `whsec_` secret. Senders SHOULD send them when the subscription's secret is
+    in `whsec_` form. *Legacy, deprecated since 0.6.0 but still always sent*:
+    `X-TDS-Timestamp` (Unix seconds) and `X-TDS-Signature` = `sha256=` + lowercase
+    hex HMAC-SHA256, keyed with the UTF-8 bytes of the whole secret, of
+    `<X-TDS-Timestamp>.<raw request body>`. Receivers accept a delivery when
+    either signature verifies and its timestamp is within 300 seconds of their
+    clock, and reject it otherwise.
 
 
     **CloudEvents (optional).** A subscription created with `cloudevents: true`
@@ -160,26 +168,63 @@ components:
   schemas:
     DeliveryHeaders:
       description: >-
-        HTTP headers of one webhook delivery: the signature headers (always)
-        and, for subscriptions with `cloudevents: true`, the CloudEvents
+        HTTP headers of one webhook delivery: the legacy signature headers
+        (always), the Standard Webhooks headers (when the secret is in `whsec_`
+        form) and, for subscriptions with `cloudevents: true`, the CloudEvents
         binary-mode headers (SPEC.md §9.1, §12).
       type: object
       allOf:
         - $ref: '#/components/schemas/SignatureHeaders'
+        - $ref: '#/components/schemas/StandardWebhooksHeaders'
         - $ref: '#/components/schemas/CloudEventsHeaders'
     SignatureHeaders:
-      description: Webhook signature headers (SPEC.md §12).
+      description: >-
+        Legacy webhook signature headers (SPEC.md §12). Deprecated since 0.6.0
+        in favour of the Standard Webhooks headers, but senders still send them
+        on every delivery; removal needs a major version and an RFC.
       type: object
       required: [X-TDS-Signature, X-TDS-Timestamp]
       properties:
         X-TDS-Signature:
-          description: sha256=<hex HMAC-SHA256 of "<timestamp>.<body>">.
+          description: >-
+            sha256=<lowercase hex HMAC-SHA256 of "<X-TDS-Timestamp>.<raw body>">,
+            keyed with the UTF-8 bytes of the subscription's signing secret
+            (the newest one during rotation).
           type: string
           pattern: "^sha256=[0-9a-f]{64}$"
+          deprecated: true
         X-TDS-Timestamp:
           description: Unix seconds when the request was sent.
           type: string
           pattern: "^[0-9]+$"
+          deprecated: true
+    StandardWebhooksHeaders:
+      description: >-
+        Standard Webhooks signature headers (standardwebhooks.com, SPEC.md
+        §12), sent together or not at all. Senders SHOULD send them when the
+        signing secret is `whsec_` + base64 of 24 to 64 random bytes.
+      type: object
+      dependentRequired:
+        webhook-signature: [webhook-id, webhook-timestamp]
+        webhook-id: [webhook-timestamp, webhook-signature]
+      properties:
+        webhook-id:
+          description: The envelope's `event_id`; the same on every retry.
+          type: string
+          minLength: 1
+        webhook-timestamp:
+          description: Unix seconds when this attempt was sent.
+          type: string
+          pattern: "^[0-9]+$"
+        webhook-signature:
+          description: >-
+            Space-separated signatures, each `v1,` + base64 HMAC-SHA256 of
+            "<webhook-id>.<webhook-timestamp>.<raw body>", keyed with the
+            base64-decoded part of a `whsec_` secret. One per active secret
+            during rotation. Receivers ignore versions they do not know
+            (e.g. `v1a`).
+          type: string
+          pattern: "^v1a?,[A-Za-z0-9+/=]+( v1a?,[A-Za-z0-9+/=]+)*$"
     CloudEventsHeaders:
       description: >-
         CloudEvents 1.0 binary content mode (HTTP protocol binding). Derived

@@ -21,12 +21,31 @@ All notable changes to this project are documented here. The format follows [Kee
   on the wire (headers and raw body). Example manifests gain `kind: webhook-delivery`; the
   validator checks the body, the headers against `DeliveryHeaders`, the signature and the
   CloudEvents mapping.
-- `tds-mock` adds the headers for subscriptions with `cloudevents: true`. Core scenario
+- Standard Webhooks signatures (SPEC.md §12): `webhook-id` (= `event_id`), `webhook-timestamp`
+  and `webhook-signature` (space-separated `v1,<base64 HMAC-SHA256 of "id.timestamp.body">`,
+  one per active secret, so secrets rotate without downtime), keyed with the decoded part of a
+  `whsec_` secret. Senders SHOULD send them when the secret is `whsec_` + base64 of 24 to 64
+  bytes; receivers accept a delivery when either this or `X-TDS-Signature` verifies.
+  AsyncAPI `StandardWebhooksHeaders` (part of `DeliveryHeaders`).
+- `tds_conform.events`: `sign_standard`, `verify_standard`, `verify_any` (the receiver rule,
+  one or several secrets), `standard_key`, `new_standard_secret`, `get_header`. Tested
+  against the Standard Webhooks reference test vector.
+- `tds-mock` issues `whsec_` secrets and sends the Standard Webhooks headers on every
+  delivery. Core scenario `webhook_delivery` checks them when sent (valid `v1` entry,
+  `webhook-id` = `event_id`); the example delivery carries them.
+- `tds-mock` adds the CloudEvents headers for subscriptions with `cloudevents: true`. Core scenario
   `webhook_delivery` subscribes with `cloudevents: true` and, when the provider agrees or sends
   `ce-*` headers anyway, checks them against the envelope. Providers that answer
   `cloudevents: false` pass as before.
 
+### Deprecated
+- `X-TDS-Signature` and `X-TDS-Timestamp`, in favour of the Standard Webhooks headers. Senders
+  still send them on every delivery and receivers still accept them; removal needs a major
+  version and an RFC. Marked `deprecated: true` in the AsyncAPI header schema.
+
 ### Changed
+- `subscription.signing_secret`: providers SHOULD issue `whsec_` + base64 secrets (any string
+  of 32+ characters stays valid; it gets `X-TDS-Signature` only).
 - Receivers dedupe on (`provider_id`, `event_id`), which equals CloudEvents (`source`, `id`);
   senders keep `event_id` unique among their own events (SPEC.md §9). `tds_conform.events.dedupe`
   uses the pair. Event ids that were already globally unique behave as before.

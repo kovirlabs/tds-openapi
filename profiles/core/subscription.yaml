@@ -17,8 +17,13 @@ properties:
     $ref: ./event-types.yaml
   signing_secret:
     description: >-
-      Shared secret for the X-TDS-Signature HMAC-SHA256 header (SPEC.md §12).
-      Returned only in the response that creates the subscription.
+      Shared secret for the webhook signatures (SPEC.md §12). Returned only in
+      the response that creates the subscription. Providers SHOULD issue it as
+      a Standard Webhooks secret: `whsec_` followed by the standard base64 of
+      24 to 64 random bytes. `webhook-signature` is keyed with those decoded
+      bytes; the deprecated `X-TDS-Signature` is keyed with the UTF-8 bytes of
+      the whole string. A secret in any other form gets `X-TDS-Signature`
+      only.
     type: string
     minLength: 32
   cloudevents:

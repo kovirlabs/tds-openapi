@@ -3,7 +3,8 @@ post:
   summary: Register a webhook
   description: >-
     Register a callback URL for trip events. The response carries the signing
-    secret once; events are signed with X-TDS-Signature (SPEC.md §9, §12).
+    secret once; events are signed with Standard Webhooks headers
+    (`webhook-signature`) and the deprecated X-TDS-Signature (SPEC.md §9, §12).
     With `cloudevents: true`, deliveries also carry CloudEvents binary-mode
     `ce-*` headers (SPEC.md §9.1).
   tags: [Events]

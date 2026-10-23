@@ -233,6 +233,9 @@ def _tampered_delivery(tmp_path: Path, change) -> list[str]:
         (lambda d: d["headers"].pop("ce-source"), "ce-source"),
         (lambda d: [d["headers"].pop(k) for k in list(d["headers"]) if k.startswith("ce-")], "cloudevents: true"),
         (lambda d: d["headers"].update({"ce-specversion": "0.3"}), "1.0"),
+        (lambda d: d["headers"].update({"webhook-id": "evt-9999"}), "webhook-signature entry matches"),
+        (lambda d: d["headers"].pop("webhook-signature"), "webhook-id/webhook-timestamp sent without"),
+        (lambda d: d["headers"].update({"webhook-signature": "v1:abc"}), "does not match"),
     ],
 )
 def test_webhook_delivery_example_checks(tmp_path: Path, change, problem):

@@ -269,7 +269,13 @@ Both profiles extend `POST /trips`: the body is a core TripRequest plus one prof
 
 ## 12. Security and privacy
 - OAuth 2.0 client credentials; mTLS optional. Scopes: `trips:write`, `trips:read`, `events:subscribe`, `tenders:write` (tenders are sent by brokers); holds use `trips:write`.
-- Webhook signing: `X-TDS-Timestamp` is Unix seconds; `X-TDS-Signature` is `sha256=` + lowercase hex HMAC-SHA256, keyed with the subscription's `signing_secret`, of `<timestamp>.<raw body>`. Receivers reject a bad signature or more than 5 min skew.
+- Webhook signing follows **Standard Webhooks** (standardwebhooks.com), with the earlier `X-TDS-*` headers kept alongside:
+  - `webhook-id` = `event_id` (the same on every retry), `webhook-timestamp` = Unix seconds when this attempt was sent, `webhook-signature` = space-separated entries `v1,<base64 HMAC-SHA256 of "<webhook-id>.<webhook-timestamp>.<raw body>">`.
+  - The subscription's `signing_secret` SHOULD be `whsec_` + standard base64 of 24 to 64 random bytes; `v1` signatures are keyed with the decoded bytes, so Standard Webhooks libraries verify them unchanged. A sender SHOULD send the three headers whenever the secret has that form.
+  - Secret rotation: while more than one secret is active, the sender adds one `v1` entry per secret, newest first, so receivers switch without downtime. (How a new secret is issued is not yet part of the binding.)
+  - `X-TDS-Timestamp` (Unix seconds) and `X-TDS-Signature` (`sha256=` + lowercase hex HMAC-SHA256, keyed with the UTF-8 bytes of the whole secret, of `<timestamp>.<raw body>`, newest secret) are **deprecated since 0.6.0**. Senders still send them on every delivery; removing them needs a major version and an RFC.
+  - Receivers MUST accept a delivery when `webhook-signature` holds a valid `v1` entry for one of their secrets or `X-TDS-Signature` is valid, with the matching timestamp no more than 300 s from their clock, and MUST reject it otherwise. Compare signatures in constant time; ignore entries with versions they do not know (such as `v1a`, Ed25519, which this binding does not define). A receiver that checks only one set SHOULD check `webhook-signature` when present, since it also binds the event id.
+  - CloudEvents (§9.1) defines no payload signing, so these headers apply to both renderings.
 - Data minimization: share only what the receiving provider needs for that leg. Rider contact shared only with `contact_consent: true`.
 - Retention guidance in docs (not enforced by spec).
 

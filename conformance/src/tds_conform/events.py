@@ -1,16 +1,24 @@
 """Webhook events: signing, verification, schema checks and sequence rules (SPEC.md §9, §10.3, §10.7, §12)."""
 
+import base64
+import binascii
 import hashlib
 import hmac
 import json
+import os
 import time
 from collections import defaultdict
 from datetime import UTC, datetime
 
 from tds_conform.data import schema_errors
 
-SIGNATURE_HEADER = "X-TDS-Signature"
-TIMESTAMP_HEADER = "X-TDS-Timestamp"
+SIGNATURE_HEADER = "X-TDS-Signature"  # deprecated alias since 0.6.0, still sent (SPEC.md §12)
+TIMESTAMP_HEADER = "X-TDS-Timestamp"  # deprecated alias since 0.6.0, still sent
+# Standard Webhooks headers (standardwebhooks.com), SPEC.md §12.
+WEBHOOK_ID_HEADER = "webhook-id"
+WEBHOOK_TIMESTAMP_HEADER = "webhook-timestamp"
+WEBHOOK_SIGNATURE_HEADER = "webhook-signature"
+SECRET_PREFIX = "whsec_"
 MAX_SKEW_S = 300
 
 EVENT_SCHEMAS = {
@@ -45,9 +53,89 @@ def sign(secret: str, body: bytes, timestamp: int | None = None) -> dict[str, st
     return {SIGNATURE_HEADER: f"sha256={mac}", TIMESTAMP_HEADER: ts}
 
 
+def standard_key(secret: str) -> bytes | None:
+    """HMAC key of a Standard Webhooks secret (`whsec_` + base64 of 24 to 64 bytes), else None."""
+    if not secret.startswith(SECRET_PREFIX):
+        return None
+    try:
+        key = base64.b64decode(secret[len(SECRET_PREFIX) :], validate=True)
+    except (binascii.Error, ValueError):
+        return None
+    return key if 24 <= len(key) <= 64 else None
+
+
+def new_standard_secret(n_bytes: int = 32) -> str:
+    """A fresh signing secret usable for both X-TDS-Signature and webhook-signature."""
+    return SECRET_PREFIX + base64.b64encode(os.urandom(n_bytes)).decode()
+
+
+def _as_list(secrets) -> list[str]:
+    return [secrets] if isinstance(secrets, str) else list(secrets)
+
+
+def sign_standard(secrets, event_id: str, body: bytes, timestamp: int | None = None) -> dict[str, str]:
+    """Standard Webhooks headers: one `v1,<base64>` per secret, newest first, space-separated.
+
+    `secrets` is one secret or several (during rotation). Secrets not in `whsec_` form are
+    skipped; with none left, no headers are returned (send X-TDS-Signature only).
+    """
+    ts = str(int(time.time()) if timestamp is None else timestamp)
+    content = f"{event_id}.{ts}.".encode() + body
+    sigs = [
+        "v1," + base64.b64encode(hmac.new(key, content, hashlib.sha256).digest()).decode()
+        for key in filter(None, map(standard_key, _as_list(secrets)))
+    ]
+    if not sigs:
+        return {}
+    return {WEBHOOK_ID_HEADER: event_id, WEBHOOK_TIMESTAMP_HEADER: ts, WEBHOOK_SIGNATURE_HEADER: " ".join(sigs)}
+
+
+def verify_standard(secrets, headers, body: bytes, now: float | None = None) -> str | None:
+    """None if `webhook-signature` holds a valid v1 signature for any of `secrets`, else what is wrong.
+
+    Unknown signature versions (e.g. `v1a`) are ignored; comparison is constant-time.
+    """
+    msg_id = get_header(headers, WEBHOOK_ID_HEADER)
+    ts = get_header(headers, WEBHOOK_TIMESTAMP_HEADER)
+    sig = get_header(headers, WEBHOOK_SIGNATURE_HEADER)
+    if not msg_id or not ts or not sig:
+        return f"missing {WEBHOOK_ID_HEADER}, {WEBHOOK_TIMESTAMP_HEADER} or {WEBHOOK_SIGNATURE_HEADER}"
+    if not ts.isdigit() or abs((time.time() if now is None else now) - int(ts)) > MAX_SKEW_S:
+        return f"{WEBHOOK_TIMESTAMP_HEADER} {ts!r} is more than {MAX_SKEW_S}s from now"
+    keys = [k for k in map(standard_key, _as_list(secrets)) if k]
+    if not keys:
+        return "no Standard Webhooks secret (whsec_...) to verify webhook-signature with"
+    content = f"{msg_id}.{ts}.".encode() + body
+    expected = [base64.b64encode(hmac.new(k, content, hashlib.sha256).digest()).decode() for k in keys]
+    for entry in sig.split():
+        version, _, value = entry.partition(",")
+        if version == "v1" and any(hmac.compare_digest(value, e) for e in expected):
+            return None
+    return f"no {WEBHOOK_SIGNATURE_HEADER} entry matches"
+
+
+def verify_any(secrets, headers, body: bytes, now: float | None = None) -> str | None:
+    """Receiver rule (SPEC.md §12): accept if webhook-signature or X-TDS-Signature verifies.
+
+    `secrets` is one secret or several (a receiver keeps the old one during rotation).
+    Returns None when the delivery is accepted, else why both checks failed.
+    """
+    problems = []
+    if get_header(headers, WEBHOOK_SIGNATURE_HEADER) is not None:
+        if (problem := verify_standard(secrets, headers, body, now)) is None:
+            return None
+        problems.append(problem)
+    problem = "no signing secret"
+    for secret in _as_list(secrets):
+        if (problem := verify(secret, headers, body, now)) is None:
+            return None
+    problems.append(problem)
+    return "; ".join(problems)
+
+
 def verify(secret: str, headers, body: bytes, now: float | None = None) -> str | None:
-    """None if the signature and timestamp are good, else what is wrong."""
-    ts, sig = _header(headers, TIMESTAMP_HEADER), _header(headers, SIGNATURE_HEADER)
+    """None if X-TDS-Signature and X-TDS-Timestamp are good, else what is wrong."""
+    ts, sig = get_header(headers, TIMESTAMP_HEADER), get_header(headers, SIGNATURE_HEADER)
     if not ts or not sig:
         return f"missing {TIMESTAMP_HEADER} or {SIGNATURE_HEADER}"
     if not ts.isdigit() or abs((time.time() if now is None else now) - int(ts)) > MAX_SKEW_S:
@@ -56,7 +144,7 @@ def verify(secret: str, headers, body: bytes, now: float | None = None) -> str |
     return None if hmac.compare_digest(expected, sig) else "signature does not match"
 
 
-def _header(headers, name: str) -> str | None:
+def get_header(headers, name: str) -> str | None:
     """Case-insensitive header lookup (HTTP header names are case-insensitive)."""
     wanted = name.lower()
     return next((v for k, v in headers.items() if k.lower() == wanted), None)
@@ -67,8 +155,9 @@ def delivery_problems(
 ) -> list[str]:
     """Everything wrong with one webhook delivery (SPEC.md §9, §9.1, §12); [] when it is good.
 
-    Checks the body is a schema-valid event, the signature, and any `ce-*` headers
-    (required when the subscription has `cloudevents: true`).
+    Checks the body is a schema-valid event, X-TDS-Signature (senders still send it), the
+    Standard Webhooks headers when present (`webhook-id` = `event_id`, a valid v1 signature),
+    and any `ce-*` headers (required when the subscription has `cloudevents: true`).
     """
     from tds_conform.cloudevents import cloudevents_problems
 
@@ -79,7 +168,14 @@ def delivery_problems(
     problems = event_errors(event)
     if problem := verify(secret, headers, body, now=now):
         problems.append(problem)
-    if cloudevents and _header(headers, "ce-id") is None:
+    if get_header(headers, WEBHOOK_SIGNATURE_HEADER) is not None:
+        if problem := verify_standard(secret, headers, body, now=now):
+            problems.append(problem)
+        if isinstance(event, dict) and get_header(headers, WEBHOOK_ID_HEADER) != event.get("event_id"):
+            problems.append(f"{WEBHOOK_ID_HEADER} is not the event_id")
+    elif standard_key(secret) and any(get_header(headers, h) for h in (WEBHOOK_ID_HEADER, WEBHOOK_TIMESTAMP_HEADER)):
+        problems.append(f"{WEBHOOK_ID_HEADER}/{WEBHOOK_TIMESTAMP_HEADER} sent without {WEBHOOK_SIGNATURE_HEADER}")
+    if cloudevents and get_header(headers, "ce-id") is None:
         problems.append("subscription has cloudevents: true but the delivery has no ce-* headers")
     if isinstance(event, dict):
         problems += cloudevents_problems(headers, event)

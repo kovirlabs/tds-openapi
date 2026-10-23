@@ -2,6 +2,7 @@
 
 import pytest
 
+import tds_conform.scenarios  # noqa: F401 - registers the scenarios
 from tds_conform import cloudevents
 from tds_conform.cloudevents import (
     cloudevents_headers,

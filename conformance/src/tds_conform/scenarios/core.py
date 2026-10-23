@@ -242,7 +242,15 @@ def _code(body) -> str | None:
 @scenario("webhook_delivery", "core", "Signed, schema-valid events are delivered for every change, including sync ones")
 def webhook_delivery(ctx: Context) -> None:
     from tds_conform.cloudevents import cloudevents_problems
-    from tds_conform.events import BROKER_EVENTS, event_errors, verify
+    from tds_conform.events import (
+        BROKER_EVENTS,
+        WEBHOOK_ID_HEADER,
+        WEBHOOK_SIGNATURE_HEADER,
+        event_errors,
+        get_header,
+        verify,
+        verify_standard,
+    )
 
     receiver = ctx.settings.receiver
     if receiver is None:
@@ -277,6 +285,19 @@ def webhook_delivery(ctx: Context) -> None:
     )
     bad_sig = [problem for d in deliveries if (problem := verify(secret, d.headers, d.body))]
     step.check(not bad_sig, "every delivery is signed (X-TDS-Signature, X-TDS-Timestamp)", "; ".join(bad_sig[:3]))
+    bad_std = []
+    for d in deliveries:
+        if get_header(d.headers, WEBHOOK_SIGNATURE_HEADER) is None:
+            continue
+        if problem := verify_standard(secret, d.headers, d.body):
+            bad_std.append(f"{d.event.get('event_id')}: {problem}")
+        if get_header(d.headers, WEBHOOK_ID_HEADER) != d.event.get("event_id"):
+            bad_std.append(f"{d.event.get('event_id')}: webhook-id is not the event_id")
+    step.check(
+        not bad_std,
+        "Standard Webhooks headers, when sent, verify (webhook-signature v1, webhook-id = event_id)",
+        "; ".join(bad_std[:3]),
+    )
     every = [d for d in receiver.deliveries if isinstance(d.event, dict)]
     broker_only = sorted({d.event["event_type"] for d in every if d.event.get("event_type") in BROKER_EVENTS})
     step.check(

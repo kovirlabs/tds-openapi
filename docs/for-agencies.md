@@ -90,8 +90,8 @@ Replace the bracketed parts. "Binding" means the TDS OpenAPI binding published a
 
 **Events and security.**
 > The Contractor shall deliver and accept events as signed webhooks as specified by the
-> binding (HMAC-SHA256 signature over timestamp and body, at-least-once delivery,
-> deduplication by `event_id`), and shall authenticate API clients with OAuth 2.0 client
+> binding (Standard Webhooks HMAC-SHA256 signatures over event id, timestamp and body,
+> at-least-once delivery, deduplication by sender and `event_id`), and shall authenticate API clients with OAuth 2.0 client
 > credentials. All traffic shall use HTTPS.
 
 **Data minimization and privacy.**
