@@ -1,0 +1,12 @@
+{
+  "subscription_id": "sub-02",
+  "callback_url": "https://broker.example.org/tds/events",
+  "event_types": [
+    "TRIP_STATUS_CHANGED",
+    "TRIP_SCHEDULED",
+    "TRIP_CANCELLED"
+  ],
+  "cloudevents": true,
+  "signing_secret": "whsec_gaDNkYMCuFPZn6nIBDzOAbSUk4511sYvoUancitvONQ=",
+  "created_at": "2026-10-30T13:00:00-04:00"
+}

@@ -2,6 +2,7 @@
 
 import hashlib
 import hmac
+import json
 import time
 from collections import defaultdict
 from datetime import UTC, datetime
@@ -46,13 +47,43 @@ def sign(secret: str, body: bytes, timestamp: int | None = None) -> dict[str, st
 
 def verify(secret: str, headers, body: bytes, now: float | None = None) -> str | None:
     """None if the signature and timestamp are good, else what is wrong."""
-    ts, sig = headers.get(TIMESTAMP_HEADER), headers.get(SIGNATURE_HEADER)
+    ts, sig = _header(headers, TIMESTAMP_HEADER), _header(headers, SIGNATURE_HEADER)
     if not ts or not sig:
         return f"missing {TIMESTAMP_HEADER} or {SIGNATURE_HEADER}"
     if not ts.isdigit() or abs((time.time() if now is None else now) - int(ts)) > MAX_SKEW_S:
         return f"{TIMESTAMP_HEADER} {ts!r} is more than {MAX_SKEW_S}s from now"
     expected = sign(secret, body, int(ts))[SIGNATURE_HEADER]
     return None if hmac.compare_digest(expected, sig) else "signature does not match"
+
+
+def _header(headers, name: str) -> str | None:
+    """Case-insensitive header lookup (HTTP header names are case-insensitive)."""
+    wanted = name.lower()
+    return next((v for k, v in headers.items() if k.lower() == wanted), None)
+
+
+def delivery_problems(
+    secret: str, headers, body: bytes, *, now: float | None = None, cloudevents: bool = False
+) -> list[str]:
+    """Everything wrong with one webhook delivery (SPEC.md §9, §9.1, §12); [] when it is good.
+
+    Checks the body is a schema-valid event, the signature, and any `ce-*` headers
+    (required when the subscription has `cloudevents: true`).
+    """
+    from tds_conform.cloudevents import cloudevents_problems
+
+    try:
+        event = json.loads(body)
+    except ValueError:
+        return ["body is not JSON"]
+    problems = event_errors(event)
+    if problem := verify(secret, headers, body, now=now):
+        problems.append(problem)
+    if cloudevents and _header(headers, "ce-id") is None:
+        problems.append("subscription has cloudevents: true but the delivery has no ce-* headers")
+    if isinstance(event, dict):
+        problems += cloudevents_problems(headers, event)
+    return problems
 
 
 def event_errors(event) -> list[str]:
@@ -65,11 +96,12 @@ def event_errors(event) -> list[str]:
 
 
 def dedupe(events: list[dict]) -> list[dict]:
-    """Drop redeliveries (same event_id) and order by occurred_at."""
+    """Drop redeliveries (same provider_id and event_id, CloudEvents source+id) and order by occurred_at."""
     seen, unique = set(), []
     for event in events:
-        if event.get("event_id") not in seen:
-            seen.add(event.get("event_id"))
+        key = (event.get("provider_id"), event.get("event_id"))
+        if key not in seen:
+            seen.add(key)
             unique.append(event)
     return sorted(unique, key=_when)
 

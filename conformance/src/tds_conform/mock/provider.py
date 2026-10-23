@@ -295,6 +295,7 @@ class Provider(TransferMixin):
     def _subscribe(self, requester: str, body) -> Response:
         if errors := schema_errors(body, "subscription-request"):
             return problem(400, "INVALID_REQUEST", "; ".join(errors))
+        # **body echoes `cloudevents`: the reference provider supports the CloudEvents headers.
         sub = {
             "subscription_id": self.new_id("sub"),
             **body,

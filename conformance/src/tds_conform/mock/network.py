@@ -10,6 +10,7 @@ from datetime import UTC, datetime
 
 import httpx
 
+from tds_conform.cloudevents import cloudevents_headers
 from tds_conform.events import sign
 from tds_conform.mock.provider import Provider, ProviderConfig
 
@@ -67,6 +68,8 @@ class Dispatcher:
     @staticmethod
     def _send(client: httpx.Client, sub: dict, body: bytes) -> str:
         headers = {"Content-Type": "application/json", **sign(sub["signing_secret"], body)}
+        if sub.get("cloudevents"):
+            headers.update(cloudevents_headers(json.loads(body)))
         try:
             return str(client.post(sub["callback_url"], content=body, headers=headers).status_code)
         except httpx.HTTPError as exc:

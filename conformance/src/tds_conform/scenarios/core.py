@@ -231,23 +231,28 @@ def _too_late_trip(ctx: Context, window: dict) -> dict | None:
     return trip if booking_window_problem(window, trip_time(trip), now) else None
 
 
+def _has_ce_headers(headers) -> bool:
+    return any(k.lower().startswith("ce-") for k in headers)
+
+
 def _code(body) -> str | None:
     return body.get("code") if isinstance(body, dict) else None
 
 
 @scenario("webhook_delivery", "core", "Signed, schema-valid events are delivered for every change, including sync ones")
 def webhook_delivery(ctx: Context) -> None:
+    from tds_conform.cloudevents import cloudevents_problems
     from tds_conform.events import BROKER_EVENTS, event_errors, verify
 
     receiver = ctx.settings.receiver
     if receiver is None:
         raise Inconclusive("no webhook receiver; run with --listen (and --callback-url if the provider is remote)")
     types = ["TRIP_STATUS_CHANGED", "TRIP_SCHEDULED", "TRIP_CANCELLED"]
-    step = ctx.call(
-        "subscribe", "POST", "/subscriptions", body={"callback_url": receiver.url, "event_types": types}, expect=(201,)
-    )
+    subscription = {"callback_url": receiver.url, "event_types": types, "cloudevents": True}
+    step = ctx.call("subscribe", "POST", "/subscriptions", body=subscription, expect=(201,))
     step.require(step.status == 201 and "signing_secret" in step.body, "subscription returns a signing_secret")
     secret = step.body["signing_secret"]
+    wants_cloudevents = step.body.get("cloudevents") is True
 
     trip = ctx.new_trip()
     body = _request_and_decide(ctx, trip)
@@ -279,6 +284,15 @@ def webhook_delivery(ctx: Context) -> None:
         "provider sends no broker events (EXCEPTION_RAISED, EXCEPTION_RESOLVED)",
         f"got {broker_only}",
     )
+    if wants_cloudevents:
+        missing = [d.event.get("event_id") for d in deliveries if not _has_ce_headers(d.headers)]
+        step.check(
+            not missing,
+            "subscription says cloudevents: true, so every delivery carries ce-* headers",
+            f"none on {missing[:3]}",
+        )
+    bad_ce = [f"{d.event.get('event_id')}: {p}" for d in deliveries for p in cloudevents_problems(d.headers, d.event)]
+    step.check(not bad_ce, "ce-* headers, when sent, match the envelope (SPEC.md §9.1)", "; ".join(bad_ce[:3]))
     bad_schema = [f"{d.event.get('event_type')}: {e}" for d in deliveries for e in event_errors(d.event)]
     step.check(not bad_schema, "every event matches its schema", "; ".join(bad_schema[:3]))
     by_id = {}

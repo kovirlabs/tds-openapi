@@ -21,6 +21,18 @@ info:
     HMAC-SHA256, keyed with the subscription's signing secret, of
     `<X-TDS-Timestamp>.<raw request body>`. Receivers reject a bad signature
     or a timestamp more than 300 seconds from their clock.
+
+
+    **CloudEvents (optional).** A subscription created with `cloudevents: true`
+    gets CloudEvents 1.0 binary-content-mode headers on every delivery
+    (SPEC.md §9.1): `ce-specversion` `1.0`, `ce-id` = `event_id`, `ce-source` =
+    `urn:tds:provider:<provider_id>`, `ce-type` = `org.tds-openapi.` + the
+    event type in lower case, `ce-time` = `occurred_at`, `ce-subject` =
+    `trips/<trip_id>[/legs/<leg_id>]`, `ce-dataschema` = the event schema at
+    `https://tds-openapi.org/schemas/<schema_version>/...`, and the extensions
+    `ce-providerid` and `ce-schemaversion`. The body and `Content-Type:
+    application/json` are unchanged. Receivers dedupe on (`provider_id`,
+    `event_id`), which is CloudEvents (`source`, `id`).
   contact:
     name: tds-openapi maintainers
     url: https://github.com/kovirlabs/tds-openapi
@@ -144,17 +156,96 @@ components:
   messageTraits:
     signed:
       headers:
-        type: object
-        required: [X-TDS-Signature, X-TDS-Timestamp]
-        properties:
-          X-TDS-Signature:
-            description: sha256=<hex HMAC-SHA256 of "<timestamp>.<body>">.
-            type: string
-            pattern: "^sha256=[0-9a-f]{64}$"
-          X-TDS-Timestamp:
-            description: Unix seconds when the request was sent.
-            type: string
-            pattern: "^[0-9]+$"
+        $ref: '#/components/schemas/DeliveryHeaders'
+  schemas:
+    DeliveryHeaders:
+      description: >-
+        HTTP headers of one webhook delivery: the signature headers (always)
+        and, for subscriptions with `cloudevents: true`, the CloudEvents
+        binary-mode headers (SPEC.md §9.1, §12).
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/SignatureHeaders'
+        - $ref: '#/components/schemas/CloudEventsHeaders'
+    SignatureHeaders:
+      description: Webhook signature headers (SPEC.md §12).
+      type: object
+      required: [X-TDS-Signature, X-TDS-Timestamp]
+      properties:
+        X-TDS-Signature:
+          description: sha256=<hex HMAC-SHA256 of "<timestamp>.<body>">.
+          type: string
+          pattern: "^sha256=[0-9a-f]{64}$"
+        X-TDS-Timestamp:
+          description: Unix seconds when the request was sent.
+          type: string
+          pattern: "^[0-9]+$"
+    CloudEventsHeaders:
+      description: >-
+        CloudEvents 1.0 binary content mode (HTTP protocol binding). Derived
+        from the envelope in the body, which stays the TDS event. Either all of
+        these are sent (`ce-subject` only when the event has a `trip_id`) or
+        none. Values are percent-encoded as the CloudEvents HTTP binding
+        requires. Binary mode carries `datacontenttype` as `Content-Type:
+        application/json`, never as a `ce-` header.
+      type: object
+      dependentRequired:
+        ce-id:
+          - ce-specversion
+          - ce-source
+          - ce-type
+          - ce-time
+          - ce-dataschema
+          - ce-providerid
+          - ce-schemaversion
+      properties:
+        ce-specversion:
+          description: CloudEvents version.
+          type: string
+          const: "1.0"
+        ce-id:
+          description: The envelope's `event_id`, stable across retries.
+          type: string
+          minLength: 1
+        ce-source:
+          description: >-
+            `urn:tds:provider:` followed by the envelope's `provider_id`,
+            percent-encoded as a URI component. (`source`, `id`) is unique per
+            event; receivers dedupe on it.
+          type: string
+          pattern: "^urn:tds:provider:.+$"
+        ce-type:
+          description: >-
+            `org.tds-openapi.` followed by the envelope's `event_type` in lower
+            case, e.g. `org.tds-openapi.trip_status_changed`. Upper-casing the
+            suffix gives the event type back.
+          type: string
+          pattern: "^org\\.tds-openapi\\.[a-z][a-z0-9_]*$"
+        ce-time:
+          description: The envelope's `occurred_at` (RFC 3339).
+          type: string
+        ce-subject:
+          description: >-
+            `trips/<trip_id>` or `trips/<trip_id>/legs/<leg_id>` (ids
+            percent-encoded as URI path segments); absent when the event has no
+            `trip_id`.
+          type: string
+          pattern: "^trips/[^/]+(/legs/[^/]+)?$"
+        ce-dataschema:
+          description: >-
+            The event type's schema, versioned by the envelope's
+            `schema_version`:
+            `https://tds-openapi.org/schemas/<schema_version>/<profile>/<schema>.yaml`.
+            Removing the version segment gives the schema's `$id`.
+          type: string
+          format: uri
+        ce-providerid:
+          description: Extension attribute; the envelope's `provider_id`.
+          type: string
+        ce-schemaversion:
+          description: Extension attribute; the envelope's `schema_version`.
+          type: string
+          pattern: "^[0-9]+\\.[0-9]+\\.[0-9]+$"
   messages:
     TripStatusChanged:
       name: TRIP_STATUS_CHANGED

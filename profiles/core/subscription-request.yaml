@@ -16,6 +16,16 @@ properties:
   event_types:
     description: Event types to deliver.
     $ref: ./event-types.yaml
+  cloudevents:
+    description: >-
+      Ask for CloudEvents 1.0 binary-mode `ce-*` headers on every delivery
+      (SPEC.md §9.1). The body stays the TDS event. A provider that cannot add
+      them still creates the subscription and returns `cloudevents: false`.
+    type: boolean
+    default: false
 examples:
   - callback_url: "https://broker.example.org/tds/events"
     event_types: [TRIP_STATUS_CHANGED, TRIP_SCHEDULED, TRIP_CANCELLED]
+  - callback_url: "https://broker.example.org/tds/events"
+    event_types: [TRIP_STATUS_CHANGED]
+    cloudevents: true

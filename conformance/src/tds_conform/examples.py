@@ -16,7 +16,9 @@ Manifest format (``examples/<scenario>/manifest.yaml``): ``description``, option
 ``narrative`` and ``generated_by``, and ``files`` mapping each JSON file to an entry with
 ``schema`` (the schema ``$id``), and for API payloads ``operation`` (e.g. ``POST /tenders``)
 and ``status`` (absent for a request body). Event logs have ``kind: event-stream`` and no
-``schema``. ``load_manifest`` always returns entries as dicts.
+``schema``; one HTTP webhook delivery (``{method, url, headers, body}``, body as the raw
+string that was signed) has ``kind: webhook-delivery`` and names the subscription response
+holding its secret in ``subscription``. ``load_manifest`` always returns entries as dicts.
 """
 
 from __future__ import annotations
