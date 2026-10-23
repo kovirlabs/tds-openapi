@@ -40,15 +40,21 @@ Content-Type: application/json
                  "HOLD_RESPONSE", "MILESTONE", "ETA_UPDATE", "CUSTODY_HANDOFF"]}
 ```
 
-The response carries `signing_secret` once. Each event arrives as one POST with:
+The response carries `signing_secret` once (`whsec_…`). Each event arrives as one POST with:
 
-- `X-TDS-Timestamp`: Unix seconds
-- `X-TDS-Signature`: `sha256=` + hex HMAC-SHA256(secret, `"<timestamp>.<raw body>"`)
+- `webhook-id` (= `event_id`), `webhook-timestamp` (Unix seconds) and `webhook-signature`
+  (`v1,` + base64 HMAC-SHA256 of `"<id>.<timestamp>.<raw body>"`): Standard Webhooks, so
+  its libraries verify them as they are
+- `X-TDS-Timestamp` and `X-TDS-Signature` (`sha256=` + hex HMAC-SHA256(secret,
+  `"<timestamp>.<raw body>"`)): deprecated since 0.6.0, still sent
+- with `"cloudevents": true` in the subscription, CloudEvents binary-mode `ce-*` headers
+  (SPEC.md §9.1); the body is the same
 
-Verify, reject skew over 300 s, return 2xx fast, dedupe on `event_id`, order by
-`occurred_at`. Failed deliveries are retried with backoff (1, 2, 4… s). Plain
-`http://` callbacks are accepted for `localhost` / `127.0.0.1` only.
-`tds_conform.events.verify()` is a reference implementation of the check.
+Verify either signature, reject skew over 300 s, return 2xx fast, dedupe on (`provider_id`,
+`event_id`), order by `occurred_at`. Failed deliveries are retried with backoff (1, 2, 4… s).
+Plain `http://` callbacks are accepted for `localhost` / `127.0.0.1` only.
+`tds_conform.events.verify_any()` is a reference implementation of the receiver check;
+`examples/webhook-delivery/` shows one delivery on the wire.
 
 ## The broker flow
 

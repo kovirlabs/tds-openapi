@@ -42,7 +42,8 @@ def test_manifest_entries_are_dicts_and_files_load(scenario):
     assert manifest["description"]
     assert manifest["files"]
     for name, entry, body in iter_examples(scenario):
-        assert isinstance(entry, dict) and ("schema" in entry or entry.get("kind") in ("event-stream", "webhook-delivery"))
+        assert isinstance(entry, dict)
+        assert "schema" in entry or entry.get("kind") in ("event-stream", "webhook-delivery")
         assert body == json.loads((REPO / "examples" / scenario / name).read_text())
         assert load_example(scenario, name) == body
 

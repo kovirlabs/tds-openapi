@@ -24,6 +24,7 @@ from tds_conform import SPEC_VERSION
 from tds_conform.booking import booking_window_for, booking_window_problem, trip_time
 from tds_conform.data import schema_errors
 from tds_conform.eligibility import trip_eligibility_problems
+from tds_conform.events import new_standard_secret
 from tds_conform.mock.common import TERMINAL, Response, _invalid_state, _not_found, _ts, _window_problem, problem
 from tds_conform.mock.transfer import TransferMixin
 from tds_conform.profiles import profile_problems
@@ -89,7 +90,7 @@ class Provider(TransferMixin):
     sink: Callable[[str, dict], None] = lambda requester, event: None
     # Injectable so generated examples are reproducible.
     new_id: Callable[[str], str] = lambda prefix: f"{prefix}-{secrets.token_hex(4)}"
-    new_secret: Callable[[], str] = lambda: secrets.token_urlsafe(32)
+    new_secret: Callable[[], str] = new_standard_secret
     events: list[dict] = field(default_factory=list)
     _trips: dict[tuple[str, str], _Trip] = field(default_factory=dict)
     _idempotency: dict[tuple[str, str], _Stored] = field(default_factory=dict)
