@@ -1,0 +1,36 @@
+# TDS CSV profile (SPEC.md §9.2): one day of batch exchange with a provider that has no API.
+# Hand-written; checked by scripts/validate_examples.py and tds-conform check-csv.
+description: >-
+  A requester and a dial-a-ride provider without an API exchange trips as CSV files. The
+  requester sends three trip requests; the provider confirms two and refuses one as outside
+  its service area. The requester then moves one pickup window and cancels the other trip, and
+  the provider answers both. The provider's statuses file reports every change as an event
+  row, including the milestones of the completed trip. The JSON files show what three of the
+  rows stand for in the API.
+narrative:
+  - "tds_requests_20261104T150000Z.csv: three REQUEST rows (one wheelchair trip with an attendant and a Medicaid authorization, one appointment trip, one out of area)."
+  - "tds_answers_20261104T204000Z.csv: two ACCEPTED (CONFIRMED, with provider trip ids and scheduled times), one REJECTED with OUTSIDE_SERVICE_AREA."
+  - "tds_requests_20261104T215000Z.csv: a MODIFY of the first pickup window and a CANCEL of the second trip."
+  - "tds_answers_20261104T220500Z.csv: both ACCEPTED; the first trip gets new scheduled times."
+  - "tds_statuses_20261105T150000Z.csv: TRIP_STATUS_CHANGED, TRIP_SCHEDULED, TRIP_CANCELLED and MILESTONE rows for all three trips."
+files:
+  tds_requests_20261104T150000Z.csv:
+    kind: csv
+  tds_answers_20261104T204000Z.csv:
+    kind: csv
+  tds_requests_20261104T215000Z.csv:
+    kind: csv
+  tds_answers_20261104T220500Z.csv:
+    kind: csv
+  tds_statuses_20261105T150000Z.csv:
+    kind: csv
+  equivalent-request.json:
+    schema: https://tds-openapi.org/schemas/core/trip-request.yaml
+    row_of: tds_requests_20261104T150000Z.csv:2
+  equivalent-trip.json:
+    schema: https://tds-openapi.org/schemas/core/trip.yaml
+    row_of: tds_answers_20261104T204000Z.csv:2
+    request: tds_requests_20261104T150000Z.csv:2
+  equivalent-refusal.json:
+    schema: https://tds-openapi.org/schemas/core/error.yaml
+    row_of: tds_answers_20261104T204000Z.csv:4

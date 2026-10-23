@@ -1,0 +1,141 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/csv/answer-row.yaml
+title: CsvAnswerRow
+description: >-
+  One row of an answers file (`tds_answers_<UTC time>.csv`, SPEC.md §9.2):
+  a provider's answer to one row of a requests file. The first six columns
+  repeat the request row's idempotency key, so a resent request gets the same
+  answer and a requester can match answers to requests. ACCEPTED rows map to
+  the Trip the API would return (`x-maps-to` under ACCEPTED, applied on top of
+  the request row's TripRequest); REJECTED rows map to the Problem Details the
+  API would return (`x-maps-to` under REJECTED). A request row without an
+  answer row is still pending, never refused or cancelled.
+x-profile: csv
+x-csv-discriminator: result
+type: object
+required: [requester_id, provider_id, trip_id, leg_id, action, result, status, answered_at]
+properties:
+  requester_id:
+    description: Requester of the answered row.
+    type: string
+    minLength: 1
+    x-maps-to: {ACCEPTED: /requester_id}
+  provider_id:
+    description: Provider answering.
+    type: string
+    minLength: 1
+    x-maps-to: {ACCEPTED: /provider_id}
+  trip_id:
+    description: Requester's trip id of the answered row.
+    type: string
+    minLength: 1
+    x-maps-to: {ACCEPTED: /trip_id}
+  leg_id:
+    description: Leg id of the answered row.
+    type: string
+    minLength: 1
+    x-maps-to: {ACCEPTED: /legs/0/leg_id}
+  action:
+    description: Action of the answered row.
+    type: string
+    enum: [REQUEST, CONFIRM, MODIFY, CANCEL]
+  revision:
+    description: Revision of the answered row (empty means 1).
+    type: integer
+    minimum: 1
+    default: 1
+  result:
+    description: >-
+      ACCEPTED: the action was applied (for REQUEST, the trip is OFFERED,
+      CONFIRMED or already SCHEDULED; for CANCEL, CANCELLED). REJECTED: it was
+      not, and `reason` says why.
+    type: string
+    enum: [ACCEPTED, REJECTED]
+  status:
+    description: >-
+      Trip status after the answer (trip.status): REJECTED for a refused
+      REQUEST; for a rejected CONFIRM, MODIFY or CANCEL, the unchanged status.
+    $ref: ../core/trip-status.yaml
+    x-maps-to: {ACCEPTED: /status}
+  provider_trip_id:
+    description: Provider's own id for the trip (trip.provider_trip_id). Required when a REQUEST is ACCEPTED.
+    type: string
+    minLength: 1
+    x-maps-to: {ACCEPTED: /provider_trip_id}
+  scheduled_pickup:
+    description: Committed pickup time, RFC 3339 with offset (leg.scheduled_pickup).
+    type: string
+    format: date-time
+    x-maps-to: {ACCEPTED: /legs/0/scheduled_pickup}
+  scheduled_dropoff:
+    description: Committed dropoff time, if the provider commits to one (leg.scheduled_dropoff).
+    type: string
+    format: date-time
+    x-maps-to: {ACCEPTED: /legs/0/scheduled_dropoff}
+  offer_expires_at:
+    description: While OFFERED, when the offer lapses unless confirmed (trip.offer_expires_at).
+    type: string
+    format: date-time
+    x-maps-to: {ACCEPTED: /offer_expires_at}
+  reason:
+    description: >-
+      Why the action was rejected (error.code): a refusal reason such as
+      NO_CAPACITY or OUTSIDE_SERVICE_AREA, or INVALID_STATE / NOT_FOUND.
+      Required when REJECTED.
+    $ref: ../core/error.yaml#/properties/code
+    x-maps-to: {REJECTED: /code}
+  detail:
+    description: Optional explanation; no rider or health information (error.detail).
+    type: string
+    maxLength: 500
+    x-maps-to: {REJECTED: /detail}
+  answered_at:
+    description: When the provider decided, RFC 3339 with offset (trip.updated_at).
+    type: string
+    format: date-time
+    x-maps-to: {ACCEPTED: /updated_at}
+allOf:
+  - if:
+      properties: {result: {const: REJECTED}}
+    then:
+      required: [reason]
+  - if:
+      properties: {result: {const: ACCEPTED}, action: {const: REQUEST}}
+    then:
+      required: [provider_trip_id]
+      properties:
+        status:
+          enum: [REQUESTED, OFFERED, CONFIRMED, SCHEDULED]
+  - if:
+      properties: {result: {const: REJECTED}, action: {const: REQUEST}}
+    then:
+      properties:
+        status:
+          const: REJECTED
+  - if:
+      properties: {result: {const: ACCEPTED}, action: {const: CANCEL}}
+    then:
+      properties:
+        status:
+          const: CANCELLED
+examples:
+  - requester_id: "throughride-demo"
+    provider_id: "aaata-a-ride"
+    trip_id: "tr-20261103-0001"
+    leg_id: "leg-1"
+    action: "REQUEST"
+    revision: 1
+    result: "ACCEPTED"
+    status: "CONFIRMED"
+    provider_trip_id: "AR-88213"
+    scheduled_pickup: "2026-11-03T09:10:00-05:00"
+    answered_at: "2026-11-02T18:00:00-05:00"
+  - requester_id: "throughride-demo"
+    provider_id: "aaata-a-ride"
+    trip_id: "tr-20261103-0002"
+    leg_id: "leg-1"
+    action: "REQUEST"
+    result: "REJECTED"
+    status: "REJECTED"
+    reason: "NO_CAPACITY"
+    answered_at: "2026-11-02T18:00:00-05:00"

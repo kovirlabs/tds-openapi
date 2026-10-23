@@ -38,6 +38,23 @@ All notable changes to this project are documented here. The format follows [Kee
   `ce-*` headers anyway, checks them against the envelope. Providers that answer
   `cloudevents: false` pass as before.
 
+- TDS CSV profile for batch providers without an API (SPEC.md §9.2, new `profiles/csv`):
+  requests, answers and statuses files (`tds_<kind>_<UTC time>.csv`), RFC 4180, UTF-8 with
+  a tolerated byte-order mark, RFC 3339 times, `|`-separated lists. Row schemas
+  `csv/request-row`, `csv/answer-row`, `csv/status-row`, each column with `x-maps-to`
+  (JSON Pointer per action or result). Request rows stand for `POST /trips`, confirm, `PATCH`
+  and cancel, keyed on (requester, provider, trip, leg, action, revision); answer rows repeat
+  the key and stand for the Trip or the Problem Details; status rows are events.
+  A missing answer is pending, never a refusal or cancellation.
+- `tds_conform.csvfile`: `read`, `write`, `row_to_json`, `json_to_row`, `row_key`,
+  `idempotency_key`, `file_problems`, `exchange_problems`, `kind_from_name`, `file_name`,
+  `columns`, `row_at`. CLI `tds-conform check-csv FILE... [--kind] [--schema-version]`.
+- Example `csv-batch`: two rounds of requests and answers and a statuses file with a completed
+  trip's milestones, plus JSON equivalents (`row_of:` in the manifest; the validator checks
+  they equal the converted rows). Example manifests gain `kind: csv`; the validator checks
+  each file and that every answer row answers a request row.
+- `tds_conform.examples.load_example` / `iter_examples` return CSV files as text.
+
 ### Deprecated
 - `X-TDS-Signature` and `X-TDS-Timestamp`, in favour of the Standard Webhooks headers. Senders
   still send them on every delivery and receivers still accept them; removal needs a major

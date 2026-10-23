@@ -60,6 +60,12 @@ def conform_main(argv: list[str] | None = None) -> int:
         metavar="PROVIDER/TRIP/LEG",
         help="a leg that requires custody records (repeatable)",
     )
+    csv_check = sub.add_parser("check-csv", help="check TDS CSV batch files (SPEC.md §9.2)")
+    csv_check.add_argument("files", type=Path, nargs="+", help="tds_<requests|answers|statuses>_<time>.csv files")
+    csv_check.add_argument(
+        "--kind", choices=["requests", "answers", "statuses"], help="file type, if not named per §9.2"
+    )
+    csv_check.add_argument("--schema-version", help="binding version for status rows with an empty schema_version")
     fz = sub.add_parser("fuzz", help="fuzz every operation against the OpenAPI document (needs tds-conform[fuzz])")
     fz.add_argument("--url", required=True, help="base URL of the provider API")
     fz.add_argument("--spec", type=Path, help="bundled OpenAPI document (default: dist/openapi.yaml in the checkout)")
@@ -81,6 +87,8 @@ def conform_main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "check-events":
         return _check_events(args)
+    if args.command == "check-csv":
+        return _check_csv(args)
 
     template = json.loads(args.trip_template.read_text()) if args.trip_template else default_trip_template()
     requester_id = args.requester_id or template["requester_id"]
@@ -160,6 +168,27 @@ def _fuzz(args) -> int:
 def _host_port(value: str) -> tuple[str, int]:
     host, _, port = value.rpartition(":")
     return host or "127.0.0.1", int(port or 0)
+
+
+def _check_csv(args) -> int:
+    from tds_conform.csvfile import exchange_problems, file_problems
+
+    failed = False
+    contents = {path.name: path.read_bytes() for path in args.files}
+    for path in args.files:
+        problems = file_problems(contents[path.name], args.kind, filename=path.name, schema_version=args.schema_version)
+        if args.kind:  # a file not named per §9.2 is still checked as the given kind
+            problems = [p for p in problems if not p.startswith("file name ")]
+        failed |= bool(problems)
+        print(f"{'PASS' if not problems else 'FAIL':5} {path}")
+        for problem in problems:
+            print(f"      {problem}")
+    if len(args.files) > 1 and (problems := exchange_problems(contents)):
+        failed = True
+        print("FAIL  answers match requests")
+        for problem in problems:
+            print(f"      {problem}")
+    return 1 if failed else 0
 
 
 def _check_events(args) -> int:

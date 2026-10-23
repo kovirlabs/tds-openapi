@@ -21,7 +21,11 @@ Checks:
      raw string}): the body is a valid event, the headers match the AsyncAPI
      DeliveryHeaders schema, the signatures verify with the secret of the
      subscription response the entry names, and CloudEvents headers match the
-     envelope (SPEC.md §9.1, §12).
+     envelope (SPEC.md §9.1, §12). An entry with `kind: csv` is a TDS CSV
+     file (SPEC.md §9.2) checked by tds_conform.csvfile.file_problems (name,
+     encoding, header, row schemas, the API objects rows stand for, milestone
+     order); answer rows must answer a request row of the scenario, and a JSON
+     entry with `row_of: <file>:<line>` must equal that row converted.
   5. Manifest entries that name an `operation` are wired into spec/openapi.yaml at
      that operation and status (so the mock serves them), the operation declares
      the same schema, and every example the spec references has such an entry.
@@ -227,13 +231,41 @@ def check_delivery(path: Path, entry: dict, registry: Registry, wiring: dict[str
     return list(dict.fromkeys(errors))
 
 
+def check_row_equivalent(scenario: Path, entry: dict, instance) -> list[str]:
+    """A JSON example marked `row_of: <csv file>:<line>` must equal what that CSV row converts to.
+
+    Request rows give the operation body; answer rows give the Trip (built on the request row
+    named by `request:`) or the Problem Details.
+    """
+    from tds_conform.csvfile import kind_from_name, row_at, row_to_json
+
+    def locate(ref: str):
+        name, _, line = ref.rpartition(":")
+        kind = kind_from_name(name)
+        return kind, row_at((scenario / name).read_bytes(), kind, int(line))
+
+    try:
+        kind, row = locate(entry["row_of"])
+        request = locate(entry["request"])[1] if "request" in entry else None
+    except (KeyError, ValueError, OSError) as exc:
+        return [f"row_of/request do not name a CSV row: {exc}"]
+    converted = row_to_json(kind, row, request=request)
+    expected = converted.get("body", converted.get("trip", converted.get("problem", converted)))
+    return [] if expected == instance else [f"differs from {entry['row_of']} converted"]
+
+
 def check_examples(registry: Registry, examples_root: Path = EXAMPLES, events: dict | None = None):
     results: dict[Path, list[str]] = {}
     for scenario, files in load_manifests(examples_root).items():
         manifest_path = scenario / "manifest.yaml"
-        for json_path in sorted(scenario.glob("*.json")):
+        for json_path in sorted([*scenario.glob("*.json"), *scenario.glob("*.csv")]):
             if json_path.name not in files:
                 results[json_path] = [f"not listed in {manifest_path.relative_to(examples_root.parent)}"]
+        csv_files = {n: (scenario / n).read_bytes() for n, e in files.items() if e.get("kind") == "csv"}
+        if csv_files and all((scenario / n).exists() for n in csv_files):
+            from tds_conform.csvfile import exchange_problems
+
+            results[manifest_path] = exchange_problems(csv_files)
         for name, entry in files.items():
             json_path = scenario / name
             if not json_path.exists():
@@ -246,6 +278,11 @@ def check_examples(registry: Registry, examples_root: Path = EXAMPLES, events: d
             if entry.get("kind") == "webhook-delivery":
                 results[json_path] = check_delivery(json_path, entry, registry, events or event_wiring())
                 continue
+            if entry.get("kind") == "csv":
+                from tds_conform.csvfile import file_problems
+
+                results[json_path] = file_problems(json_path.read_bytes(), filename=name)
+                continue
             schema_id = entry["schema"]
             try:
                 schema = registry.contents(schema_id)
@@ -256,6 +293,8 @@ def check_examples(registry: Registry, examples_root: Path = EXAMPLES, events: d
             results[json_path] = [format_error(e) for e in validator_for(schema, registry).iter_errors(instance)]
             if not results[json_path] and schema_id in RULES:
                 results[json_path] = RULES[schema_id](instance)
+            if not results[json_path] and "row_of" in entry:
+                results[json_path] = check_row_equivalent(scenario, entry, instance)
     return results
 
 

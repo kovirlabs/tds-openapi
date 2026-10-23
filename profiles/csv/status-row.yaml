@@ -1,0 +1,151 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/csv/status-row.yaml
+title: CsvStatusRow
+description: >-
+  One row of a statuses file (`tds_statuses_<UTC time>.csv`, SPEC.md §9.2):
+  one event, as the provider would have delivered it to a webhook (SPEC.md
+  §9). `x-maps-to` gives each column's JSON Pointer in the event envelope.
+  Rows are deduplicated on (provider_id, event_id) like webhook deliveries, so
+  a provider may repeat rows in a later file. MILESTONE rows belong to the
+  transfer profile (SPEC.md §10.3); a file carrying them is also the record of
+  actual pickup and dropoff times.
+x-profile: csv
+type: object
+required: [event_id, event_type, occurred_at, provider_id, trip_id]
+properties:
+  event_id:
+    description: Unique id of the event among this provider's events (event.event_id).
+    type: string
+    minLength: 1
+    x-maps-to: /event_id
+  event_type:
+    description: Which event the row is (event.event_type).
+    type: string
+    enum: [TRIP_STATUS_CHANGED, TRIP_SCHEDULED, TRIP_CANCELLED, MILESTONE]
+    x-maps-to: /event_type
+  occurred_at:
+    description: When the change happened, RFC 3339 with offset (event.occurred_at).
+    type: string
+    format: date-time
+    x-maps-to: /occurred_at
+  provider_id:
+    description: Provider that emitted the event (event.provider_id).
+    type: string
+    minLength: 1
+    x-maps-to: /provider_id
+  requester_id:
+    description: >-
+      Requester the row is for. Routing only (the event envelope has no
+      requester); lets one file serve several requesters.
+    type: string
+  trip_id:
+    description: Requester's trip id (event.trip_id).
+    type: string
+    minLength: 1
+    x-maps-to: /trip_id
+  leg_id:
+    description: Leg id (event.leg_id). Required for TRIP_SCHEDULED and MILESTONE.
+    type: string
+    minLength: 1
+    x-maps-to: /leg_id
+  provider_trip_id:
+    description: Provider's own trip id, for the reader's cross-check. Not part of the event.
+    type: string
+  schema_version:
+    description: >-
+      Binding version of the row (event.schema_version). Empty: the version the
+      two parties agreed for the exchange.
+    type: string
+    pattern: "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    x-maps-to: /schema_version
+  status:
+    description: New trip status (TRIP_STATUS_CHANGED payload.status).
+    $ref: ../core/trip-status.yaml
+    x-maps-to: /payload/status
+  previous_status:
+    description: Status before the change (TRIP_STATUS_CHANGED payload.previous_status).
+    $ref: ../core/trip-status.yaml
+    x-maps-to: /payload/previous_status
+  scheduled_pickup:
+    description: Committed pickup time (TRIP_SCHEDULED payload.scheduled_pickup).
+    type: string
+    format: date-time
+    x-maps-to: /payload/scheduled_pickup
+  scheduled_dropoff:
+    description: Committed dropoff time (TRIP_SCHEDULED payload.scheduled_dropoff).
+    type: string
+    format: date-time
+    x-maps-to: /payload/scheduled_dropoff
+  vehicle_id:
+    description: Assigned vehicle (TRIP_SCHEDULED payload.vehicle_ref.vehicle_id).
+    type: string
+    x-maps-to: /payload/vehicle_ref/vehicle_id
+  vehicle_description:
+    description: Rider-facing vehicle description (payload.vehicle_ref.description).
+    type: string
+    maxLength: 200
+    x-maps-to: /payload/vehicle_ref/description
+  vehicle_plate:
+    description: Licence plate (payload.vehicle_ref.plate).
+    type: string
+    maxLength: 20
+    x-maps-to: /payload/vehicle_ref/plate
+  cancel_reason:
+    description: Why the trip was cancelled (TRIP_CANCELLED payload.cancellation.reason).
+    $ref: ../core/cancel-reason.yaml
+    x-maps-to: /payload/cancellation/reason
+  cancelled_by:
+    description: Which side cancelled (payload.cancellation.cancelled_by).
+    type: string
+    enum: [REQUESTER, PROVIDER]
+    x-maps-to: /payload/cancellation/cancelled_by
+  cancelled_at:
+    description: When the cancellation took effect (payload.cancellation.cancelled_at).
+    type: string
+    format: date-time
+    x-maps-to: /payload/cancellation/cancelled_at
+  cancel_detail:
+    description: Optional explanation; no health information (payload.cancellation.detail).
+    type: string
+    maxLength: 500
+    x-maps-to: /payload/cancellation/detail
+  milestone:
+    description: Milestone reached (MILESTONE payload.milestone, transfer profile).
+    $ref: ../transfer/milestone.yaml
+    x-maps-to: /payload/milestone
+  delay_cause:
+    description: On LEG_FAILED, why the leg failed (MILESTONE payload.delay_cause).
+    $ref: ../transfer/delay-cause.yaml
+    x-maps-to: /payload/delay_cause
+allOf:
+  - if:
+      properties: {event_type: {const: TRIP_STATUS_CHANGED}}
+    then:
+      required: [status]
+  - if:
+      properties: {event_type: {const: TRIP_SCHEDULED}}
+    then:
+      required: [leg_id, scheduled_pickup]
+  - if:
+      properties: {event_type: {const: TRIP_CANCELLED}}
+    then:
+      required: [cancel_reason, cancelled_by, cancelled_at]
+  - if:
+      properties: {event_type: {const: MILESTONE}}
+    then:
+      required: [leg_id, milestone]
+examples:
+  - event_id: "evt-0001"
+    event_type: "TRIP_SCHEDULED"
+    occurred_at: "2026-11-02T18:00:00-05:00"
+    provider_id: "aaata-a-ride"
+    trip_id: "tr-20261103-0001"
+    leg_id: "leg-1"
+    scheduled_pickup: "2026-11-03T09:10:00-05:00"
+  - event_id: "evt-0002"
+    event_type: "MILESTONE"
+    occurred_at: "2026-11-03T09:12:00-05:00"
+    provider_id: "aaata-a-ride"
+    trip_id: "tr-20261103-0001"
+    leg_id: "leg-1"
+    milestone: "RIDER_ONBOARD"

@@ -1,0 +1,52 @@
+{
+  "requester_id": "throughride-demo",
+  "provider_id": "county-dial-a-ride",
+  "trip_id": "tr-20261105-0001",
+  "legs": [
+    {
+      "leg_id": "leg-1",
+      "pickup": {
+        "lat": 42.2601,
+        "lon": -83.7795,
+        "name": "Home",
+        "address": {
+          "street": "210 Example St",
+          "city": "Ann Arbor",
+          "region": "MI",
+          "postal_code": "48103",
+          "country": "US"
+        }
+      },
+      "dropoff": {
+        "lat": 42.2836,
+        "lon": -83.7286,
+        "name": "Regional Hospital, east entrance"
+      },
+      "pickup_window": {
+        "earliest": "2026-11-05T08:00:00-05:00",
+        "latest": "2026-11-05T08:30:00-05:00"
+      },
+      "service_requirements": [
+        "WHEELCHAIR_LIFT",
+        "DOOR_TO_DOOR"
+      ]
+    }
+  ],
+  "rider_ref": {
+    "rider_ref_id": "r-91c2",
+    "display_name": "Ana",
+    "language": "es",
+    "contact_consent": true,
+    "contact": {
+      "phone": "+15175550142"
+    }
+  },
+  "party": {
+    "attendants": 1
+  },
+  "notes_to_driver": "Ring bell twice, ramp at side door",
+  "fare_funding": {
+    "funding_source": "MEDICAID_NEMT",
+    "authorization_ref": "PA-55120"
+  }
+}
