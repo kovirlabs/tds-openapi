@@ -12,6 +12,7 @@ class Delivery:
     headers: dict[str, str]
     body: bytes
     received_at: float
+    path: str = ""  # request target (path and query), to tell subscriptions sharing a receiver apart
 
     @property
     def event(self):
@@ -29,7 +30,7 @@ class Receiver:
         class Handler(BaseHTTPRequestHandler):
             def do_POST(self):
                 body = self.rfile.read(int(self.headers.get("Content-Length") or 0))
-                receiver.deliveries.append(Delivery(dict(self.headers.items()), body, time.time()))
+                receiver.deliveries.append(Delivery(dict(self.headers.items()), body, time.time(), self.path))
                 self.send_response(204)
                 self.end_headers()
 

@@ -8,6 +8,7 @@ import json
 import os
 import time
 from collections import defaultdict
+from collections.abc import Sequence
 from datetime import UTC, datetime
 
 from tds_conform.data import schema_errors
@@ -151,13 +152,22 @@ def get_header(headers, name: str) -> str | None:
 
 
 def delivery_problems(
-    secret: str, headers, body: bytes, *, now: float | None = None, cloudevents: bool = False
+    secret: str,
+    headers,
+    body: bytes,
+    *,
+    now: float | None = None,
+    cloudevents: bool = False,
+    older_secrets: Sequence[str] = (),
 ) -> list[str]:
     """Everything wrong with one webhook delivery (SPEC.md §9, §9.1, §12); [] when it is good.
 
     Checks the body is a schema-valid event, X-TDS-Signature (senders still send it), the
     Standard Webhooks headers when present (`webhook-id` = `event_id`, a valid v1 signature),
     and any `ce-*` headers (required when the subscription has `cloudevents: true`).
+    `secret` is the newest secret; `older_secrets` are others still active during a rotation
+    (SPEC.md §12.1): X-TDS-Signature uses the newest, and `webhook-signature` must then
+    carry a valid v1 entry for every active `whsec_` secret.
     """
     from tds_conform.cloudevents import cloudevents_problems
 
@@ -171,6 +181,9 @@ def delivery_problems(
     if get_header(headers, WEBHOOK_SIGNATURE_HEADER) is not None:
         if problem := verify_standard(secret, headers, body, now=now):
             problems.append(problem)
+        for older in older_secrets:
+            if standard_key(older) and verify_standard(older, headers, body, now=now):
+                problems.append(f"no {WEBHOOK_SIGNATURE_HEADER} entry for an older secret still active")
         if isinstance(event, dict) and get_header(headers, WEBHOOK_ID_HEADER) != event.get("event_id"):
             problems.append(f"{WEBHOOK_ID_HEADER} is not the event_id")
     elif standard_key(secret) and any(get_header(headers, h) for h in (WEBHOOK_ID_HEADER, WEBHOOK_TIMESTAMP_HEADER)):

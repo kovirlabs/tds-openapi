@@ -1,5 +1,6 @@
 """Several reference providers in one process, with a ticker and signed webhook delivery."""
 
+import functools
 import heapq
 import itertools
 import json
@@ -35,8 +36,11 @@ class Dispatcher:
             self._stopped = True
             self._cv.notify()
 
-    def submit(self, subscription: dict, event: dict) -> None:
-        job = (time.monotonic(), next(self._seq), 1, subscription, json.dumps(event).encode(), event["event_id"])
+    def submit(self, subscription: dict, event: dict, secrets: Callable[[], list[str]] | None = None) -> None:
+        """Queue one delivery. `secrets` gives the active secrets, newest first, at each attempt
+        (SPEC.md §12.1); without it the subscription's `signing_secret` is used."""
+        body = json.dumps(event).encode()
+        job = (time.monotonic(), next(self._seq), 1, subscription, body, event["event_id"], secrets)
         with self._cv:
             heapq.heappush(self._queue, job)
             self._cv.notify()
@@ -49,8 +53,8 @@ class Dispatcher:
                         self._cv.wait(timeout=None if not self._queue else self._queue[0][0] - time.monotonic())
                     if self._stopped:
                         return
-                    due, _, attempt, sub, body, event_id = heapq.heappop(self._queue)
-                outcome = self._send(client, sub, body)
+                    due, _, attempt, sub, body, event_id, secrets = heapq.heappop(self._queue)
+                outcome = self._send(client, sub, body, secrets() if secrets else [sub["signing_secret"]])
                 self.log.append(
                     {
                         "event_id": event_id,
@@ -63,16 +67,18 @@ class Dispatcher:
                 if not str(outcome).startswith("2") and attempt < self.max_attempts:
                     retry_at = time.monotonic() + self.retry_base_s * 2 ** (attempt - 1)
                     with self._cv:
-                        heapq.heappush(self._queue, (retry_at, next(self._seq), attempt + 1, sub, body, event_id))
+                        job = (retry_at, next(self._seq), attempt + 1, sub, body, event_id, secrets)
+                        heapq.heappush(self._queue, job)
 
     @staticmethod
-    def _send(client: httpx.Client, sub: dict, body: bytes) -> str:
+    def _send(client: httpx.Client, sub: dict, body: bytes, secrets: list[str]) -> str:
+        """One attempt: X-TDS-Signature with the newest secret, a v1 entry per active secret."""
         event = json.loads(body)
         sent_at = int(time.time())
         headers = {
             "Content-Type": "application/json",
-            **sign(sub["signing_secret"], body, sent_at),
-            **sign_standard(sub["signing_secret"], event["event_id"], body, sent_at),
+            **sign(secrets[0], body, sent_at),
+            **sign_standard(secrets, event["event_id"], body, sent_at),
         }
         if sub.get("cloudevents"):
             headers.update(cloudevents_headers(event))
@@ -117,7 +123,7 @@ class Network:
     def _sink_for(self, provider: Provider):
         def sink(requester: str, event: dict) -> None:
             for sub in provider.subscriptions_for(requester, event["event_type"]):
-                self.dispatcher.submit(sub, event)
+                self.dispatcher.submit(sub, event, functools.partial(provider.signing_secrets, sub))
 
         return sink
 

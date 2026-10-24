@@ -32,3 +32,19 @@ HoldId:
   description: The broker-assigned hold_id. Scoped to the authenticated requester.
   schema:
     type: string
+SubscriptionId:
+  name: subscription_id
+  in: path
+  required: true
+  description: >-
+    The provider-assigned subscription_id. Scoped to the authenticated
+    requester: another client's subscription is NOT_FOUND.
+  schema:
+    type: string
+SecretId:
+  name: secret_id
+  in: path
+  required: true
+  description: The provider-assigned secret_id of one of the subscription's signing secrets.
+  schema:
+    type: string

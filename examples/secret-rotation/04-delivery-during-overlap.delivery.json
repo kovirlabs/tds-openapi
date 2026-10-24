@@ -1,0 +1,13 @@
+{
+  "method": "POST",
+  "url": "https://broker.example.org/tds/events",
+  "headers": {
+    "Content-Type": "application/json",
+    "X-TDS-Signature": "sha256=1f254f585335db0195cd65527e72324e4ac3100765c4b29b373b77e4a8ca837a",
+    "X-TDS-Timestamp": "1793631602",
+    "webhook-id": "evt-0107",
+    "webhook-timestamp": "1793631602",
+    "webhook-signature": "v1,/U5xUkL4qDK/tknVba293R2UWeYShimTSoIJD8jVEbo= v1,nmM9j3g5Gd6XPpk8kTpgMnnOClioLcWz23krh7hu/oo="
+  },
+  "body": "{\"event_id\":\"evt-0107\",\"event_type\":\"TRIP_STATUS_CHANGED\",\"occurred_at\":\"2026-11-02T10:00:00-05:00\",\"provider_id\":\"aaata-a-ride\",\"trip_id\":\"tr-20261102-0007\",\"leg_id\":\"leg-1\",\"schema_version\":\"0.7.0\",\"payload\":{\"status\":\"SCHEDULED\",\"previous_status\":\"CONFIRMED\"}}"
+}

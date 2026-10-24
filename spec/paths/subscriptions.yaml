@@ -6,7 +6,9 @@ post:
     secret once; events are signed with Standard Webhooks headers
     (`webhook-signature`) and the deprecated X-TDS-Signature (SPEC.md §9, §12).
     With `cloudevents: true`, deliveries also carry CloudEvents binary-mode
-    `ce-*` headers (SPEC.md §9.1).
+    `ce-*` headers (SPEC.md §9.1). Providers that declare `secret_rotation:
+    true` on /health also return `signing_secret_id` and mint later secrets
+    with `POST /subscriptions/{subscription_id}/secrets` (SPEC.md §12.1).
   tags: [Events]
   security:
     - oauth2: [events:subscribe]
@@ -27,6 +29,9 @@ post:
           with_cloudevents_headers:
             summary: Ask for CloudEvents binary-mode headers (SPEC.md §9.1)
             externalValue: ../../examples/webhook-delivery/01-subscribe.request.json
+          before_rotation:
+            summary: A subscription whose secret is rotated later (SPEC.md §12.1)
+            externalValue: ../../examples/secret-rotation/01-subscribe.request.json
   responses:
     "201":
       description: Subscription created.
@@ -41,6 +46,8 @@ post:
               externalValue: ../../examples/two-provider-transfer/02-subscribe-aaata-a-ride.response.json
             with_cloudevents_headers:
               externalValue: ../../examples/webhook-delivery/01-subscribe.response.json
+            before_rotation:
+              externalValue: ../../examples/secret-rotation/01-subscribe.response.json
     "400":
       $ref: ../components/responses.yaml#/BadRequest
     "401":

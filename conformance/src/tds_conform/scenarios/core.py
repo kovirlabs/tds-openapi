@@ -329,3 +329,182 @@ def webhook_delivery(ctx: Context) -> None:
         "an event for every status change, including ones returned synchronously",
         f"missing {sorted(expected - statuses)}",
     )
+
+
+SECRETS = "/subscriptions/{subscription_id}/secrets"
+CLOCK_SKEW_S = 120
+
+
+def _trip_deliveries(ctx: Context, receiver, trip_id: str, tag: str) -> list:
+    """Book and cancel a test trip; return its deliveries to the callback URL carrying `tag`."""
+    trip = ctx.new_trip(trip_id=trip_id)
+    _request_and_decide(ctx, trip)
+    ctx.call("cancel", "POST", TRIP + "/cancel", body={"reason": "RIDER_REQUEST"}, expect=(200,), trip_id=trip_id)
+
+    def ours() -> list:
+        return [
+            d
+            for d in receiver.deliveries
+            if tag in d.path and isinstance(d.event, dict) and d.event.get("trip_id") == trip_id
+        ]
+
+    arrived = receiver.wait_for(
+        lambda _: any(d.event.get("event_type") == "TRIP_CANCELLED" for d in ours()), ctx.max_wait_s
+    )
+    ctx.result.steps[-1].check(arrived, f"TRIP_CANCELLED arrives within {ctx.max_wait_s:.0f}s", "no TRIP_CANCELLED")
+    return ours()
+
+
+@scenario(
+    "secret_rotation",
+    "core",
+    "Subscription secrets rotate over the API with an overlap and retire early (when /health declares it)",
+)
+def secret_rotation(ctx: Context) -> None:
+    import uuid
+
+    from tds_conform.events import WEBHOOK_SIGNATURE_HEADER, get_header, standard_key, verify, verify_standard
+
+    if not ctx.health:
+        step = ctx.call("health", "GET", "/health", expect=(200,), auth=False)
+        ctx.health = step.body if isinstance(step.body, dict) else {}
+    if ctx.health.get("secret_rotation") is not True:
+        ctx.result.note = "secret_rotation not declared on /health; nothing to check"
+        return
+    receiver = ctx.settings.receiver
+    # A tag in the callback URL tells this subscription's deliveries from other scenarios'.
+    tag = f"rotation-{uuid.uuid4().hex[:12]}"
+    callback = f"{receiver.url}?subscription={tag}" if receiver else "http://127.0.0.1:9/tds-conform-unused"
+    sub = {"callback_url": callback, "event_types": ["TRIP_STATUS_CHANGED", "TRIP_CANCELLED"]}
+    step = ctx.call("subscribe", "POST", "/subscriptions", body=sub, expect=(201,))
+    step.require(step.status == 201 and "signing_secret" in step.body, "subscription returns a signing_secret")
+    sub_id, old = step.body["subscription_id"], step.body["signing_secret"]
+    old_id = step.body.get("signing_secret_id")
+    step.check(old_id is not None, "subscription returns signing_secret_id", "missing signing_secret_id")
+
+    overlap_s, key = 3600, f"conform-{uuid.uuid4()}"
+    rotate = {"overlap_s": overlap_s}
+    started = datetime.now(UTC)
+    step = ctx.call("rotate the secret", "POST", SECRETS, body=rotate, key=key, expect=(201,), subscription_id=sub_id)
+    step.require(step.status == 201 and isinstance(step.body, dict), "rotation succeeds")
+    secrets = step.body.get("secrets") or [{}]
+    first, rest = secrets[0], secrets[1:]
+    step.require("signing_secret" in first, "the first entry is the new secret, with its value")
+    new, new_id = first["signing_secret"], first.get("secret_id")
+    step.check(new != old, "the new secret differs from the old one", "same value returned")
+    step.check(
+        "expires_at" not in first, "the newest secret has no expires_at", f"expires_at {first.get('expires_at')}"
+    )
+    step.check(
+        all("signing_secret" not in s for s in rest), "only the new secret carries its value", "older value returned"
+    )
+    step.check_equal(step.body.get("subscription_id"), sub_id, "answer names the subscription")
+    older = next((s for s in rest if s.get("secret_id") == old_id), rest[0] if rest else None)
+    if step.check(older is not None, "the old secret is still listed during the overlap", "old secret missing"):
+        old_id = older.get("secret_id", old_id)
+        expires = older.get("expires_at")
+        latest = started + timedelta(seconds=overlap_s + CLOCK_SKEW_S)
+        step.check(
+            expires is not None
+            and started - timedelta(seconds=CLOCK_SKEW_S) < datetime.fromisoformat(expires) <= latest,
+            f"the old secret expires after now and within overlap_s ({overlap_s} s)",
+            f"expires_at {expires}",
+        )
+
+    step = ctx.call("replay the rotation", "POST", SECRETS, body=rotate, key=key, expect=(201,), subscription_id=sub_id)
+    replayed = (step.body.get("secrets") or [{}])[0] if isinstance(step.body, dict) else {}
+    step.check_equal(
+        replayed.get("signing_secret"), new, "a replay with the same Idempotency-Key returns the same secret"
+    )
+
+    step = ctx.call("list secrets", "GET", SECRETS, expect=(200,), subscription_id=sub_id)
+    listed = step.body.get("secrets", []) if isinstance(step.body, dict) else []
+    step.check(all("signing_secret" not in s for s in listed), "a listing carries no secret values", "value listed")
+    step.check_equal([s.get("secret_id") for s in listed[:1]], [new_id], "the listing starts with the newest secret")
+    step.check(any(s.get("secret_id") == old_id for s in listed), "the old secret is listed", f"got {listed}")
+
+    ctx.call(
+        "rotate an unknown subscription",
+        "POST",
+        SECRETS,
+        body={},
+        expect=(404,),
+        subscription_id=f"conform-missing-{uuid.uuid4().hex[:8]}",
+    )
+
+    both_whsec = bool(standard_key(old) and standard_key(new))
+    if receiver:
+        deliveries = _trip_deliveries(ctx, receiver, f"conform-{uuid.uuid4().hex[:12]}", tag)
+        step = ctx.result.steps[-1]
+        bad = [p for d in deliveries if (p := verify(new, d.headers, d.body))]
+        step.check(not bad, "during the overlap, X-TDS-Signature uses the new secret", "; ".join(bad[:3]))
+        standard = [d for d in deliveries if get_header(d.headers, WEBHOOK_SIGNATURE_HEADER) is not None]
+        if both_whsec:
+            missing = [
+                d.event.get("event_id")
+                for d in standard
+                if verify_standard(new, d.headers, d.body) or verify_standard(old, d.headers, d.body)
+            ]
+            step.check(
+                not missing,
+                "during the overlap, webhook-signature has a v1 entry for the new and the old secret",
+                f"not on {missing[:3]}",
+            )
+
+    step = ctx.call(
+        "retire the newest secret",
+        "DELETE",
+        SECRETS + "/{secret_id}",
+        expect=(409,),
+        subscription_id=sub_id,
+        secret_id=new_id or "",
+    )
+    step.check_equal(_code(step.body), "INVALID_STATE", "refused with INVALID_STATE")
+    if old_id:
+        step = ctx.call(
+            "retire the old secret early",
+            "DELETE",
+            SECRETS + "/{secret_id}",
+            expect=(200,),
+            subscription_id=sub_id,
+            secret_id=old_id,
+        )
+        expires = step.body.get("expires_at") if isinstance(step.body, dict) else None
+        step.check(
+            expires is not None
+            and datetime.fromisoformat(expires) <= datetime.now(UTC) + timedelta(seconds=CLOCK_SKEW_S),
+            "the retired secret's expires_at is now or earlier",
+            f"expires_at {expires}",
+        )
+        step.check(
+            isinstance(step.body, dict) and "signing_secret" not in step.body, "retiring returns no secret value"
+        )
+        step = ctx.call("list secrets after retiring", "GET", SECRETS, expect=(200,), subscription_id=sub_id)
+        listed = step.body.get("secrets", []) if isinstance(step.body, dict) else []
+        step.check(
+            [s.get("secret_id") for s in listed] == [new_id],
+            "only the new secret is left",
+            f"got {[s.get('secret_id') for s in listed]}",
+        )
+    ctx.call(
+        "retire an unknown secret",
+        "DELETE",
+        SECRETS + "/{secret_id}",
+        expect=(404,),
+        subscription_id=sub_id,
+        secret_id=f"conform-missing-{uuid.uuid4().hex[:8]}",
+    )
+
+    if receiver and old_id:
+        deliveries = _trip_deliveries(ctx, receiver, f"conform-{uuid.uuid4().hex[:12]}", tag)
+        step = ctx.result.steps[-1]
+        bad = [p for d in deliveries if (p := verify(new, d.headers, d.body))]
+        step.check(not bad, "after retiring, deliveries are signed with the new secret", "; ".join(bad[:3]))
+        if both_whsec:
+            stale = [
+                d.event.get("event_id")
+                for d in deliveries
+                if get_header(d.headers, WEBHOOK_SIGNATURE_HEADER) is not None
+                and verify_standard(old, d.headers, d.body) is None
+            ]
+            step.check(not stale, "after retiring, no signature is made with the old secret", f"on {stale[:3]}")

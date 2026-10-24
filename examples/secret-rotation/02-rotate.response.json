@@ -1,0 +1,15 @@
+{
+  "subscription_id": "sub-07",
+  "secrets": [
+    {
+      "secret_id": "sec-02",
+      "signing_secret": "whsec_1WNy36llSMlCdz1DmnU4LvvPLdPydBGDi759pN8lE9I=",
+      "created_at": "2026-11-02T09:00:00-05:00"
+    },
+    {
+      "secret_id": "sec-01",
+      "created_at": "2026-10-30T13:00:00-04:00",
+      "expires_at": "2026-11-03T09:00:00-05:00"
+    }
+  ]
+}

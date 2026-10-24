@@ -68,6 +68,14 @@ properties:
       transfer:
         description: Booking window for tenders (POST /tenders).
         $ref: ./booking-window.yaml
+  secret_rotation:
+    description: >-
+      True if this endpoint implements the subscription secret operations
+      (`POST`/`GET /subscriptions/{subscription_id}/secrets`, `DELETE
+      /subscriptions/{subscription_id}/secrets/{secret_id}`, SPEC.md §12.1).
+      Absent or false: a new secret is arranged out of band.
+    type: boolean
+    default: false
 examples:
   - status: "OK"
     spec_versions: ["0.2.0"]
@@ -78,6 +86,11 @@ examples:
     profiles: [CORE, TRANSFER]
     operated_via: "BROKER_PROXY"
     typical_response_s: 900
+  - status: "OK"
+    spec_versions: ["0.7.0"]
+    profiles: [CORE]
+    operated_via: "DIRECT"
+    secret_rotation: true
   - status: "OK"
     spec_versions: ["0.5.3"]
     profiles: [CORE, PARATRANSIT]
