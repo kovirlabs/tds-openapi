@@ -126,7 +126,10 @@ RFC 9457 Problem Details (`type`, `title`, `status`, `detail`, `instance`) + `co
 | PATCH | `/trips/{trip_id}` | Modify windows/party. Provider may re-offer. |
 | POST | `/trips/{trip_id}/cancel` | Cancel with `reason` enum (`RIDER_REQUEST`, `PROVIDER_UNABLE`, `DUPLICATE`, `MISSED_CONNECTION`, `OTHER`), `cancelled_by`, optional `detail` (free text, no health data). |
 | POST | `/subscriptions` | Register webhook URL + event types. |
-| GET | `/health` | Liveness, supported profiles and spec versions, `operated_via` (`DIRECT` / `BROKER_PROXY`), `typical_response_s` (how long an asynchronous decision usually takes), `booking_window` and `booking_window_by_profile` (§7.1). |
+| POST | `/subscriptions/{subscription_id}/secrets` | Rotate the signing secret: mint a new one, keep older ones for an overlap (§12.1). Optional. |
+| GET | `/subscriptions/{subscription_id}/secrets` | Active signing secrets, newest first, without values (§12.1). Optional. |
+| DELETE | `/subscriptions/{subscription_id}/secrets/{secret_id}` | Retire an older secret before its overlap ends (§12.1). Optional. |
+| GET | `/health` | Liveness, supported profiles and spec versions, `operated_via` (`DIRECT` / `BROKER_PROXY`), `typical_response_s` (how long an asynchronous decision usually takes), `booking_window` and `booking_window_by_profile` (§7.1), `secret_rotation` (§12.1). |
 
 All mutating calls require `Idempotency-Key` header. Settlement endpoints are deferred; v0.5 defines the settlement split format only (§10.8).
 
@@ -285,19 +288,31 @@ Both profiles extend `POST /trips`: the body is a core TripRequest plus one prof
 - Webhook signing follows **Standard Webhooks** (standardwebhooks.com), with the earlier `X-TDS-*` headers kept alongside:
   - `webhook-id` = `event_id` (the same on every retry), `webhook-timestamp` = Unix seconds when this attempt was sent, `webhook-signature` = space-separated entries `v1,<base64 HMAC-SHA256 of "<webhook-id>.<webhook-timestamp>.<raw body>">`.
   - The subscription's `signing_secret` SHOULD be `whsec_` + standard base64 of 24 to 64 random bytes; `v1` signatures are keyed with the decoded bytes, so Standard Webhooks libraries verify them unchanged. A sender SHOULD send the three headers whenever the secret has that form.
-  - Secret rotation: while more than one secret is active, the sender adds one `v1` entry per secret, newest first, so receivers switch without downtime. (How a new secret is issued is not yet part of the binding.)
+  - Secret rotation: while more than one secret is active, the sender adds one `v1` entry per secret, newest first, so receivers switch without downtime. New secrets are issued over the API (§12.1).
   - `X-TDS-Timestamp` (Unix seconds) and `X-TDS-Signature` (`sha256=` + lowercase hex HMAC-SHA256, keyed with the UTF-8 bytes of the whole secret, of `<timestamp>.<raw body>`, newest secret) are **deprecated since 0.6.0**. Senders still send them on every delivery; removing them needs a major version and an RFC.
   - Receivers MUST accept a delivery when `webhook-signature` holds a valid `v1` entry for one of their secrets or `X-TDS-Signature` is valid, with the matching timestamp no more than 300 s from their clock, and MUST reject it otherwise. Compare signatures in constant time; ignore entries with versions they do not know (such as `v1a`, Ed25519, which this binding does not define). A receiver that checks only one set SHOULD check `webhook-signature` when present, since it also binds the event id.
   - CloudEvents (§9.1) defines no payload signing, so these headers apply to both renderings.
 - Data minimization: share only what the receiving provider needs for that leg. Rider contact shared only with `contact_consent: true`.
 - Retention guidance in docs (not enforced by spec).
 
+### 12.1 Rotating a subscription's signing secret
+A subscriber gets a new secret without a second, out-of-band hand-over. Optional for providers; one that implements it declares `secret_rotation: true` on `/health` and returns `signing_secret_id` with each new subscription. All three operations need scope `events:subscribe` and act only on the authenticated requester's own subscriptions (any other is `NOT_FOUND`).
+
+- **Rotate.** `POST /subscriptions/{subscription_id}/secrets` (`Idempotency-Key` required; body optional, `secret-rotation-request.yaml`) mints a new secret and answers 201 with the active secrets, newest first (`subscription-secret-list.yaml`). The first entry is the new secret and the only place its value (`signing_secret`) is ever returned; a replay with the same key returns the same value, so a lost response never strands a secret.
+- **Overlap.** Every older active secret gets `expires_at` = now + `overlap_s`, unless it already expires sooner. `overlap_s` absent: the provider's default, which SHOULD be 86400 (24 h); `0` retires older secrets at once (a leaked secret). A provider MAY shorten `overlap_s` to its own maximum (which SHOULD be at least 86400) and MAY refuse a rotation with 409 `INVALID_STATE` while it holds its limit of active secrets (it SHOULD allow at least 3).
+- **Signing.** Each delivery attempt is signed with the secrets active when it is sent: one `webhook-signature` `v1` entry per active `whsec_` secret, newest first, and `X-TDS-Signature` with the newest. From an older secret's `expires_at` on, no signature uses it, retries included.
+- **List.** `GET /subscriptions/{subscription_id}/secrets` returns the active secrets with `secret_id`, `created_at` and `expires_at`, never values.
+- **Retire early.** `DELETE /subscriptions/{subscription_id}/secrets/{secret_id}` (`Idempotency-Key` required) sets an older secret's `expires_at` to now and returns it (200, no value). The newest secret cannot be retired (409 `INVALID_STATE`; rotate first). Retiring an expired secret changes nothing.
+- **Receiver procedure.** Rotate; add the new secret to the secrets you verify with (`verify_any` takes several); deploy; then retire the old one, or let it expire. During the overlap a delivery verifies with either secret.
+- Patterned on Standard Webhooks and webhook platforms that keep the previous secret valid for a period after rotation; the binding adds the overlap and early retirement to the API so either side can see when the old secret stops working.
+
 ## 13. Versioning and conformance
 - SemVer on the spec. `schema_version` in every event; `/health` lists supported versions and profiles.
 - Conformance levels: **Core**, **Core + Transfer**, **Core + Paratransit**, **Core + NEMT** (`tds-conform run --profile core|transfer|paratransit|nemt`). A run produces an HTML/JSON report a vendor can attach to an RFP response. A level is met only if every scenario for it passes; INCONCLUSIVE (the provider refused the test trip) does not count as a pass.
 - The kit ships with a stateful reference provider (`tds-mock`) that passes every scenario; it is the executable reading of this spec where prose is ambiguous.
-- Conformance scenarios (initial): `book_confirm_cancel`, `modify_window`, `idempotency`, `eligibility_attestation`, `booking_window`, `webhook_delivery`, `tender_deadline`, `milestone_sequence`, `eta_heartbeat_staleness`, `hold_request`, `custody_required`; profiles: `paratransit_booking`, `paratransit_rules`, `nemt_booking`, `nemt_rules`.
+- Conformance scenarios (initial): `book_confirm_cancel`, `modify_window`, `idempotency`, `eligibility_attestation`, `booking_window`, `webhook_delivery`, `secret_rotation`, `tender_deadline`, `milestone_sequence`, `eta_heartbeat_staleness`, `hold_request`, `custody_required`; profiles: `paratransit_booking`, `paratransit_rules`, `nemt_booking`, `nemt_rules`.
 - Synchronous (201) and asynchronous (202 → later `OFFERED`/`REJECTED`) decisions are equally conformant. Timing checks use the provider's declared `typical_response_s`, not a fixed number of seconds; a broker-proxied provider is tested the same way (the kit may stand in for its staff).
+- `secret_rotation` checks only providers that declare `secret_rotation: true` (others pass with a note): the new value is returned once and replayed under the same key, the old secret expires within `overlap_s`, listings carry no values, the newest secret cannot be retired, and, with a webhook receiver, deliveries during the overlap carry `v1` entries for both secrets and none for a retired one.
 - Scenarios that need a vehicle to move (`milestone_sequence`, `custody_required`, `eta_heartbeat_staleness`) cannot be triggered on a live provider; they are checked on a captured event log (`tds-conform check-events`). `webhook_delivery`, `tender_deadline` and `hold_request` run live against any endpoint.
 - CSV batch files (§9.2) are checked with `tds-conform check-csv`; it is a file check, not a conformance level.
 - Fuzzing (`tds-conform fuzz`, schemathesis) complements the scenarios: generated valid and invalid requests to every operation must get documented status codes, media types and schema-valid bodies, never a 5xx. It is a diagnostic, not part of a level.
@@ -318,7 +333,8 @@ Both profiles extend `POST /trips`: the body is a core TripRequest plus one prof
 | **v0.4** | Transfer profile (§10) draft; examples `two-provider-transfer`, `late-first-leg-hold`, `tender-expired-retender`, `supervised-rider-custody-handoff` (v0.4.1 adds `missed-connection-reprotect`, v0.5 `refusals-and-failures`); mock simulating two providers; ThroughRide adapters pointed at mock. **SE Michigan pilot demo target.** |
 | **v0.5** | Settlement split (§10.8); paratransit and NEMT drafts with conformance levels (§11); AsyncAPI completeness incl. broker exception events (§9); `tds-conform fuzz`; `docs/for-agencies.md` RFP language. v0.5.1 adds exception type `ESCALATED`; v0.5.2 eligibility verification methods and fact codes (§6.5.1); v0.5.3 rider-category fact codes (§6.5.2) and booking windows (§7.1). |
 | **v0.6** | CloudEvents binary-mode rendering of deliveries (§9.1); Standard Webhooks signature headers, `X-TDS-*` deprecated (§12); CSV profile for batch providers (§9.2) with `tds-conform check-csv`. |
-| v0.7+ | Settlement exchange (API operation or events, undecided), profile vocabularies checked against TDS 2020 and payers, outreach to MobilityData/OMF. |
+| **v0.7** | Subscription secret rotation over the API (§12.1) with conformance scenario `secret_rotation`. |
+| v0.8+ | Settlement exchange (API operation or events, undecided), profile vocabularies checked against TDS 2020 and payers, outreach to MobilityData/OMF. |
 
 ## 16. Open questions
 1. Do DRCOG or NEORide already have TDS API schemas? (Ask before v0.2 to avoid divergence.)

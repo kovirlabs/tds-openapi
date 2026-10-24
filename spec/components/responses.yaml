@@ -16,3 +16,9 @@ NotFound:
     application/problem+json:
       schema:
         $ref: ../../profiles/core/error.yaml
+SubscriptionNotFound:
+  description: No subscription with this subscription_id for the authenticated requester (code NOT_FOUND).
+  content:
+    application/problem+json:
+      schema:
+        $ref: ../../profiles/core/error.yaml

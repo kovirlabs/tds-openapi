@@ -20,6 +20,7 @@ from tds_conform.mock.network import Network
 from tds_conform.mock.provider import problem
 
 TRIP = r"/trips/(?P<trip_id>[^/]+)"
+SUB = r"/subscriptions/(?P<subscription_id>[^/]+)"
 # (method, pattern, provider method, needs auth, takes Idempotency-Key, takes body)
 API_ROUTES = [
     ("GET", r"/health", "health", False, False, False),
@@ -33,6 +34,9 @@ API_ROUTES = [
     ("POST", r"/tenders", "create_tender", True, True, True),
     ("GET", r"/tenders/(?P<tender_id>[^/]+)", "get_tender", True, False, False),
     ("POST", r"/subscriptions", "subscribe", True, True, True),
+    ("POST", SUB + r"/secrets", "rotate_secret", True, True, True),
+    ("GET", SUB + r"/secrets", "list_secrets", True, False, False),
+    ("DELETE", SUB + r"/secrets/(?P<secret_id>[^/]+)", "retire_secret", True, True, False),
 ]
 SIM_TRIP = r"/_sim/(?P<pid>[^/]+)/trips/(?P<trip_id>[^/]+)"
 
@@ -56,6 +60,9 @@ def make_handler(network: Network) -> type[BaseHTTPRequestHandler]:
 
         def do_PATCH(self):
             self._dispatch("PATCH")
+
+        def do_DELETE(self):
+            self._dispatch("DELETE")
 
         def _dispatch(self, method: str) -> None:
             url = urlsplit(self.path)

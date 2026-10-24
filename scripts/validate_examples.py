@@ -20,7 +20,9 @@ Checks:
      `kind: webhook-delivery` is one HTTP delivery ({method, url, headers, body as a
      raw string}): the body is a valid event, the headers match the AsyncAPI
      DeliveryHeaders schema, the signatures verify with the secret of the
-     subscription response the entry names, and CloudEvents headers match the
+     subscription response the entry names (with `rotation: <file>`, the newest secret
+     from that rotation response, and a webhook-signature entry for the subscription's
+     older secret too, SPEC.md §12.1), and CloudEvents headers match the
      envelope (SPEC.md §9.1, §12). An entry with `kind: csv` is a TDS CSV
      file (SPEC.md §9.2) checked by tds_conform.csvfile.file_problems (name,
      encoding, header, row schemas, the API objects rows stand for, milestone
@@ -219,14 +221,22 @@ def check_delivery(path: Path, entry: dict, registry: Registry, wiring: dict[str
     if not entry.get("subscription") or not subscription_path.is_file():
         return [*errors, "manifest entry must name the subscription response that holds the signing secret"]
     subscription = json.loads(subscription_path.read_text())
+    newest, older = subscription["signing_secret"], []
+    if entry.get("rotation"):
+        rotation_path = path.parent / entry["rotation"]
+        if not rotation_path.is_file():
+            return [*errors, f"rotation response {entry['rotation']} not found"]
+        rotation = json.loads(rotation_path.read_text())
+        newest, older = rotation["secrets"][0]["signing_secret"], [newest]
     headers = delivery["headers"]
     sent_at = next((v for k, v in headers.items() if k.lower() == "x-tds-timestamp"), "0")
     errors += delivery_problems(
-        subscription["signing_secret"],
+        newest,
         headers,
         delivery["body"].encode(),
         now=int(sent_at) if sent_at.isdigit() else 0,
         cloudevents=subscription.get("cloudevents", False),
+        older_secrets=older,
     )
     return list(dict.fromkeys(errors))
 

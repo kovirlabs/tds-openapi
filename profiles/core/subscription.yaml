@@ -26,6 +26,14 @@ properties:
       only.
     type: string
     minLength: 32
+  signing_secret_id:
+    description: >-
+      Identifier of signing_secret among the subscription's secrets (SPEC.md
+      §12.1), for providers that support rotating secrets with
+      `POST /subscriptions/{subscription_id}/secrets`. Use it to retire this
+      secret early once a newer one is in use.
+    type: string
+    minLength: 1
   cloudevents:
     description: >-
       True if every delivery carries CloudEvents 1.0 binary-mode `ce-*` headers

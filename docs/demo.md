@@ -56,6 +56,12 @@ Plain `http://` callbacks are accepted for `localhost` / `127.0.0.1` only.
 `tds_conform.events.verify_any()` is a reference implementation of the receiver check;
 `examples/webhook-delivery/` shows one delivery on the wire.
 
+To rotate the secret (SPEC.md §12.1), `POST /subscriptions/<subscription_id>/secrets` with
+`{"overlap_s": 86400}` (and an `Idempotency-Key`): the answer carries the new secret once; the
+old one keeps working until its `expires_at`, and deliveries carry a `webhook-signature` entry
+for each. `DELETE /subscriptions/<subscription_id>/secrets/<secret_id>` retires the old one
+early; `GET …/secrets` lists what is active. `examples/secret-rotation/` walks through it.
+
 ## The broker flow
 
 1. **Tender both legs** with the same `interchange` (`POST /tenders` at each provider).

@@ -4,6 +4,37 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+- Subscription secret rotation over the API (SPEC.md §12.1), optional for providers, declared
+  with `secret_rotation: true` on `/health`:
+  - `POST /subscriptions/{subscription_id}/secrets` mints a new signing secret (body
+    `secret-rotation-request` with optional `overlap_s`, 0 to 30 days; default SHOULD be
+    86400) and answers 201 with the active secrets newest first (`subscription-secret-list`),
+    the new value only in the first entry. Older secrets get `expires_at` = now + overlap
+    (never lengthened). A replay with the same `Idempotency-Key` returns the same secret.
+  - `GET /subscriptions/{subscription_id}/secrets` lists active secrets without values.
+  - `DELETE /subscriptions/{subscription_id}/secrets/{secret_id}` retires an older secret
+    early (200, `subscription-secret`); the newest cannot be retired (409 `INVALID_STATE`).
+  - New core schemas `subscription-secret`, `subscription-secret-list`,
+    `secret-rotation-request`; `subscription.signing_secret_id`; `health.secret_rotation`.
+    Crosswalk rows (TODO, protocol fields).
+  - During an overlap, every delivery attempt carries a `webhook-signature` `v1` entry per
+    active secret (newest first) and `X-TDS-Signature` with the newest; an expired secret
+    signs nothing.
+- Example `secret-rotation`: subscribe, rotate, list, a delivery signed with both secrets,
+  retire the old one, refusal to retire the newest. Webhook-delivery manifest entries take
+  `rotation: <file>`; the validator then requires a `v1` entry for the older secret too.
+- `tds-mock` implements the three operations (`ProviderConfig.secret_rotation`,
+  `default_overlap_s`, `max_overlap_s`, `max_active_secrets`), issues `signing_secret_id`
+  (`sec-1`, `sec-2`, … per subscription), and signs each attempt with the secrets active at
+  that moment (`Provider.signing_secrets`; `Dispatcher.submit` takes an optional `secrets`
+  callable). The generated subscribe responses gain `signing_secret_id`.
+- Core scenario `secret_rotation`: runs only when `/health` declares `secret_rotation`
+  (others pass with a note), so existing providers stay conformant. Checks the one-time value
+  and replay, the overlap expiry, value-free listings, retiring rules and, with a webhook
+  receiver, the signatures during the overlap and after retiring.
+- `tds_conform.events.delivery_problems(..., older_secrets=[...])`; `receiver.Delivery.path`.
+
 ## [0.6.0] - 2026-10-23
 
 Event delivery that standard tooling understands, and a file format for providers without an

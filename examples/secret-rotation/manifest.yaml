@@ -1,0 +1,40 @@
+# Subscription secret rotation (SPEC.md §12.1). Hand-written; secrets are published here only so
+# the signatures can be checked. Signatures computed with tds_conform.events and checked by
+# scripts/validate_examples.py.
+description: >-
+  A broker rotates the signing secret of its subscription over the API: the provider mints a
+  new secret and keeps the old one valid for a day; a delivery during the overlap carries one
+  webhook-signature entry per active secret (newest first) and X-TDS-Signature with the new
+  secret; once the broker verifies with the new secret it retires the old one early. The newest
+  secret cannot be retired.
+files:
+  01-subscribe.request.json:
+    schema: https://tds-openapi.org/schemas/core/subscription-request.yaml
+    operation: POST /subscriptions
+  01-subscribe.response.json:
+    schema: https://tds-openapi.org/schemas/core/subscription.yaml
+    operation: POST /subscriptions
+    status: 201
+  02-rotate.request.json:
+    schema: https://tds-openapi.org/schemas/core/secret-rotation-request.yaml
+    operation: POST /subscriptions/{subscription_id}/secrets
+  02-rotate.response.json:
+    schema: https://tds-openapi.org/schemas/core/subscription-secret-list.yaml
+    operation: POST /subscriptions/{subscription_id}/secrets
+    status: 201
+  03-list-secrets.response.json:
+    schema: https://tds-openapi.org/schemas/core/subscription-secret-list.yaml
+    operation: GET /subscriptions/{subscription_id}/secrets
+    status: 200
+  04-delivery-during-overlap.delivery.json:
+    kind: webhook-delivery
+    subscription: 01-subscribe.response.json
+    rotation: 02-rotate.response.json
+  05-retire-old.response.json:
+    schema: https://tds-openapi.org/schemas/core/subscription-secret.yaml
+    operation: DELETE /subscriptions/{subscription_id}/secrets/{secret_id}
+    status: 200
+  06-retire-newest.response.json:
+    schema: https://tds-openapi.org/schemas/core/error.yaml
+    operation: DELETE /subscriptions/{subscription_id}/secrets/{secret_id}
+    status: 409

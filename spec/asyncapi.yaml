@@ -21,7 +21,9 @@ info:
     `event_id`, `webhook-timestamp` = Unix seconds at send time, and
     `webhook-signature` = space-separated `v1,<base64 HMAC-SHA256 of
     "<webhook-id>.<webhook-timestamp>.<raw body>">`, one per active secret
-    (several during secret rotation), keyed with the base64-decoded part of a
+    (several during secret rotation, newest first; a subscriber mints a new
+    secret with `POST /subscriptions/{subscription_id}/secrets`, SPEC.md
+    §12.1), keyed with the base64-decoded part of a
     `whsec_` secret. Senders SHOULD send them when the subscription's secret is
     in `whsec_` form. *Legacy, deprecated since 0.6.0 but still always sent*:
     `X-TDS-Timestamp` (Unix seconds) and `X-TDS-Signature` = `sha256=` + lowercase
@@ -221,7 +223,8 @@ components:
             Space-separated signatures, each `v1,` + base64 HMAC-SHA256 of
             "<webhook-id>.<webhook-timestamp>.<raw body>", keyed with the
             base64-decoded part of a `whsec_` secret. One per active secret
-            during rotation. Receivers ignore versions they do not know
+            during rotation (SPEC.md §12.1), newest first; a secret past its
+            expires_at is not used. Receivers ignore versions they do not know
             (e.g. `v1a`).
           type: string
           pattern: "^v1a?,[A-Za-z0-9+/=]+( v1a?,[A-Za-z0-9+/=]+)*$"

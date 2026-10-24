@@ -1,0 +1,7 @@
+{
+  "type": "about:blank",
+  "title": "Invalid state",
+  "status": 409,
+  "detail": "sec-02 is the newest secret of sub-07; rotate before retiring it.",
+  "code": "INVALID_STATE"
+}

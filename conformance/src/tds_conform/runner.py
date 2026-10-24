@@ -30,6 +30,9 @@ RESPONSE_SCHEMAS = {
     ("POST /tenders", 202): "transfer/tender",
     ("GET /tenders/{tender_id}", 200): "transfer/tender",
     ("POST /subscriptions", 201): "core/subscription",
+    ("POST /subscriptions/{subscription_id}/secrets", 201): "core/subscription-secret-list",
+    ("GET /subscriptions/{subscription_id}/secrets", 200): "core/subscription-secret-list",
+    ("DELETE /subscriptions/{subscription_id}/secrets/{secret_id}", 200): "core/subscription-secret",
 }
 REQUEST_SCHEMAS = {
     "POST /trips": "core/trip-request",
@@ -38,6 +41,7 @@ REQUEST_SCHEMAS = {
     "POST /trips/{trip_id}/hold": "transfer/hold-request",
     "POST /tenders": "transfer/tender-request",
     "POST /subscriptions": "core/subscription-request",
+    "POST /subscriptions/{subscription_id}/secrets": "core/secret-rotation-request",
 }
 AUTO_KEY = object()
 
@@ -127,7 +131,7 @@ class Context:
         headers = {}
         if auth:
             headers["Authorization"] = f"Bearer {self.settings.token}"
-        if key is AUTO_KEY and method in ("POST", "PATCH"):
+        if key is AUTO_KEY and method in ("POST", "PATCH", "DELETE"):
             key = f"conform-{uuid.uuid4()}"
         if key not in (AUTO_KEY, None):
             headers["Idempotency-Key"] = key
