@@ -147,7 +147,7 @@ Then use the public accessors rather than paths into this repo:
 
 ```python
 from tds_conform.examples import (
-    binding_version,  # "0.7.0": the binding version these examples and schemas belong to
+    binding_version,  # "0.7.1": the binding version these examples and schemas belong to
     examples_dir,  # Path to examples/ (one folder per scenario)
     profiles_dir,  # Path to profiles/ (JSON Schemas)
     scenarios,  # ["cancellation", ..., "two-provider-transfer"]

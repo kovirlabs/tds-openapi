@@ -445,3 +445,55 @@ streams change only in `schema_version`; generated subscribe responses gain
     with the newest). If endpoints are only managed in the UI, a "rotate secret" button with
     an overlap, showing the new value once, gives partners the same result.
   - The TDS fake (`tests/fakes/tds.py`) can replay `secret-rotation/` for these paths.
+
+
+## v0.7.1 released (2026-10-24, local tag `v0.7.1`)
+
+Answers queue item TQ-20 (let providers signal back-pressure so brokers can honour it).
+Re-vendor from tag `v0.7.1` (`binding_version()` = `0.7.1`; generated event streams change
+only in `schema_version`). New example files `errors/rate-limited.json` (429) and
+`errors/temporarily-unavailable.json` (503).
+
+**Back-pressure (SPEC.md §7.2).** Agreed, additive:
+- Every operation may answer **429** `RATE_LIMITED` (this client is over the provider's limit)
+  or **503** `TEMPORARILY_UNAVAILABLE` (the provider cannot take requests for now). Nothing is
+  processed and the `Idempotency-Key` is not consumed.
+- Providers SHOULD send the wait as `Retry-After` (RFC 9110 §10.2.3: delta-seconds, which
+  providers SHOULD use, or an HTTP-date) **and** as `retry_after_s` (integer seconds) in the
+  Problem Details. They SHOULD agree; a client that sees both uses the larger. `retry_after_s`
+  MAY accompany any other 5xx. OpenAPI: `components/headers.yaml#/RetryAfter`, responses
+  `TooManyRequests` / `ServiceUnavailable`.
+- Requesters SHOULD wait at least that long and repeat the same request with the same
+  `Idempotency-Key`. The hint is a minimum; waiting longer (own backoff) is fine. An
+  unparseable `Retry-After` is ignored.
+- A 429/503 is not a refusal: the trip is not `REJECTED`, and back-pressure alone is no
+  reason to offer the trip to another provider.
+- The same applies to webhook deliveries: a receiver may answer 429/503 with `Retry-After`;
+  the sender SHOULD not attempt again sooner.
+- `tds_conform.backpressure.retry_after_s(headers, body)` is the reference reading. `tds-mock`
+  throttles with `ProviderConfig.rate_limit` / `/_sim/<id>/policy {"rate_limit": …}` and
+  answers 503 after `POST /_sim/<id>/unavailable {"for_s": …}`. The kit retries unexpected
+  429/503 after the hint and reports a missing or inconsistent hint as a warning (SHOULD), not
+  a failure.
+- **Differs from the proposal:** no `retry_after_s` on a trip "whose status is a transient
+  `FAILED`". In the binding, trip `FAILED` is the terminal in-service outcome (the leg could
+  not be completed, §8.1), never a transient booking failure, and a Trip carries no retry
+  hint. ThroughRide's "`FAILED`-class" adapter outcomes are its own classification; on the
+  wire they are 429, 503, other 5xx or network errors, which the Problem Details hint covers.
+- **For ThroughRide:**
+  - `adapters/tds.py`: on 429, 503 (and any 5xx) read `Retry-After` (digits = seconds;
+    otherwise an HTTP-date via `email.utils.parsedate_to_datetime`, seconds until then, at
+    least 0; anything else ignored) and the Problem Details `retry_after_s` (a non-negative
+    integer, not a bool); take the larger as `AdapterResult.retry_after`. The next attempt is
+    at max(that, the 1/2/5/15/30/60-minute backoff step), same Idempotency-Key. Implement the
+    parser in the adapter (about 15 lines), since `tds_conform` is a dev-only dependency;
+    test it against `tds_conform.backpressure.parse_retry_after` cases.
+  - Do not map 429/503 to a rejection or to a Proposal for another provider. If the hinted
+    wait would pass the leg's booking deadline or the tender's `respond_by`, surface it to the
+    coordinator as an exception instead of waiting silently (rule 1 unchanged).
+  - Outbound webhooks (`apps/webhooks`): when a partner endpoint answers 429/503 with
+    `Retry-After`, schedule the next attempt no earlier than that (max with the existing
+    schedule, with your own upper limit). Inbound TDS webhook endpoint: may answer 503 with
+    `Retry-After` when overloaded.
+  - Fakes (`tests/fakes/tds.py`): replay the two new error examples with a `Retry-After`
+    header equal to their `retry_after_s` (examples hold bodies only).

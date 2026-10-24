@@ -4,7 +4,7 @@
     "event_type": "TRIP_STATUS_CHANGED",
     "occurred_at": "2026-11-10T07:55:00.000-05:00",
     "provider_id": "aaata-a-ride",
-    "schema_version": "0.7.0",
+    "schema_version": "0.7.1",
     "payload": {
       "status": "REQUESTED"
     },
@@ -16,7 +16,7 @@
     "event_type": "TRIP_STATUS_CHANGED",
     "occurred_at": "2026-11-10T07:55:00.000-05:00",
     "provider_id": "oakland-go",
-    "schema_version": "0.7.0",
+    "schema_version": "0.7.1",
     "payload": {
       "status": "REQUESTED"
     },
@@ -28,7 +28,7 @@
     "event_type": "TRIP_STATUS_CHANGED",
     "occurred_at": "2026-11-10T07:55:00.001-05:00",
     "provider_id": "aaata-a-ride",
-    "schema_version": "0.7.0",
+    "schema_version": "0.7.1",
     "payload": {
       "status": "OFFERED",
       "previous_status": "REQUESTED"
@@ -41,7 +41,7 @@
     "event_type": "TRIP_STATUS_CHANGED",
     "occurred_at": "2026-11-10T07:55:00.001-05:00",
     "provider_id": "oakland-go",
-    "schema_version": "0.7.0",
+    "schema_version": "0.7.1",
     "payload": {
       "status": "OFFERED",
       "previous_status": "REQUESTED"
@@ -54,7 +54,7 @@
     "event_type": "TRIP_STATUS_CHANGED",
     "occurred_at": "2026-11-10T07:55:00.002-05:00",
     "provider_id": "aaata-a-ride",
-    "schema_version": "0.7.0",
+    "schema_version": "0.7.1",
     "payload": {
       "status": "CONFIRMED",
       "previous_status": "OFFERED"
@@ -67,7 +67,7 @@
     "event_type": "TRIP_STATUS_CHANGED",
     "occurred_at": "2026-11-10T07:55:00.002-05:00",
     "provider_id": "oakland-go",
-    "schema_version": "0.7.0",
+    "schema_version": "0.7.1",
     "payload": {
       "status": "CONFIRMED",
       "previous_status": "OFFERED"
@@ -80,7 +80,7 @@
     "event_type": "TENDER_RESPONSE",
     "occurred_at": "2026-11-10T07:55:00.003-05:00",
     "provider_id": "aaata-a-ride",
-    "schema_version": "0.7.0",
+    "schema_version": "0.7.1",
     "payload": {
       "tender": {
         "tender_id": "tn-hold-a",
@@ -104,7 +104,7 @@
     "event_type": "TENDER_RESPONSE",
     "occurred_at": "2026-11-10T07:55:00.003-05:00",
     "provider_id": "oakland-go",
-    "schema_version": "0.7.0",
+    "schema_version": "0.7.1",
     "payload": {
       "tender": {
         "tender_id": "tn-hold-b",
@@ -128,7 +128,7 @@
     "event_type": "TRIP_STATUS_CHANGED",
     "occurred_at": "2026-11-10T07:56:00.000-05:00",
     "provider_id": "aaata-a-ride",
-    "schema_version": "0.7.0",
+    "schema_version": "0.7.1",
     "payload": {
       "status": "SCHEDULED",
       "previous_status": "CONFIRMED"
@@ -141,7 +141,7 @@
     "event_type": "TRIP_STATUS_CHANGED",
     "occurred_at": "2026-11-10T07:56:00.000-05:00",
     "provider_id": "oakland-go",
-    "schema_version": "0.7.0",
+    "schema_version": "0.7.1",
     "payload": {
       "status": "SCHEDULED",
       "previous_status": "CONFIRMED"
@@ -154,7 +154,7 @@
     "event_type": "TRIP_SCHEDULED",
     "occurred_at": "2026-11-10T07:56:00.001-05:00",
     "provider_id": "aaata-a-ride",
-    "schema_version": "0.7.0",
+    "schema_version": "0.7.1",
     "payload": {
       "scheduled_pickup": "2026-11-10T08:50:00-05:00",
       "vehicle_ref": {
@@ -170,7 +170,7 @@
     "event_type": "TRIP_SCHEDULED",
     "occurred_at": "2026-11-10T07:56:00.001-05:00",
     "provider_id": "oakland-go",
-    "schema_version": "0.7.0",
+    "schema_version": "0.7.1",
     "payload": {
       "scheduled_pickup": "2026-11-10T09:45:00-05:00",
       "vehicle_ref": {
@@ -186,7 +186,7 @@
     "event_type": "TRIP_STATUS_CHANGED",
     "occurred_at": "2026-11-10T08:40:00.000-05:00",
     "provider_id": "aaata-a-ride",
-    "schema_version": "0.7.0",
+    "schema_version": "0.7.1",
     "payload": {
       "status": "IN_PROGRESS",
       "previous_status": "SCHEDULED"
@@ -199,7 +199,7 @@
     "event_type": "MILESTONE",
     "occurred_at": "2026-11-10T08:40:00.001-05:00",
     "provider_id": "aaata-a-ride",
-    "schema_version": "0.7.0",
+    "schema_version": "0.7.1",
     "payload": {
       "milestone": "EN_ROUTE_TO_PICKUP"
     },
@@ -211,7 +211,7 @@
     "event_type": "ETA_UPDATE",
     "occurred_at": "2026-11-10T08:40:00.002-05:00",
     "provider_id": "aaata-a-ride",
-    "schema_version": "0.7.0",
+    "schema_version": "0.7.1",
     "payload": {
       "eta": {
         "target": "PICKUP",
@@ -231,7 +231,7 @@
     "event_type": "ETA_UPDATE",
     "occurred_at": "2026-11-10T08:45:00.000-05:00",
     "provider_id": "aaata-a-ride",
-    "schema_version": "0.7.0",
+    "schema_version": "0.7.1",
     "payload": {
       "eta": {
         "target": "PICKUP",
@@ -251,7 +251,7 @@
     "event_type": "ETA_UPDATE",
     "occurred_at": "2026-11-10T08:50:00.000-05:00",
     "provider_id": "aaata-a-ride",
-    "schema_version": "0.7.0",
+    "schema_version": "0.7.1",
     "payload": {
       "eta": {
         "target": "PICKUP",
@@ -271,7 +271,7 @@
     "event_type": "MILESTONE",
     "occurred_at": "2026-11-10T08:50:00.001-05:00",
     "provider_id": "aaata-a-ride",
-    "schema_version": "0.7.0",
+    "schema_version": "0.7.1",
     "payload": {
       "milestone": "ARRIVED_PICKUP",
       "location": {
@@ -289,7 +289,7 @@
     "event_type": "MILESTONE",
     "occurred_at": "2026-11-10T08:53:00.000-05:00",
     "provider_id": "aaata-a-ride",
-    "schema_version": "0.7.0",
+    "schema_version": "0.7.1",
     "payload": {
       "milestone": "RIDER_ONBOARD",
       "location": {
@@ -307,7 +307,7 @@
     "event_type": "MILESTONE",
     "occurred_at": "2026-11-10T08:54:00.000-05:00",
     "provider_id": "aaata-a-ride",
-    "schema_version": "0.7.0",
+    "schema_version": "0.7.1",
     "payload": {
       "milestone": "EN_ROUTE_TO_DROPOFF"
     },
@@ -319,7 +319,7 @@
     "event_type": "ETA_UPDATE",
     "occurred_at": "2026-11-10T08:54:00.001-05:00",
     "provider_id": "aaata-a-ride",
-    "schema_version": "0.7.0",
+    "schema_version": "0.7.1",
     "payload": {
       "eta": {
         "target": "DROPOFF",
@@ -339,7 +339,7 @@
     "event_type": "ETA_UPDATE",
     "occurred_at": "2026-11-10T08:59:00.000-05:00",
     "provider_id": "aaata-a-ride",
-    "schema_version": "0.7.0",
+    "schema_version": "0.7.1",
     "payload": {
       "eta": {
         "target": "DROPOFF",
@@ -359,7 +359,7 @@
     "event_type": "ETA_UPDATE",
     "occurred_at": "2026-11-10T09:04:00.000-05:00",
     "provider_id": "aaata-a-ride",
-    "schema_version": "0.7.0",
+    "schema_version": "0.7.1",
     "payload": {
       "eta": {
         "target": "DROPOFF",
@@ -379,7 +379,7 @@
     "event_type": "ETA_UPDATE",
     "occurred_at": "2026-11-10T09:05:00.000-05:00",
     "provider_id": "aaata-a-ride",
-    "schema_version": "0.7.0",
+    "schema_version": "0.7.1",
     "payload": {
       "eta": {
         "target": "DROPOFF",
@@ -400,7 +400,7 @@
     "event_type": "TRIP_SCHEDULED",
     "occurred_at": "2026-11-10T09:06:00.000-05:00",
     "provider_id": "oakland-go",
-    "schema_version": "0.7.0",
+    "schema_version": "0.7.1",
     "payload": {
       "scheduled_pickup": "2026-11-10T09:50:00-05:00",
       "vehicle_ref": {
@@ -416,7 +416,7 @@
     "event_type": "HOLD_RESPONSE",
     "occurred_at": "2026-11-10T09:06:00.001-05:00",
     "provider_id": "oakland-go",
-    "schema_version": "0.7.0",
+    "schema_version": "0.7.1",
     "payload": {
       "hold": {
         "hold_id": "hd-hold-1",
@@ -440,7 +440,7 @@
     "event_type": "ETA_UPDATE",
     "occurred_at": "2026-11-10T09:10:00.000-05:00",
     "provider_id": "aaata-a-ride",
-    "schema_version": "0.7.0",
+    "schema_version": "0.7.1",
     "payload": {
       "eta": {
         "target": "DROPOFF",
@@ -461,7 +461,7 @@
     "event_type": "ETA_UPDATE",
     "occurred_at": "2026-11-10T09:15:00.000-05:00",
     "provider_id": "aaata-a-ride",
-    "schema_version": "0.7.0",
+    "schema_version": "0.7.1",
     "payload": {
       "eta": {
         "target": "DROPOFF",
@@ -482,7 +482,7 @@
     "event_type": "ETA_UPDATE",
     "occurred_at": "2026-11-10T09:20:00.000-05:00",
     "provider_id": "aaata-a-ride",
-    "schema_version": "0.7.0",
+    "schema_version": "0.7.1",
     "payload": {
       "eta": {
         "target": "DROPOFF",
@@ -503,7 +503,7 @@
     "event_type": "ETA_UPDATE",
     "occurred_at": "2026-11-10T09:25:00.000-05:00",
     "provider_id": "aaata-a-ride",
-    "schema_version": "0.7.0",
+    "schema_version": "0.7.1",
     "payload": {
       "eta": {
         "target": "DROPOFF",
@@ -524,7 +524,7 @@
     "event_type": "ETA_UPDATE",
     "occurred_at": "2026-11-10T09:30:00.000-05:00",
     "provider_id": "aaata-a-ride",
-    "schema_version": "0.7.0",
+    "schema_version": "0.7.1",
     "payload": {
       "eta": {
         "target": "DROPOFF",
@@ -545,7 +545,7 @@
     "event_type": "TRIP_STATUS_CHANGED",
     "occurred_at": "2026-11-10T09:30:00.000-05:00",
     "provider_id": "oakland-go",
-    "schema_version": "0.7.0",
+    "schema_version": "0.7.1",
     "payload": {
       "status": "IN_PROGRESS",
       "previous_status": "SCHEDULED"
@@ -558,7 +558,7 @@
     "event_type": "MILESTONE",
     "occurred_at": "2026-11-10T09:30:00.001-05:00",
     "provider_id": "oakland-go",
-    "schema_version": "0.7.0",
+    "schema_version": "0.7.1",
     "payload": {
       "milestone": "EN_ROUTE_TO_PICKUP"
     },
@@ -570,7 +570,7 @@
     "event_type": "ETA_UPDATE",
     "occurred_at": "2026-11-10T09:30:00.002-05:00",
     "provider_id": "oakland-go",
-    "schema_version": "0.7.0",
+    "schema_version": "0.7.1",
     "payload": {
       "eta": {
         "target": "PICKUP",
@@ -590,7 +590,7 @@
     "event_type": "ETA_UPDATE",
     "occurred_at": "2026-11-10T09:35:00.000-05:00",
     "provider_id": "aaata-a-ride",
-    "schema_version": "0.7.0",
+    "schema_version": "0.7.1",
     "payload": {
       "eta": {
         "target": "DROPOFF",
@@ -611,7 +611,7 @@
     "event_type": "ETA_UPDATE",
     "occurred_at": "2026-11-10T09:40:00.000-05:00",
     "provider_id": "aaata-a-ride",
-    "schema_version": "0.7.0",
+    "schema_version": "0.7.1",
     "payload": {
       "eta": {
         "target": "DROPOFF",
@@ -632,7 +632,7 @@
     "event_type": "ETA_UPDATE",
     "occurred_at": "2026-11-10T09:45:00.000-05:00",
     "provider_id": "aaata-a-ride",
-    "schema_version": "0.7.0",
+    "schema_version": "0.7.1",
     "payload": {
       "eta": {
         "target": "DROPOFF",
@@ -653,7 +653,7 @@
     "event_type": "MILESTONE",
     "occurred_at": "2026-11-10T09:46:00.000-05:00",
     "provider_id": "oakland-go",
-    "schema_version": "0.7.0",
+    "schema_version": "0.7.1",
     "payload": {
       "milestone": "ARRIVED_PICKUP",
       "location": {
@@ -671,7 +671,7 @@
     "event_type": "ETA_UPDATE",
     "occurred_at": "2026-11-10T09:50:00.000-05:00",
     "provider_id": "aaata-a-ride",
-    "schema_version": "0.7.0",
+    "schema_version": "0.7.1",
     "payload": {
       "eta": {
         "target": "DROPOFF",
@@ -692,7 +692,7 @@
     "event_type": "MILESTONE",
     "occurred_at": "2026-11-10T09:50:00.001-05:00",
     "provider_id": "aaata-a-ride",
-    "schema_version": "0.7.0",
+    "schema_version": "0.7.1",
     "payload": {
       "milestone": "ARRIVED_DROPOFF",
       "location": {
@@ -710,7 +710,7 @@
     "event_type": "MILESTONE",
     "occurred_at": "2026-11-10T09:52:00.000-05:00",
     "provider_id": "aaata-a-ride",
-    "schema_version": "0.7.0",
+    "schema_version": "0.7.1",
     "payload": {
       "milestone": "LEG_COMPLETED"
     },
@@ -722,7 +722,7 @@
     "event_type": "TRIP_STATUS_CHANGED",
     "occurred_at": "2026-11-10T09:52:00.001-05:00",
     "provider_id": "aaata-a-ride",
-    "schema_version": "0.7.0",
+    "schema_version": "0.7.1",
     "payload": {
       "status": "COMPLETED",
       "previous_status": "IN_PROGRESS"
@@ -735,7 +735,7 @@
     "event_type": "MILESTONE",
     "occurred_at": "2026-11-10T09:53:00.000-05:00",
     "provider_id": "oakland-go",
-    "schema_version": "0.7.0",
+    "schema_version": "0.7.1",
     "payload": {
       "milestone": "RIDER_ONBOARD",
       "location": {
@@ -753,7 +753,7 @@
     "event_type": "MILESTONE",
     "occurred_at": "2026-11-10T09:54:00.000-05:00",
     "provider_id": "oakland-go",
-    "schema_version": "0.7.0",
+    "schema_version": "0.7.1",
     "payload": {
       "milestone": "EN_ROUTE_TO_DROPOFF"
     },
@@ -765,7 +765,7 @@
     "event_type": "ETA_UPDATE",
     "occurred_at": "2026-11-10T09:54:00.001-05:00",
     "provider_id": "oakland-go",
-    "schema_version": "0.7.0",
+    "schema_version": "0.7.1",
     "payload": {
       "eta": {
         "target": "DROPOFF",
@@ -785,7 +785,7 @@
     "event_type": "MILESTONE",
     "occurred_at": "2026-11-10T10:27:00.000-05:00",
     "provider_id": "oakland-go",
-    "schema_version": "0.7.0",
+    "schema_version": "0.7.1",
     "payload": {
       "milestone": "ARRIVED_DROPOFF",
       "location": {
@@ -803,7 +803,7 @@
     "event_type": "MILESTONE",
     "occurred_at": "2026-11-10T10:29:00.000-05:00",
     "provider_id": "oakland-go",
-    "schema_version": "0.7.0",
+    "schema_version": "0.7.1",
     "payload": {
       "milestone": "LEG_COMPLETED"
     },
@@ -815,7 +815,7 @@
     "event_type": "TRIP_STATUS_CHANGED",
     "occurred_at": "2026-11-10T10:29:00.001-05:00",
     "provider_id": "oakland-go",
-    "schema_version": "0.7.0",
+    "schema_version": "0.7.1",
     "payload": {
       "status": "COMPLETED",
       "previous_status": "IN_PROGRESS"
