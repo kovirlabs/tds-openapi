@@ -4,9 +4,13 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-10-24
+
 Back-pressure: providers say how long to wait, so brokers back off instead of retrying on
 their own schedule (TQ-20). Additive: new optional field, new error codes (clients already
 treat unknown codes as a generic failure), and 429/503 now documented on every operation.
+Patch version, as earlier additive fields were. Generated event streams change only in
+`schema_version`.
 
 ### Added
 - SPEC.md §7.2 Back-pressure. Every operation may answer **429** (code `RATE_LIMITED`, this
