@@ -1,0 +1,8 @@
+{
+  "type": "about:blank",
+  "title": "Temporarily unavailable",
+  "status": 503,
+  "detail": "The scheduling system is running its nightly optimisation. Retry the same request after the wait.",
+  "code": "TEMPORARILY_UNAVAILABLE",
+  "retry_after_s": 120
+}

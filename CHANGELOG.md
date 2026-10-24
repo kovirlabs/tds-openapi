@@ -4,6 +4,41 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+Back-pressure: providers say how long to wait, so brokers back off instead of retrying on
+their own schedule (TQ-20). Additive: new optional field, new error codes (clients already
+treat unknown codes as a generic failure), and 429/503 now documented on every operation.
+
+### Added
+- SPEC.md §7.2 Back-pressure. Every operation may answer **429** (code `RATE_LIMITED`, this
+  client is over the limit) or **503** (code `TEMPORARILY_UNAVAILABLE`, the provider cannot
+  take requests for now). Nothing is processed and the `Idempotency-Key` is not consumed.
+  Providers SHOULD send the wait as the `Retry-After` header (RFC 9110 §10.2.3,
+  delta-seconds preferred, HTTP-date allowed) and as `retry_after_s` in the Problem Details;
+  requesters SHOULD wait at least that long (the larger of the two when both are present) and
+  repeat the same request with the same `Idempotency-Key`. A 429/503 is not a refusal.
+- `core/error`: `retry_after_s` (integer ≥ 0) and codes `RATE_LIMITED`,
+  `TEMPORARILY_UNAVAILABLE`. Crosswalk row (TODO, protocol field).
+- OpenAPI: reusable header `components/headers.yaml#/RetryAfter` and responses
+  `TooManyRequests` / `ServiceUnavailable`, referenced as 429 and 503 from every operation
+  (inline on `POST /trips`, with examples).
+- Examples `errors/rate-limited.json` (429) and `errors/temporarily-unavailable.json` (503).
+- Webhook deliveries (§9): a receiver may answer 429/503 with `Retry-After`; the sender SHOULD
+  not attempt again sooner. `tds-mock`'s sender does so (`Dispatcher.max_retry_after_s` caps
+  it; the delivery log records `retry_after_s`).
+- `tds_conform.backpressure`: `retry_after_s(headers, body)`, `parse_retry_after`,
+  `retry_after_header`, `backpressure_problems`, `BACKPRESSURE_CODES`.
+- `tds-mock`: `ProviderConfig.rate_limit` (`{"requests": N, "per_s": S}` per requester, also
+  settable with `/_sim/<id>/policy`) answers 429; `POST /_sim/<id>/unavailable {"for_s": …}`
+  answers 503 to every call for that long. Both send `Retry-After` and `retry_after_s`.
+  `Provider.admit(requester)` is the hook.
+- Kit: an unexpected 429/503 in any scenario is retried with the same `Idempotency-Key` after
+  the hinted wait (up to `Settings.backpressure_retries`, default 3; a wait over
+  `max_backpressure_wait_s`, default 30 s, makes the scenario INCONCLUSIVE). The hint is
+  checked at SHOULD level: new advisory checks (`Check.advisory`, `Step.advise`) are shown
+  as warnings and never fail a scenario; `report.json` `summary.warnings` counts them.
+- Validator: every operation documents 429 and 503 with `Retry-After`; 429/503 examples carry
+  the matching code and `retry_after_s`.
+
 ## [0.7.0] - 2026-10-24
 
 Rotate a webhook subscription's signing secret over the API, so a second secret need not be

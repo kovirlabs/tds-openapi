@@ -9,6 +9,7 @@ from datetime import UTC, date, datetime, timedelta
 
 import httpx
 
+from tds_conform.backpressure import BACKPRESSURE_CODES, backpressure_problems, retry_after_s
 from tds_conform.booking import booking_window_for, closes_at, trip_time
 from tds_conform.data import example, schema_errors
 
@@ -59,6 +60,7 @@ class Check:
     name: str
     passed: bool
     detail: str = ""
+    advisory: bool = False  # a SHOULD: reported as a warning, never fails the scenario
 
 
 @dataclass
@@ -78,6 +80,11 @@ class Step:
 
     def check(self, passed: bool, name: str, detail: str = "") -> bool:
         self.checks.append(Check(name, bool(passed), "" if passed else detail))
+        return bool(passed)
+
+    def advise(self, passed: bool, name: str, detail: str = "") -> bool:
+        """Record a SHOULD-level check: a failure is a warning in the report, not a FAIL."""
+        self.checks.append(Check(name, bool(passed), "" if passed else detail, advisory=True))
         return bool(passed)
 
     def require(self, passed: bool, name: str, detail: str = "") -> None:
@@ -106,6 +113,11 @@ class Settings:
     trip_template: dict
     max_wait_s: float | None = None  # None: derive from the provider's typical_response_s
     receiver: object | None = None  # tds_conform.receiver.Receiver, for webhook scenarios
+    # Back-pressure (SPEC.md §7.2): an unexpected 429/503 is retried with the same Idempotency-Key
+    # after the provider's Retry-After, up to this many times; a longer wait makes it INCONCLUSIVE.
+    backpressure_retries: int = 3
+    max_backpressure_wait_s: float = 30.0
+    backpressure_default_wait_s: float = 2.0  # when a 429/503 carries no hint
 
 
 class Context:
@@ -126,7 +138,12 @@ class Context:
         auth: bool = True,
         **params: str,
     ) -> Step:
-        """Make one request, record it, and check status, media type and response schema."""
+        """Make one request, record it, and check status, media type and response schema.
+
+        A 429 or 503 the scenario does not expect is back-pressure (SPEC.md §7.2): its hint is
+        checked (advisory), and the same request is sent again with the same Idempotency-Key once
+        the provider's Retry-After has passed.
+        """
         path = route.format(**params)
         headers = {}
         if auth:
@@ -135,6 +152,29 @@ class Context:
             key = f"conform-{uuid.uuid4()}"
         if key not in (AUTO_KEY, None):
             headers["Idempotency-Key"] = key
+        for attempt in range(self.settings.backpressure_retries + 1):
+            step, resp = self._send(label, method, path, headers, body)
+            if resp.status_code not in BACKPRESSURE_CODES or resp.status_code in expect:
+                break
+            self._backpressure(step, resp, last=attempt == self.settings.backpressure_retries)
+        step.check(resp.status_code in expect, f"status is {' or '.join(map(str, expect))}", f"got {resp.status_code}")
+        if resp.status_code >= 400:
+            step.check_equal(
+                step.response["content_type"],
+                "application/problem+json",
+                "error media type is application/problem+json",
+            )
+            schema = "core/error"
+        else:
+            schema = RESPONSE_SCHEMAS.get((f"{method} {route}", resp.status_code))
+        if schema:
+            errors = schema_errors(step.body, schema)
+            step.check(not errors, f"body matches {schema}.yaml", "; ".join(errors[:5]))
+        if resp.status_code in BACKPRESSURE_CODES:
+            self._advise_backpressure(step, resp)
+        return step
+
+    def _send(self, label: str, method: str, path: str, headers: dict, body) -> tuple[Step, httpx.Response]:
         step = Step(
             label, {"method": method, "path": path, "idempotency_key": headers.get("Idempotency-Key"), "body": body}
         )
@@ -149,17 +189,37 @@ class Context:
             parsed = resp.text
         media = resp.headers.get("content-type", "").split(";")[0].strip()
         step.response = {"status": resp.status_code, "content_type": media, "body": parsed}
+        if retry_after := resp.headers.get("retry-after"):
+            step.response["retry_after"] = retry_after
+        return step, resp
 
-        step.check(resp.status_code in expect, f"status is {' or '.join(map(str, expect))}", f"got {resp.status_code}")
-        if resp.status_code >= 400:
-            step.check_equal(media, "application/problem+json", "error media type is application/problem+json")
-            schema = "core/error"
-        else:
-            schema = RESPONSE_SCHEMAS.get((f"{method} {route}", resp.status_code))
-        if schema:
-            errors = schema_errors(parsed, schema)
-            step.check(not errors, f"body matches {schema}.yaml", "; ".join(errors[:5]))
-        return step
+    def _advise_backpressure(self, step: Step, resp: httpx.Response) -> None:
+        problems = backpressure_problems(resp.status_code, resp.headers, step.body)
+        step.advise(not problems, "back-pressure hint: Retry-After and retry_after_s (SHOULD)", "; ".join(problems))
+
+    def _backpressure(self, step: Step, resp: httpx.Response, last: bool) -> None:
+        """Honour an unexpected 429/503: check its hint, then wait, or stop without a verdict."""
+        step.label += f" (back-pressure {resp.status_code})"
+        step.check_equal(
+            step.response["content_type"], "application/problem+json", "error media type is application/problem+json"
+        )
+        errors = schema_errors(step.body, "core/error")
+        step.check(not errors, "body matches core/error.yaml", "; ".join(errors[:5]))
+        self._advise_backpressure(step, resp)
+        wait = retry_after_s(resp.headers, step.body)
+        if wait is None:
+            wait = self.settings.backpressure_default_wait_s
+        if last:
+            raise Inconclusive(
+                f"provider still answers {resp.status_code} after "
+                f"{self.settings.backpressure_retries} retries; run again later"
+            )
+        if wait > self.settings.max_backpressure_wait_s:
+            raise Inconclusive(
+                f"provider asked to wait {wait} s ({resp.status_code}), longer than "
+                f"{self.settings.max_backpressure_wait_s:.0f} s; run again later"
+            )
+        time.sleep(wait)
 
     @property
     def max_wait_s(self) -> float:
@@ -276,6 +336,6 @@ def run_scenario(
     except Exception as exc:  # a bug in the kit or a wildly malformed response
         result.outcome, result.note = "ERROR", f"{type(exc).__name__}: {exc}"
         return result
-    if any(not c.passed for s in result.steps for c in s.checks):
+    if any(not c.passed and not c.advisory for s in result.steps for c in s.checks):
         result.outcome = "FAIL"
     return result

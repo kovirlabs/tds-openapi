@@ -37,7 +37,21 @@ POLICY_FIELDS = {
     "max_hold_s": int,
     "max_auto_hold_s": int,
     "heartbeat_s": int,
+    "rate_limit": dict,
 }
+
+
+def _valid_rate_limit(value) -> bool:
+    def number(v) -> bool:
+        return isinstance(v, int | float) and not isinstance(v, bool)
+
+    return (
+        isinstance(value, dict)
+        and number(value.get("requests"))
+        and value["requests"] >= 1
+        and number(value.get("per_s"))
+        and value["per_s"] > 0
+    )
 
 
 class TransferMixin:
@@ -310,6 +324,8 @@ class TransferMixin:
             for key, value in (body or {}).items():
                 if key not in POLICY_FIELDS:
                     return problem(400, "INVALID_REQUEST", f"Unknown policy {key!r}; one of {sorted(POLICY_FIELDS)}.")
+                if key == "rate_limit" and value is not None and not _valid_rate_limit(value):
+                    return problem(400, "INVALID_REQUEST", 'rate_limit is {"requests": <n >= 1>, "per_s": <s > 0>}.')
                 setattr(self.config, key, None if value is None else POLICY_FIELDS[key](value))
             values = {k: getattr(self.config, k) for k in POLICY_FIELDS}
             return 200, {k: sorted(v) if isinstance(v, frozenset) else v for k, v in values.items()}

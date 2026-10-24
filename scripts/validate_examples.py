@@ -35,6 +35,9 @@ Checks:
      that message.
   6. Every profiles/core property appears in mappings/tds-2020-crosswalk.md or
      is marked `x-tds-extension: true`.
+  6b. Back-pressure (SPEC.md §7.2): every operation documents 429 and 503 with a
+     Retry-After header, and every 429/503 example carries the matching code and
+     retry_after_s.
   7. AsyncAPI completeness: every event type is declared in core/event-types, sent by
      an operation and shown in an example event stream, and every state an event reports
      (trip statuses, who cancelled, tender and hold outcomes, milestones, exception types)
@@ -454,6 +457,35 @@ def check_wiring(manifests: dict[Path, dict], wiring: dict[tuple[str, str], dict
     return results
 
 
+def check_backpressure(manifests: dict[Path, dict], openapi: Path = OPENAPI) -> list[str]:
+    """SPEC.md §7.2: 429 and 503 are documented on every operation with Retry-After; examples show the hint."""
+    from tds_conform.backpressure import BACKPRESSURE_CODES
+
+    errors = []
+    spec = _resolve(yaml.safe_load(openapi.read_text()), openapi)
+    for route, item in spec.get("paths", {}).items():
+        for method in HTTP_METHODS:
+            if method not in item:
+                continue
+            responses = {str(k): v for k, v in item[method].get("responses", {}).items()}
+            for status in map(str, BACKPRESSURE_CODES):
+                response = responses.get(status)
+                if response is None:
+                    errors.append(f"{method.upper()} {route}: no {status} response")
+                elif "Retry-After" not in response.get("headers", {}):
+                    errors.append(f"{method.upper()} {route} {status}: no Retry-After header")
+    for scenario, files in manifests.items():
+        for name, entry in files.items():
+            if entry.get("status") in BACKPRESSURE_CODES:
+                body = json.loads((scenario / name).read_text())
+                where = f"{scenario.name}/{name}"
+                if body.get("code") != BACKPRESSURE_CODES[entry["status"]]:
+                    errors.append(f"{where}: code is not {BACKPRESSURE_CODES[entry['status']]}")
+                if "retry_after_s" not in body:
+                    errors.append(f"{where}: no retry_after_s")
+    return errors
+
+
 def collect_events(manifests: dict[Path, dict]) -> list[dict]:
     """Every event in every example event stream."""
     events = []
@@ -539,6 +571,7 @@ def main() -> int:
     for path, errors in check_events(manifests, event_wiring()).items():
         report(path.relative_to(ROOT).as_posix() + " (event wiring)", errors)
     report("event coverage (AsyncAPI completeness)", check_event_coverage(manifests, registry))
+    report("back-pressure responses (429/503, Retry-After)", check_backpressure(manifests))
     report(CROSSWALK.relative_to(ROOT).as_posix() + " coverage", check_crosswalk(schemas))
 
     print(f"\n{failures} problem(s)" if failures else "\nall checks passed")

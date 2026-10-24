@@ -12,6 +12,8 @@ OUTCOME_ORDER = ("PASS", "FAIL", "ERROR", "INCONCLUSIVE")
 
 def build(meta: dict, results: list[ScenarioResult]) -> dict:
     summary = {o: sum(r.outcome == o for r in results) for o in OUTCOME_ORDER}
+    # Failed SHOULD-level (advisory) checks: shown as warnings, never affect the verdict.
+    summary["warnings"] = sum(not c.passed and c.advisory for r in results for s in r.steps for c in s.checks)
     level = meta["profile"].upper() if summary["PASS"] == len(results) and results else None
     return {**meta, "conformant": level is not None, "summary": summary, "scenarios": [asdict(r) for r in results]}
 
@@ -71,9 +73,9 @@ def _scenario_html(s: dict) -> str:
 
 
 def _step_html(step: dict) -> str:
-    ok = all(c["passed"] for c in step["checks"])
+    ok = all(c["passed"] or c.get("advisory") for c in step["checks"])
     checks = "".join(
-        f"<li class='{'pass' if c['passed'] else 'fail'}'>{'✓' if c['passed'] else '✗'} {escape(c['name'])}"
+        f"<li class='{_check_class(c)}'>{_check_mark(c)} {escape(c['name'])}"
         f"{' — ' + escape(c['detail']) if c['detail'] else ''}</li>"
         for c in step["checks"]
     )
@@ -85,3 +87,11 @@ def _step_html(step: dict) -> str:
         f"</summary><ul>{checks}</ul><p>Request</p><pre>{escape(json.dumps(req, indent=2))}</pre>"
         f"<p>Response</p><pre>{escape(json.dumps(resp, indent=2))}</pre></details>"
     )
+
+
+def _check_class(check: dict) -> str:
+    return "pass" if check["passed"] else "inconclusive" if check.get("advisory") else "fail"
+
+
+def _check_mark(check: dict) -> str:
+    return "✓" if check["passed"] else "!" if check.get("advisory") else "✗"

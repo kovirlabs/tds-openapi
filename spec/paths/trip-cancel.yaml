@@ -50,3 +50,7 @@ post:
           examples:
             already_cancelled:
               externalValue: ../../examples/cancellation/03-cancel-again.response.json
+    "429":
+      $ref: ../components/responses.yaml#/TooManyRequests
+    "503":
+      $ref: ../components/responses.yaml#/ServiceUnavailable

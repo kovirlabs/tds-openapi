@@ -8,3 +8,11 @@ files:
     schema: https://tds-openapi.org/schemas/core/error.yaml
     operation: POST /trips
     status: 409
+  rate-limited.json:
+    schema: https://tds-openapi.org/schemas/core/error.yaml
+    operation: POST /trips
+    status: 429
+  temporarily-unavailable.json:
+    schema: https://tds-openapi.org/schemas/core/error.yaml
+    operation: POST /trips
+    status: 503

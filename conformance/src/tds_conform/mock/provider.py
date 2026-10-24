@@ -14,8 +14,10 @@ Transfer-profile behaviour (tenders, holds, milestones, custody) lives in
 import copy
 import hashlib
 import json
+import math
 import secrets
 import threading
+from collections import deque
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
@@ -25,7 +27,16 @@ from tds_conform.booking import booking_window_for, booking_window_problem, trip
 from tds_conform.data import schema_errors
 from tds_conform.eligibility import trip_eligibility_problems
 from tds_conform.events import new_standard_secret
-from tds_conform.mock.common import TERMINAL, Response, _invalid_state, _not_found, _ts, _window_problem, problem
+from tds_conform.mock.common import (
+    TERMINAL,
+    Response,
+    _invalid_state,
+    _not_found,
+    _ts,
+    _window_problem,
+    backpressure,
+    problem,
+)
 from tds_conform.mock.transfer import TransferMixin
 from tds_conform.profiles import profile_problems
 
@@ -60,6 +71,10 @@ class ProviderConfig:
     default_overlap_s: int = 86400
     max_overlap_s: int = 7 * 86400
     max_active_secrets: int = 5
+    # Back-pressure (SPEC.md §7.2): {"requests": N, "per_s": S} lets each requester make N
+    # authenticated calls per S seconds (sliding window); more get 429 RATE_LIMITED with
+    # Retry-After. None: no limit. 503s are switched on with /_sim/<id>/unavailable.
+    rate_limit: dict | None = None
 
 
 @dataclass
@@ -122,6 +137,8 @@ class Provider(TransferMixin):
     _holds: dict[tuple[str, str], dict] = field(default_factory=dict)
     _lock: threading.RLock = field(default_factory=threading.RLock)
     _last_event_at: datetime | None = None
+    _calls: dict[str, deque] = field(default_factory=dict)  # recent call times per requester (rate_limit)
+    _unavailable_until: datetime | None = None
 
     @property
     def provider_id(self) -> str:
@@ -216,6 +233,43 @@ class Provider(TransferMixin):
             for trip in list(self._trips.values()):
                 self._advance(trip)
             self._tick_transfer()
+
+    # --- back-pressure (SPEC.md §7.2) ------------------------------------------------
+
+    def admit(self, requester: str | None) -> Response | None:
+        """Whether to take this call: None, or the 503/429 to answer instead (nothing is processed,
+        so a retry with the same Idempotency-Key is a first attempt). `requester` is None for
+        unauthenticated calls (/health), which are never rate limited."""
+        with self._lock:
+            now = self.clock()
+            if self._unavailable_until is not None and now < self._unavailable_until:
+                wait = max(1, math.ceil((self._unavailable_until - now).total_seconds()))
+                return backpressure(
+                    503, "TEMPORARILY_UNAVAILABLE", "The provider cannot take requests for now. Retry later.", wait
+                )
+            limit = self.config.rate_limit
+            if requester is None or not limit:
+                return None
+            window = timedelta(seconds=limit["per_s"])
+            calls = self._calls.setdefault(requester, deque())
+            while calls and calls[0] <= now - window:
+                calls.popleft()
+            if len(calls) >= limit["requests"]:
+                wait = max(1, math.ceil((calls[0] + window - now).total_seconds()))
+                detail = f"More than {limit['requests']} requests in {limit['per_s']} s from this client."
+                return backpressure(429, "RATE_LIMITED", detail, wait)
+            calls.append(now)
+            return None
+
+    def sim_unavailable(self, body) -> Response:
+        """Answer every call with 503 TEMPORARILY_UNAVAILABLE for `for_s` seconds ({"for_s": 0} ends it)."""
+        for_s = (body or {}).get("for_s") if isinstance(body, dict) else None
+        if not isinstance(for_s, int) or isinstance(for_s, bool) or for_s < 0:
+            return problem(400, "INVALID_REQUEST", 'Send {"for_s": <seconds, 0 or more>}.')
+        with self._lock:
+            self._unavailable_until = self.clock() + timedelta(seconds=for_s) if for_s else None
+            until = self._unavailable_until
+            return 200, {"unavailable_until": _ts(until) if until else None}
 
     # --- idempotency ------------------------------------------------------------
 

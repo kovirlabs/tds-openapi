@@ -22,6 +22,10 @@ get:
       $ref: ../components/responses.yaml#/Unauthorized
     "404":
       $ref: ../components/responses.yaml#/NotFound
+    "429":
+      $ref: ../components/responses.yaml#/TooManyRequests
+    "503":
+      $ref: ../components/responses.yaml#/ServiceUnavailable
 patch:
   operationId: modifyTrip
   summary: Modify a trip
@@ -72,3 +76,7 @@ patch:
         application/problem+json:
           schema:
             $ref: ../../profiles/core/error.yaml
+    "429":
+      $ref: ../components/responses.yaml#/TooManyRequests
+    "503":
+      $ref: ../components/responses.yaml#/ServiceUnavailable

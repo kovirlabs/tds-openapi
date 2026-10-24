@@ -1,0 +1,12 @@
+RetryAfter:
+  description: >-
+    Back-pressure hint (RFC 9110 §10.2.3; SPEC.md §7.2): how long the client
+    should wait before retrying, as delta-seconds (e.g. `20`) or an HTTP-date
+    (e.g. `Sat, 24 Oct 2026 14:05:00 GMT`). Providers SHOULD send delta-seconds.
+    The Problem Details body repeats the wait as `retry_after_s`. Clients treat
+    it as a minimum: wait at least this long, then retry the same request with
+    the same Idempotency-Key. A value that cannot be parsed is ignored.
+  schema:
+    type: string
+    pattern: '^([0-9]+|(Mon|Tue|Wed|Thu|Fri|Sat|Sun), [0-9]{2} (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) [0-9]{4} [0-9]{2}:[0-9]{2}:[0-9]{2} GMT)$'
+  example: "20"

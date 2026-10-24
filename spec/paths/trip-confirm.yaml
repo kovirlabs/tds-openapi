@@ -31,3 +31,7 @@ post:
         application/problem+json:
           schema:
             $ref: ../../profiles/core/error.yaml
+    "429":
+      $ref: ../components/responses.yaml#/TooManyRequests
+    "503":
+      $ref: ../components/responses.yaml#/ServiceUnavailable

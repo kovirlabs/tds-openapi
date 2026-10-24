@@ -1,6 +1,6 @@
 # SPEC.md — tds-openapi
 
-Status: **Draft 3 (v0.7.0)** · Owner: Evan / Kovir Labs · Date: 2026-10-24
+Status: **Draft 3 (v0.7.1)** · Owner: Evan / Kovir Labs · Date: 2026-10-24
 
 Field lists below are **proposed**. Names for `profiles/core` must be reconciled with TDS 2020 (TCRP Report 210) in `mappings/tds-2020-crosswalk.md`; anything marked `TODO(crosswalk)` is unverified.
 
@@ -115,7 +115,7 @@ Why `RESIDENT_US_<county FIPS>`: funders restrict by county; the 5-digit code al
 `fare` (`amount`, `currency`); `funding_source` enum (`RIDER`, `SECTION_5310`, `SECTION_5311`, `MEDICAID_NEMT`, `AGENCY`, `SPONSOR`, `OTHER`); `sponsor_ref`; `authorization_ref`. TODO(crosswalk).
 
 ### 6.7 Error
-RFC 9457 Problem Details (`type`, `title`, `status`, `detail`, `instance`) + `code` enum: protocol errors (`INVALID_REQUEST`, `UNAUTHORIZED`, `NOT_FOUND`, `INVALID_STATE`, `IDEMPOTENCY_KEY_REUSED`, `TRIP_ID_IN_USE`) and booking refusals (e.g. `NO_CAPACITY`, `OUTSIDE_SERVICE_AREA`, `OUTSIDE_SERVICE_HOURS`, `ELIGIBILITY_REQUIRED`, `ELIGIBILITY_NOT_ACCEPTED` (§6.5.1), `OUTSIDE_BOOKING_WINDOW` (§7.1), `INVALID_WINDOW`, `UNSUPPORTED_REQUIREMENT`). With `OUTSIDE_BOOKING_WINDOW`, optional `bookable_from` (date-time, §7.1).
+RFC 9457 Problem Details (`type`, `title`, `status`, `detail`, `instance`) + `code` enum: protocol errors (`INVALID_REQUEST`, `UNAUTHORIZED`, `NOT_FOUND`, `INVALID_STATE`, `IDEMPOTENCY_KEY_REUSED`, `TRIP_ID_IN_USE`), back-pressure (`RATE_LIMITED`, `TEMPORARILY_UNAVAILABLE`, with optional `retry_after_s`, §7.2) and booking refusals (e.g. `NO_CAPACITY`, `OUTSIDE_SERVICE_AREA`, `OUTSIDE_SERVICE_HOURS`, `ELIGIBILITY_REQUIRED`, `ELIGIBILITY_NOT_ACCEPTED` (§6.5.1), `OUTSIDE_BOOKING_WINDOW` (§7.1), `INVALID_WINDOW`, `UNSUPPORTED_REQUIREMENT`). With `OUTSIDE_BOOKING_WINDOW`, optional `bookable_from` (date-time, §7.1).
 
 ## 7. Core operations (OpenAPI)
 | Method | Path | Purpose |
@@ -144,6 +144,16 @@ Providers accept requests only within a window before the trip: up to 14 days ah
 - A request outside the window is refused with `OUTSIDE_BOOKING_WINDOW` (422; a rejected tender's `reason`; a `PATCH` refusal leaves the previous terms), checked after request validation and `INVALID_WINDOW` and before any other refusal, so a requester knows that only timing is wrong. When the request came too early the Problem Details carry `bookable_from` (trip time − `max_advance_s`). As with any 422 on `POST /trips` the trip is `REJECTED`; the later request is a new trip with a new `trip_id`.
 - `tds_conform.booking` (`booking_window_for`, `trip_time`, `opens_at`, `closes_at`, `booking_window_problem`) implements these rules for requesters and providers; conformance scenario `booking_window`.
 
+### 7.2 Back-pressure (429, 503, `Retry-After`)
+A provider that is overloaded, in maintenance, or limiting how fast one client may call says so and says how long to wait, so a requester backs off instead of retrying on its own schedule:
+
+- **429** `RATE_LIMITED`: this client is over the provider's limit. **503** `TEMPORARILY_UNAVAILABLE`: the provider cannot take requests from anyone for now. Every operation may answer either; nothing was processed (no trip created, no state changed, the `Idempotency-Key` not consumed).
+- The provider SHOULD send the wait both as the HTTP `Retry-After` header (RFC 9110 §10.2.3; delta-seconds, which providers SHOULD use, or an HTTP-date) and as `retry_after_s` (integer seconds) in the Problem Details, for clients that cannot read headers. When both are present they SHOULD agree; a client that sees both uses the larger. `retry_after_s` MAY also accompany any other 5xx.
+- The requester SHOULD wait at least that long, then repeat the **same request with the same `Idempotency-Key`**, so a request that did get through is never applied twice. The hint is a minimum: a client may wait longer (its own backoff), never shorter. A `Retry-After` that cannot be parsed is ignored. Without a hint the client uses its own backoff.
+- A 429/503 is never a refusal: it says nothing about whether the provider can serve the trip, and the trip is not `REJECTED`. A requester does not offer the trip to another provider just because of back-pressure.
+- Webhook receivers (§9) may answer a delivery with 429 or 503 and `Retry-After` as well; the sender SHOULD then make its next attempt no earlier than that (keeping its own backoff when that is longer, and its own upper limit).
+- `tds_conform.backpressure` (`retry_after_s(headers, body)`, `parse_retry_after`, `backpressure_problems`) reads and checks the hint. `tds-mock` answers 429 under `ProviderConfig.rate_limit` and 503 after `POST /_sim/<provider_id>/unavailable {"for_s": …}`, both with the header and the field; its webhook sender honours a receiver's `Retry-After`. The kit retries an unexpected 429/503 the same way and reports a missing or inconsistent hint as a warning (§13).
+
 ## 8. State machines
 
 ### 8.1 Trip status
@@ -162,7 +172,7 @@ Transfer event types: `TENDER_RESPONSE`, `HOLD_RESPONSE`, `MILESTONE`, `ETA_UPDA
 Broker event types: `EXCEPTION_RAISED`, `EXCEPTION_RESOLVED` (§10.6), sent by a broker to its own subscribers (coordinator tools, agency systems), never by providers; `provider_id` is then the broker's id.
 - **Completeness.** Every state change has a typed event: trip status (`TRIP_STATUS_CHANGED`, all statuses), schedule and vehicle (`TRIP_SCHEDULED`), cancellation by either side (`TRIP_CANCELLED`), tender and hold outcomes, milestones, ETA bands, custody, and exceptions. The example validator fails unless every event type and every state those events report appears in an example event stream.
 - Providers emit an event for **every** change, including changes the requester already saw in a synchronous response, so a receiver's event log is complete.
-- Delivery: one event per HTTPS POST to the subscription's `callback_url`; at least once, retries with exponential backoff; receivers return 2xx and dedupe on (`provider_id`, `event_id`); order by `occurred_at`. A sender keeps `event_id` unique among its own events and repeats it on every retry. Plain `http://` callbacks are allowed only for loopback addresses (development and the conformance kit).
+- Delivery: one event per HTTPS POST to the subscription's `callback_url`; at least once, retries with exponential backoff (no sooner than a receiver's `Retry-After` on 429/503, §7.2); receivers return 2xx and dedupe on (`provider_id`, `event_id`); order by `occurred_at`. A sender keeps `event_id` unique among its own events and repeats it on every retry. Plain `http://` callbacks are allowed only for loopback addresses (development and the conformance kit).
 
 ### 9.1 CloudEvents rendering (optional)
 A subscriber that routes events through CloudEvents tooling (event buses, integration platforms) asks for `cloudevents: true` in `POST /subscriptions`. The provider answers `cloudevents: true` if it will add the headers, else `false`; the subscription is created either way. Every delivery to such a subscription carries CloudEvents 1.0 **binary content mode** headers (CloudEvents HTTP protocol binding). The body stays the TDS event byte for byte and `Content-Type` stays `application/json`, so receivers that ignore the headers lose nothing. A provider MAY add the headers to any subscription.
@@ -314,6 +324,7 @@ A subscriber gets a new secret without a second, out-of-band hand-over. Optional
 - Synchronous (201) and asynchronous (202 → later `OFFERED`/`REJECTED`) decisions are equally conformant. Timing checks use the provider's declared `typical_response_s`, not a fixed number of seconds; a broker-proxied provider is tested the same way (the kit may stand in for its staff).
 - `secret_rotation` checks only providers that declare `secret_rotation: true` (others pass with a note): the new value is returned once and replayed under the same key, the old secret expires within `overlap_s`, listings carry no values, the newest secret cannot be retired, and, with a webhook receiver, deliveries during the overlap carry `v1` entries for both secrets and none for a retired one.
 - Scenarios that need a vehicle to move (`milestone_sequence`, `custody_required`, `eta_heartbeat_staleness`) cannot be triggered on a live provider; they are checked on a captured event log (`tds-conform check-events`). `webhook_delivery`, `tender_deadline` and `hold_request` run live against any endpoint.
+- Back-pressure (§7.2) has no scenario of its own, since a live provider cannot be made to throttle on demand. Whenever any scenario gets an unexpected 429 or 503, the kit checks the hint as a SHOULD (`Retry-After` present and parseable, `retry_after_s` present and in agreement, the matching `code`) and records a failure as a **warning**, which does not affect the verdict; it then waits and repeats the request with the same `Idempotency-Key` (up to 3 times). A wait longer than 30 s, or a provider still busy after the retries, makes the scenario INCONCLUSIVE. The example validator requires every operation to document 429 and 503 with `Retry-After`.
 - CSV batch files (§9.2) are checked with `tds-conform check-csv`; it is a file check, not a conformance level.
 - Fuzzing (`tds-conform fuzz`, schemathesis) complements the scenarios: generated valid and invalid requests to every operation must get documented status codes, media types and schema-valid bodies, never a 5xx. It is a diagnostic, not part of a level.
 - `tender_deadline` tests the provider side: respond by `respond_by`, or the tender becomes `EXPIRED`. Conformance never measures how fast a broker or a human approves a fallback tender; it checks only that a fallback tender, when sent, follows the published policy.
@@ -333,7 +344,7 @@ A subscriber gets a new secret without a second, out-of-band hand-over. Optional
 | **v0.4** | Transfer profile (§10) draft; examples `two-provider-transfer`, `late-first-leg-hold`, `tender-expired-retender`, `supervised-rider-custody-handoff` (v0.4.1 adds `missed-connection-reprotect`, v0.5 `refusals-and-failures`); mock simulating two providers; ThroughRide adapters pointed at mock. **SE Michigan pilot demo target.** |
 | **v0.5** | Settlement split (§10.8); paratransit and NEMT drafts with conformance levels (§11); AsyncAPI completeness incl. broker exception events (§9); `tds-conform fuzz`; `docs/for-agencies.md` RFP language. v0.5.1 adds exception type `ESCALATED`; v0.5.2 eligibility verification methods and fact codes (§6.5.1); v0.5.3 rider-category fact codes (§6.5.2) and booking windows (§7.1). |
 | **v0.6** | CloudEvents binary-mode rendering of deliveries (§9.1); Standard Webhooks signature headers, `X-TDS-*` deprecated (§12); CSV profile for batch providers (§9.2) with `tds-conform check-csv`. |
-| **v0.7** | Subscription secret rotation over the API (§12.1) with conformance scenario `secret_rotation`. |
+| **v0.7** | Subscription secret rotation over the API (§12.1) with conformance scenario `secret_rotation`. v0.7.1 adds back-pressure: 429/503 with `Retry-After` and `retry_after_s` (§7.2). |
 | v0.8+ | Settlement exchange (API operation or events, undecided), profile vocabularies checked against TDS 2020 and payers, outreach to MobilityData/OMF. |
 
 ## 16. Open questions

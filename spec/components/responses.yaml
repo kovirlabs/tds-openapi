@@ -22,3 +22,28 @@ SubscriptionNotFound:
     application/problem+json:
       schema:
         $ref: ../../profiles/core/error.yaml
+TooManyRequests:
+  description: >-
+    Back-pressure (SPEC.md §7.2): this client is sending too many requests
+    (code RATE_LIMITED). Nothing was processed. Retry the same request with the
+    same Idempotency-Key after the wait in Retry-After / retry_after_s.
+  headers:
+    Retry-After:
+      $ref: ./headers.yaml#/RetryAfter
+  content:
+    application/problem+json:
+      schema:
+        $ref: ../../profiles/core/error.yaml
+ServiceUnavailable:
+  description: >-
+    Back-pressure (SPEC.md §7.2): the provider cannot take requests for now,
+    e.g. overload or maintenance (code TEMPORARILY_UNAVAILABLE). Nothing was
+    processed. Retry the same request with the same Idempotency-Key after the
+    wait in Retry-After / retry_after_s.
+  headers:
+    Retry-After:
+      $ref: ./headers.yaml#/RetryAfter
+  content:
+    application/problem+json:
+      schema:
+        $ref: ../../profiles/core/error.yaml
