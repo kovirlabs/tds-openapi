@@ -24,3 +24,7 @@ get:
             booking_window:
               summary: Books 14 days ahead with 24 hours' notice; paratransit next day only
               externalValue: ../../examples/booking-window/01-health.json
+    "429":
+      $ref: ../components/responses.yaml#/TooManyRequests
+    "503":
+      $ref: ../components/responses.yaml#/ServiceUnavailable

@@ -4,7 +4,9 @@ URLs:
   /p/<provider_id>/...      the provider API of one provider (its base URL)
   /...                      the first (default) provider, for single-provider use
   /_sim/...                 simulation controls: drive legs through milestones, delays,
-                            no-shows and failures; change answer policies; read the event log
+                            no-shows and failures; change answer policies (incl. rate_limit);
+                            answer 503 for a while (POST /_sim/<id>/unavailable {"for_s": 30});
+                            read the event log
 
 Authentication is deliberately trivial: the bearer token *is* the requester id
 (`Authorization: Bearer throughride-demo`), so a requester can act as several
@@ -16,6 +18,7 @@ import re
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlsplit
 
+from tds_conform.backpressure import BACKPRESSURE_CODES, retry_after_header
 from tds_conform.mock.network import Network
 from tds_conform.mock.provider import problem
 
@@ -80,12 +83,15 @@ def make_handler(network: Network) -> type[BaseHTTPRequestHandler]:
                 return self._send(*problem(404, "NOT_FOUND", f"No route {method} {path}."))
             name, needs_auth, keyed, with_body, match = route
 
-            args = []
+            args, requester = [], None
             if needs_auth:
                 auth = self.headers.get("Authorization", "")
                 if not auth.startswith("Bearer ") or not auth[7:].strip():
                     return self._send(*problem(401, "UNAUTHORIZED", "Send Authorization: Bearer <requester_id>."))
-                args.append(auth[7:].strip())
+                requester = auth[7:].strip()
+                args.append(requester)
+            if refused := provider.admit(requester):  # back-pressure, before anything is processed
+                return self._send(*refused)
             if keyed:
                 args.append(self.headers.get("Idempotency-Key"))
             args.extend(match.groupdict().values())
@@ -113,6 +119,8 @@ def make_handler(network: Network) -> type[BaseHTTPRequestHandler]:
                 return provider.sim_events(query.get("trip_id", [None])[0])
             if method == "POST" and rest == "policy":
                 return provider.sim_policy(body)
+            if method == "POST" and rest == "unavailable":
+                return provider.sim_unavailable(body)
             if method == "POST" and (m := re.fullmatch(SIM_TRIP + r"/(?P<action>[a-z-]+)", path)):
                 trip_id, action = m["trip_id"], m["action"]
                 if action == "advance":
@@ -137,6 +145,9 @@ def make_handler(network: Network) -> type[BaseHTTPRequestHandler]:
             self.send_response(status)
             self.send_header("Content-Type", "application/problem+json" if status >= 400 else "application/json")
             self.send_header("Content-Length", str(len(data)))
+            if status in BACKPRESSURE_CODES and isinstance(body.get("retry_after_s"), int):
+                for name, value in retry_after_header(body["retry_after_s"]).items():
+                    self.send_header(name, value)
             self.end_headers()
             self.wfile.write(data)
 

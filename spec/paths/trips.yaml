@@ -92,3 +92,35 @@ post:
             too_little_notice:
               summary: Too late for the provider's minimum notice; no retry hint
               externalValue: ../../examples/booking-window/03-too-little-notice.response.json
+    "429":
+      description: >-
+        Back-pressure (SPEC.md §7.2): too many requests from this client (code
+        RATE_LIMITED). The trip was not created. Retry the same request with the
+        same Idempotency-Key after Retry-After / retry_after_s.
+      headers:
+        Retry-After:
+          $ref: ../components/headers.yaml#/RetryAfter
+      content:
+        application/problem+json:
+          schema:
+            $ref: ../../profiles/core/error.yaml
+          examples:
+            rate_limited:
+              summary: Over the provider's per-client limit; retry in 20 s
+              externalValue: ../../examples/errors/rate-limited.json
+    "503":
+      description: >-
+        Back-pressure (SPEC.md §7.2): the provider cannot take requests for now
+        (code TEMPORARILY_UNAVAILABLE). The trip was not created. Retry the same
+        request with the same Idempotency-Key after Retry-After / retry_after_s.
+      headers:
+        Retry-After:
+          $ref: ../components/headers.yaml#/RetryAfter
+      content:
+        application/problem+json:
+          schema:
+            $ref: ../../profiles/core/error.yaml
+          examples:
+            temporarily_unavailable:
+              summary: Scheduling system busy (nightly optimisation run); retry in 120 s
+              externalValue: ../../examples/errors/temporarily-unavailable.json

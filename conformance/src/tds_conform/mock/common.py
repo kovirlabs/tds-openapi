@@ -8,9 +8,24 @@ Response = tuple[int, dict]
 
 
 def problem(status: int, code: str, detail: str) -> Response:
-    titles = {400: "Invalid request", 401: "Unauthorized", 404: "Not found", 409: "Conflict", 422: "Refused"}
+    titles = {
+        400: "Invalid request",
+        401: "Unauthorized",
+        404: "Not found",
+        409: "Conflict",
+        422: "Refused",
+        429: "Too many requests",
+        503: "Temporarily unavailable",
+    }
     title = titles.get(status, "Error")
     return status, {"type": "about:blank", "title": title, "status": status, "detail": detail, "code": code}
+
+
+def backpressure(status: int, code: str, detail: str, retry_after_s: int) -> Response:
+    """A 429/503 Problem Details with the wait as retry_after_s (SPEC.md §7.2); the HTTP layer
+    copies it into the Retry-After header."""
+    status, body = problem(status, code, detail)
+    return status, body | {"retry_after_s": retry_after_s}
 
 
 def _not_found(kind: str, ident: str) -> Response:

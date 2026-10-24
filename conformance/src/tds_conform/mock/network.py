@@ -11,16 +11,26 @@ from datetime import UTC, datetime
 
 import httpx
 
+from tds_conform.backpressure import BACKPRESSURE_CODES, retry_after_s
 from tds_conform.cloudevents import cloudevents_headers
 from tds_conform.events import sign, sign_standard
 from tds_conform.mock.provider import Provider, ProviderConfig
 
 
 class Dispatcher:
-    """At-least-once webhook delivery with exponential backoff (SPEC.md §9)."""
+    """At-least-once webhook delivery with exponential backoff (SPEC.md §9). A receiver's 429 or
+    503 with Retry-After pushes the next attempt back to at least that wait (SPEC.md §7.2), up
+    to `max_retry_after_s`."""
 
-    def __init__(self, retry_base_s: float = 1.0, max_attempts: int = 6, timeout_s: float = 5.0):
+    def __init__(
+        self,
+        retry_base_s: float = 1.0,
+        max_attempts: int = 6,
+        timeout_s: float = 5.0,
+        max_retry_after_s: float = 3600.0,
+    ):
         self.retry_base_s, self.max_attempts, self.timeout_s = retry_base_s, max_attempts, timeout_s
+        self.max_retry_after_s = max_retry_after_s
         self.log: list[dict] = []
         self._queue: list = []
         self._seq = itertools.count()
@@ -54,25 +64,31 @@ class Dispatcher:
                     if self._stopped:
                         return
                     due, _, attempt, sub, body, event_id, secrets = heapq.heappop(self._queue)
-                outcome = self._send(client, sub, body, secrets() if secrets else [sub["signing_secret"]])
-                self.log.append(
-                    {
-                        "event_id": event_id,
-                        "subscription_id": sub["subscription_id"],
-                        "attempt": attempt,
-                        "outcome": outcome,
-                        "at": datetime.now(UTC).isoformat(timespec="seconds"),
-                    }
-                )
+                outcome, hint = self._send(client, sub, body, secrets() if secrets else [sub["signing_secret"]])
+                entry = {
+                    "event_id": event_id,
+                    "subscription_id": sub["subscription_id"],
+                    "attempt": attempt,
+                    "outcome": outcome,
+                    "at": datetime.now(UTC).isoformat(timespec="seconds"),
+                }
+                if hint is not None:
+                    entry["retry_after_s"] = hint
+                self.log.append(entry)
                 if not str(outcome).startswith("2") and attempt < self.max_attempts:
-                    retry_at = time.monotonic() + self.retry_base_s * 2 ** (attempt - 1)
+                    delay = self.retry_base_s * 2 ** (attempt - 1)
+                    if hint is not None:
+                        delay = max(delay, min(hint, self.max_retry_after_s))
+                    retry_at = time.monotonic() + delay
                     with self._cv:
                         job = (retry_at, next(self._seq), attempt + 1, sub, body, event_id, secrets)
                         heapq.heappush(self._queue, job)
 
     @staticmethod
-    def _send(client: httpx.Client, sub: dict, body: bytes, secrets: list[str]) -> str:
-        """One attempt: X-TDS-Signature with the newest secret, a v1 entry per active secret."""
+    def _send(client: httpx.Client, sub: dict, body: bytes, secrets: list[str]) -> tuple[str, int | None]:
+        """One attempt: X-TDS-Signature with the newest secret, a v1 entry per active secret.
+
+        Returns the outcome (status code or error) and, for a 429/503, the receiver's Retry-After."""
         event = json.loads(body)
         sent_at = int(time.time())
         headers = {
@@ -83,9 +99,11 @@ class Dispatcher:
         if sub.get("cloudevents"):
             headers.update(cloudevents_headers(event))
         try:
-            return str(client.post(sub["callback_url"], content=body, headers=headers).status_code)
+            resp = client.post(sub["callback_url"], content=body, headers=headers)
         except httpx.HTTPError as exc:
-            return f"error: {type(exc).__name__}"
+            return f"error: {type(exc).__name__}", None
+        hint = retry_after_s(resp.headers) if resp.status_code in BACKPRESSURE_CODES else None
+        return str(resp.status_code), hint
 
 
 class Network:

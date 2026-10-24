@@ -52,3 +52,7 @@ post:
       $ref: ../components/responses.yaml#/BadRequest
     "401":
       $ref: ../components/responses.yaml#/Unauthorized
+    "429":
+      $ref: ../components/responses.yaml#/TooManyRequests
+    "503":
+      $ref: ../components/responses.yaml#/ServiceUnavailable

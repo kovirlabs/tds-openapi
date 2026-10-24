@@ -245,3 +245,26 @@ def test_webhook_delivery_example_checks(tmp_path: Path, change, problem):
 
 def test_webhook_delivery_example_is_clean(tmp_path: Path):
     assert _tampered_delivery(tmp_path, lambda d: None) == []
+
+
+def test_backpressure_check_flags_undocumented_429_and_bad_examples(tmp_path: Path):
+    spec = tmp_path / "openapi.yaml"
+    spec.write_text(
+        "openapi: 3.1.0\npaths:\n  /x:\n    get:\n      responses:\n        '429':\n          description: no header\n"
+    )
+    scenario = tmp_path / "s"
+    scenario.mkdir()
+    (scenario / "busy.json").write_text('{"code": "RATE_LIMITED", "status": 503}')
+    manifests = {scenario: {"busy.json": {"operation": "GET /x", "status": 503}}}
+    problems = ve.check_backpressure(manifests, spec)
+    assert "GET /x 429: no Retry-After header" in problems
+    assert "GET /x: no 503 response" in problems
+    assert any(p.endswith("code is not TEMPORARILY_UNAVAILABLE") for p in problems)
+    assert any(p.endswith("no retry_after_s") for p in problems)
+
+
+def test_error_retry_after_s_is_a_non_negative_integer():
+    error = {"title": "Busy", "status": 503, "code": "TEMPORARILY_UNAVAILABLE"}
+    assert not errors("error.yaml", error | {"retry_after_s": 30})
+    assert errors("error.yaml", error | {"retry_after_s": -1})
+    assert errors("error.yaml", error | {"retry_after_s": "30"})

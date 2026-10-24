@@ -88,6 +88,7 @@ cite; don't paste definitions (reuse terms not yet confirmed, see SPEC.md §16 Q
 | `error.instance` | TODO(crosswalk) | | TODO | RFC 9457 field |
 | `error.code` | TODO(crosswalk) | | TODO |  |
 | `error.bookable_from` | TODO(crosswalk) | | TODO | Protocol field (retry hint on OUTSIDE_BOOKING_WINDOW); likely no TDS equivalent |
+| `error.retry_after_s` | TODO(crosswalk) | | TODO | Protocol field (back-pressure hint, mirrors the HTTP Retry-After header); likely no TDS equivalent |
 
 ### TripCancelledEvent (`profiles/core/event-trip-cancelled.yaml`)
 
