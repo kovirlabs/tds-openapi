@@ -399,3 +399,49 @@ as text (`tds_conform.examples.load_example` already does).
   adapter-local (Latin-1 fallback, other header names); the TDS profile is their default,
   and `json_to_row` / `row_to_json` can do the mapping for that default. A REJECTED answer is a
   rejection reason for the coordinator; offering the leg elsewhere stays a proposal (rule 1).
+
+
+## v0.7.0 released (2026-10-24, local tag `v0.7.0`)
+
+Answers queue item TQ-19 (rotate a subscription's signing secret over the API), the follow-up
+noted under v0.6.0. Re-vendor from tag `v0.7.0` (`binding_version()` = `0.7.0`; generated event
+streams change only in `schema_version`; generated subscribe responses gain
+`signing_secret_id`). New example folder `secret-rotation/`.
+
+**Secret rotation (SPEC.md §12.1).** Optional for providers, additive:
+- A provider that supports it says `secret_rotation: true` on `/health` and returns
+  `signing_secret_id` with each new subscription.
+- `POST /subscriptions/{subscription_id}/secrets` (`Idempotency-Key`; optional body
+  `{"overlap_s": …}`, 0 to 2592000, default SHOULD be 86400) answers 201
+  `{subscription_id, secrets: [...]}`, newest first. Only the first entry carries
+  `signing_secret`, and only in this response (or a replay under the same key). Older secrets
+  get `expires_at` = now + overlap (never lengthened); `overlap_s: 0` cuts them off at once.
+  409 `INVALID_STATE` when the provider's limit of active secrets is reached.
+- `GET /subscriptions/{subscription_id}/secrets` lists active secrets (`secret_id`,
+  `created_at`, `expires_at`), never values.
+- `DELETE /subscriptions/{subscription_id}/secrets/{secret_id}` (`Idempotency-Key`) retires an
+  older secret now (200, the secret without its value); the newest cannot be retired (409
+  `INVALID_STATE`).
+- While secrets overlap, each delivery attempt carries one `webhook-signature` `v1` entry per
+  active secret (newest first) and `X-TDS-Signature` with the newest; nothing is signed with an
+  expired secret, retries included. Receivers verify with every secret they hold
+  (`verify_any(secrets, …)` already takes a list).
+- Scopes: `events:subscribe`; another requester's subscription is `NOT_FOUND`.
+- `tds-mock` implements it (`ProviderConfig.secret_rotation`, `default_overlap_s`,
+  `max_overlap_s`, `max_active_secrets`); core scenario `secret_rotation` checks providers that
+  declare it.
+- **For ThroughRide:**
+  - Inbound (`apps/providers`, TDS subscriptions to providers): keep a list of secrets per
+    subscription, not one `signing_secret` field. Each needs `secret_id`, the encrypted value,
+    and `expires_at`. Store `signing_secret_id` from the subscribe answer. Add a rotate action
+    (admin or a scheduled task, idempotent per subscription and attempt) for providers whose
+    `/health` says `secret_rotation: true`: call `POST …/secrets`, store the new secret, verify
+    inbound deliveries with all unexpired secrets (`verify_any`), then `DELETE` the old one
+    once a delivery has verified with the new one, or let it expire. Providers without the
+    capability keep the out-of-band path.
+  - Outbound (`apps/webhooks`, ThroughRide as sender): if partners manage their endpoints
+    over an API, the same operations apply to `WebhookEndpoint`: several secrets with expiry,
+    sign each attempt with every active one (`sign_standard([newest, *older], …)`, and `sign`
+    with the newest). If endpoints are only managed in the UI, a "rotate secret" button with
+    an overlap, showing the new value once, gives partners the same result.
+  - The TDS fake (`tests/fakes/tds.py`) can replay `secret-rotation/` for these paths.

@@ -4,6 +4,13 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-10-24
+
+Rotate a webhook subscription's signing secret over the API, so a second secret need not be
+handed over out of band. Additive and optional for providers (declared on `/health`); minor
+version because it adds operations. Generated event streams change only in `schema_version`;
+generated subscribe responses gain `signing_secret_id`.
+
 ### Added
 - Subscription secret rotation over the API (SPEC.md §12.1), optional for providers, declared
   with `secret_rotation: true` on `/health`:
