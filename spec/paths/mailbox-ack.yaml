@@ -1,0 +1,39 @@
+parameters:
+  - $ref: ../components/parameters.yaml#/MailboxFileName
+post:
+  operationId: ackMailboxFile
+  summary: Acknowledge a request file
+  description: >-
+    The agent has the file safely stored; it leaves the listing (SPEC.md
+    §9.4). Idempotent: acknowledging again returns 200 with the first
+    acknowledgement's time. An agent that crashes between download and
+    acknowledgement sees the file listed again and acknowledges it then. No
+    request body and no Idempotency-Key.
+  tags: [Mailbox]
+  parameters:
+    - $ref: ../components/parameters.yaml#/RelayAgent
+  responses:
+    "200":
+      description: The file is acknowledged.
+      content:
+        application/json:
+          schema:
+            $ref: ../../profiles/csv/mailbox-ack.yaml
+          examples:
+            acked:
+              externalValue: ../../examples/relay-mailbox/03-ack.response.json
+    "401":
+      $ref: ../components/responses.yaml#/MailboxUnauthorized
+    "404":
+      description: >-
+        No request file with this name in this mailbox (code NOT_FOUND), for
+        example one already deleted under the requester's retention rules. An
+        agent that holds the file keeps it.
+      content:
+        application/problem+json:
+          schema:
+            $ref: ../../profiles/core/error.yaml
+    "429":
+      $ref: ../components/responses.yaml#/MailboxTooManyRequests
+    "503":
+      $ref: ../components/responses.yaml#/MailboxUnavailable

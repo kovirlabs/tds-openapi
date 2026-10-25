@@ -39,6 +39,13 @@ RESPONSE_SCHEMAS = {
     ("GET /subscriptions/{subscription_id}/secrets", 200): "core/subscription-secret-list",
     ("DELETE /subscriptions/{subscription_id}/secrets/{secret_id}", 200): "core/subscription-secret",
 }
+# The relay mailbox (SPEC.md §9.4, spec/relay-mailbox.yaml), served by a requester; tests/ checks it too.
+MAILBOX_RESPONSE_SCHEMAS = {
+    ("GET /outbox", 200): "csv/mailbox-listing",
+    ("POST /ack/{file_name}", 200): "csv/mailbox-ack",
+    ("PUT /inbox/{file_name}", 201): "csv/mailbox-receipt",
+    ("PUT /inbox/{file_name}", 200): "csv/mailbox-receipt",
+}
 REQUEST_SCHEMAS = {
     "POST /trips": "core/trip-request",
     "PATCH /trips/{trip_id}": "core/trip-modification",
@@ -123,6 +130,9 @@ class Settings:
     backpressure_retries: int = 3
     max_backpressure_wait_s: float = 30.0
     backpressure_default_wait_s: float = 2.0  # when a 429/503 carries no hint
+    # Relay mailbox (SPEC.md §9.4): acknowledge listed request files. Off by default, because an
+    # acknowledged file leaves the listing and the provider's real agent would not see it.
+    take_files: bool = False
 
 
 class Context:
@@ -130,6 +140,7 @@ class Context:
         self.settings, self.result, self.client = settings, result, client
         self.typical_response_s = 0
         self.health: dict = {}  # the provider's /health body, read once per run
+        self.last: httpx.Response | None = None  # the last response, for raw bytes and headers
 
     def call(
         self,
@@ -141,16 +152,19 @@ class Context:
         body=None,
         key=AUTO_KEY,
         auth: bool = True,
+        content: bytes | None = None,
+        headers: dict[str, str] | None = None,
         **params: str,
     ) -> Step:
         """Make one request, record it, and check status, media type and response schema.
 
         A 429 or 503 the scenario does not expect is back-pressure (SPEC.md §7.2): its hint is
         checked (advisory), and the same request is sent again with the same Idempotency-Key once
-        the provider's Retry-After has passed.
+        the provider's Retry-After has passed. `content` sends raw bytes (a CSV upload) instead of
+        a JSON `body`; `headers` adds request headers.
         """
         path = route.format(**params)
-        headers = {}
+        headers = dict(headers or {})
         if auth:
             headers["Authorization"] = f"Bearer {self.settings.token}"
         if key is AUTO_KEY and method in ("POST", "PATCH", "DELETE"):
@@ -158,7 +172,7 @@ class Context:
         if key not in (AUTO_KEY, None):
             headers["Idempotency-Key"] = key
         for attempt in range(self.settings.backpressure_retries + 1):
-            step, resp = self._send(label, method, path, headers, body)
+            step, resp = self._send(label, method, path, headers, body, content)
             if resp.status_code not in BACKPRESSURE_CODES or resp.status_code in expect:
                 break
             self._backpressure(step, resp, last=attempt == self.settings.backpressure_retries)
@@ -171,7 +185,8 @@ class Context:
             )
             schema = "core/error"
         else:
-            schema = RESPONSE_SCHEMAS.get((f"{method} {route}", resp.status_code))
+            op = (f"{method} {route}", resp.status_code)
+            schema = RESPONSE_SCHEMAS.get(op) or MAILBOX_RESPONSE_SCHEMAS.get(op)
         if schema:
             errors = schema_errors(step.body, schema)
             step.check(not errors, f"body matches {schema}.yaml", "; ".join(errors[:5]))
@@ -179,23 +194,32 @@ class Context:
             self._advise_backpressure(step, resp)
         return step
 
-    def _send(self, label: str, method: str, path: str, headers: dict, body) -> tuple[Step, httpx.Response]:
-        step = Step(
-            label, {"method": method, "path": path, "idempotency_key": headers.get("Idempotency-Key"), "body": body}
-        )
+    def _send(
+        self, label: str, method: str, path: str, headers: dict, body, content: bytes | None = None
+    ) -> tuple[Step, httpx.Response]:
+        request = {"method": method, "path": path, "idempotency_key": headers.get("Idempotency-Key"), "body": body}
+        if content is not None:
+            request["content_bytes"] = len(content)
+        step = Step(label, request)
         self.result.steps.append(step)
         try:
-            resp = self.client.request(method, path, headers=headers, json=body)
+            if content is not None:
+                resp = self.client.request(method, path, headers=headers, content=content)
+            else:
+                resp = self.client.request(method, path, headers=headers, json=body)
         except httpx.HTTPError as exc:
             step.require(False, "request completes", f"{type(exc).__name__}: {exc}")
+        self.last = resp
+        media = resp.headers.get("content-type", "").split(";")[0].strip()
         try:
-            parsed = resp.json()
+            parsed = resp.text if media == "text/csv" else resp.json()
         except ValueError:
             parsed = resp.text
-        media = resp.headers.get("content-type", "").split(";")[0].strip()
         step.response = {"status": resp.status_code, "content_type": media, "body": parsed}
         if retry_after := resp.headers.get("retry-after"):
             step.response["retry_after"] = retry_after
+        if digest := resp.headers.get("x-relay-sha256"):
+            step.response["x_relay_sha256"] = digest
         return step, resp
 
     def _advise_backpressure(self, step: Step, resp: httpx.Response) -> None:

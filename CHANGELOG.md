@@ -4,6 +4,45 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+- Relay mailbox for CSV profile files (SPEC.md §9.4, TQ-22), for providers whose scheduler
+  can only call out (behind a firewall, or in Google Apps Script). A new OpenAPI document,
+  `spec/relay-mailbox.yaml` (bundled to `dist/relay-mailbox.yaml` and linted), served by the
+  **requester**; the provider's agent is the client. `Authorization: Bearer <token>`, the
+  token naming one provider's mailbox; optional `X-Relay-Agent`. No `Idempotency-Key`: every
+  call is safe to repeat as it stands.
+  - `GET /outbox`: request files not yet acknowledged, oldest first (`csv/mailbox-listing`
+    with `provider_id`, `poll_interval_s`, optional `max_file_bytes`; entries
+    `csv/mailbox-file`: `name`, `size`, `sha256`, `created_at`).
+  - `GET /outbox/{file_name}`: the bytes (`text/csv`) with `X-Relay-SHA256`.
+  - `POST /ack/{file_name}`: idempotent, the first `acked_at` kept (`csv/mailbox-ack`).
+  - `PUT /inbox/{file_name}`: an answers or statuses file, write-once by name: 201 stored,
+    200 the same bytes again, 409 `FILE_NAME_TAKEN` for other bytes (`csv/mailbox-receipt`
+    with `stored`, `sha256`, `size`, `received_at`).
+  - Error codes `INVALID_FILE_NAME` (400), `EMPTY_FILE` (400), `FILE_TOO_LARGE` (413),
+    `FILE_NAME_TAKEN` (409) in `core/error`; unknown files are `NOT_FOUND` (404); 429/503
+    with `Retry-After` and `retry_after_s` as in §7.2.
+- Example `relay-mailbox`: list, download, acknowledge, upload, retry, and every refusal. The
+  validator checks that a listing's sizes and hashes match the CSV files it names, and wires
+  examples into both OpenAPI documents.
+- `tds-mock` serves a mailbox per provider at `/mailbox` (token = provider id), with
+  `GET /_sim/mailbox/<provider_id>` (last poll, acknowledgements, uploads with their text),
+  `POST /_sim/mailbox/<provider_id>/outbox` (queue a request file; default the example) and
+  `POST /_sim/mailbox/<provider_id>/unavailable`. `Network(..., mailboxes=[...])` takes others.
+- `tds-conform mailbox --url <mailbox base URL> --token <token> [--take-files]` runs the
+  scenarios `relay_mailbox_upload` and `relay_mailbox_download` for the new **Relay mailbox**
+  level (a requester's, not a provider's). Without a waiting file, or without `--take-files`
+  for the acknowledgement, the download scenario is INCONCLUSIVE. Reports never copy file
+  contents. `tds_conform.mailbox` holds the name rules (`inbox_name_problem`,
+  `is_outbox_name`) and `sha256_hex`.
+- The kit's `Context.call` takes `content` (raw bytes) and `headers`; `Settings.take_files`.
+
+### Changed
+- CSV profile file names (SPEC.md §9.2): the optional suffix after the time is now a tag of
+  1 to 40 letters, digits or `-` (`tds_answers_20261104T204000Z_1a2b3c4d.csv`), not only a
+  number, so writers that may write twice in one second can add a random tag.
+  `tds_conform.csvfile.FILE_NAME` accepts it; every name valid before is still valid.
+
 ## [0.8.0] - 2026-10-25
 
 Change or end a webhook subscription over the API, so a broker can take a new event type

@@ -2,9 +2,9 @@
 
 Three file types, each a CSV with one header row:
 
-    tds_requests_<YYYYMMDDTHHMMSSZ>[_<n>].csv   requester → provider   profiles/csv/request-row.yaml
-    tds_answers_<YYYYMMDDTHHMMSSZ>[_<n>].csv    provider → requester   profiles/csv/answer-row.yaml
-    tds_statuses_<YYYYMMDDTHHMMSSZ>[_<n>].csv   provider → requester   profiles/csv/status-row.yaml
+    tds_requests_<YYYYMMDDTHHMMSSZ>[_<tag>].csv requester → provider   profiles/csv/request-row.yaml
+    tds_answers_<YYYYMMDDTHHMMSSZ>[_<tag>].csv  provider → requester   profiles/csv/answer-row.yaml
+    tds_statuses_<YYYYMMDDTHHMMSSZ>[_<tag>].csv provider → requester   profiles/csv/status-row.yaml
 
 Format: RFC 4180 (comma, double-quote quoting, CRLF; readers accept LF), UTF-8 (readers
 strip a byte-order mark; writers don't write one). Columns are matched by header name, in
@@ -59,7 +59,9 @@ __all__ = [
 ]
 
 FILE_KINDS = {"requests": "csv/request-row", "answers": "csv/answer-row", "statuses": "csv/status-row"}
-FILE_NAME = re.compile(r"^tds_(requests|answers|statuses)_([0-9]{8}T[0-9]{6}Z)(_[0-9]+)?\.csv$")
+# The optional tag tells apart files written in the same second: 1-40 letters, digits or `-`
+# (a sequence number or a random suffix).
+FILE_NAME = re.compile(r"^tds_(requests|answers|statuses)_([0-9]{8}T[0-9]{6}Z)(_[A-Za-z0-9-]{1,40})?\.csv$")
 LIST_SEPARATOR = "|"
 BOM = "﻿"
 # Operation each request action stands for.
@@ -86,8 +88,9 @@ def kind_from_name(name: str) -> str | None:
     return match.group(1) if match else None
 
 
-def file_name(kind: str, when: str, sequence: int | None = None) -> str:
-    """`file_name("requests", "20261102T220000Z")` → `tds_requests_20261102T220000Z.csv`."""
+def file_name(kind: str, when: str, sequence: int | str | None = None) -> str:
+    """`file_name("requests", "20261102T220000Z")` → `tds_requests_20261102T220000Z.csv`; `sequence`
+    is the optional tag (a number, or 1-40 letters, digits or `-`)."""
     if kind not in FILE_KINDS:
         raise ValueError(f"unknown file kind {kind!r}")
     return f"tds_{kind}_{when}" + (f"_{sequence}" if sequence is not None else "") + ".csv"

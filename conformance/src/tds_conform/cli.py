@@ -60,6 +60,18 @@ def conform_main(argv: list[str] | None = None) -> int:
         metavar="PROVIDER/TRIP/LEG",
         help="a leg that requires custody records (repeatable)",
     )
+    mbox = sub.add_parser(
+        "mailbox", help="run the relay mailbox scenarios against a requester's mailbox (SPEC.md §9.4)"
+    )
+    mbox.add_argument("--url", required=True, help="the mailbox base URL (the one agents are configured with)")
+    mbox.add_argument("--token", required=True, help="a mailbox token, as issued to one provider's agent")
+    mbox.add_argument(
+        "--take-files",
+        action="store_true",
+        help="acknowledge a waiting request file (use a test mailbox: the real agent would not see it)",
+    )
+    mbox.add_argument("--scenario", action="append", help="run only this scenario (repeatable)")
+    mbox.add_argument("--report-dir", type=Path, default=Path("tds-conform-report"), help="where to write reports")
     csv_check = sub.add_parser("check-csv", help="check TDS CSV batch files (SPEC.md §9.2)")
     csv_check.add_argument("files", type=Path, nargs="+", help="tds_<requests|answers|statuses>_<time>.csv files")
     csv_check.add_argument(
@@ -89,6 +101,8 @@ def conform_main(argv: list[str] | None = None) -> int:
         return _check_events(args)
     if args.command == "check-csv":
         return _check_csv(args)
+    if args.command == "mailbox":
+        return _mailbox(args, parser)
 
     template = json.loads(args.trip_template.read_text()) if args.trip_template else default_trip_template()
     requester_id = args.requester_id or template["requester_id"]
@@ -134,6 +148,35 @@ def conform_main(argv: list[str] | None = None) -> int:
     built = report.build(meta, results)
     json_path, html_path = report.write(built, args.report_dir)
     print(f"\n{'CONFORMANT' if built['conformant'] else 'NOT CONFORMANT'} ({args.profile}) · {json_path} · {html_path}")
+    return 0 if built["conformant"] else 1
+
+
+def _mailbox(args, parser) -> int:
+    """The relay mailbox level (SPEC.md §9.4): every `csv` scenario against one mailbox."""
+    wanted = args.scenario or [sid for sid, (profile, _, _) in SCENARIOS.items() if profile == "csv"]
+    unknown = set(wanted) - SCENARIOS.keys()
+    if unknown:
+        parser.error(f"unknown scenario(s): {', '.join(sorted(unknown))}")
+    url = args.url.rstrip("/")
+    settings = Settings(url=url, token=args.token, requester_id="", provider_id="", trip_template={})
+    settings.take_files = args.take_files
+    started = datetime.now(UTC).isoformat(timespec="seconds")
+    results = []
+    with httpx.Client(base_url=url, timeout=30) as client:
+        for sid in wanted:
+            result = run_scenario(sid, settings, client, 0)
+            print(f"{result.outcome:13} {sid}{'  (' + result.note + ')' if result.note else ''}")
+            results.append(result)
+    meta = {
+        "kit_version": __version__,
+        "spec_version": SPEC_VERSION,
+        "profile": "relay-mailbox",
+        "target": url,
+        "started_at": started,
+    }
+    built = report.build(meta, results)
+    json_path, html_path = report.write(built, args.report_dir)
+    print(f"\n{'CONFORMANT' if built['conformant'] else 'NOT CONFORMANT'} (relay mailbox) · {json_path} · {html_path}")
     return 0 if built["conformant"] else 1
 
 
@@ -294,6 +337,7 @@ def mock_main(argv: list[str] | None = None) -> int:
     for pid in network.providers:
         print(f"  provider {pid:16} {base}/p/{pid}" if pid != "mock-provider" else f"  any provider_id    {base}")
     print(f"  simulation        {base}/_sim/<provider_id>/...  (see tds_conform/mock/server.py)")
+    print(f"  relay mailbox     {base}/mailbox  ·  Authorization: Bearer <provider_id>  (SPEC.md §9.4)")
     try:
         server.serve_forever()
     except KeyboardInterrupt:

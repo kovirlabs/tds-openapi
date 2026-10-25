@@ -7,6 +7,12 @@ URLs:
                             no-shows and failures; change answer policies (incl. rate_limit);
                             answer 503 for a while (POST /_sim/<id>/unavailable {"for_s": 30});
                             read the event log
+  /mailbox/...              a requester-side relay mailbox for CSV profile files (SPEC.md §9.4):
+                            GET outbox, GET outbox/<name>, POST ack/<name>, PUT inbox/<name>;
+                            the bearer token is the provider id whose mailbox it is
+  /_sim/mailbox/<id>        GET: what the agent did (last poll, acks, uploads with their text);
+                            POST .../outbox {"content"?, "name"?} queues a request file;
+                            POST .../unavailable {"for_s": 30} answers 503 for a while
 
 Authentication is deliberately trivial: the bearer token *is* the requester id
 (`Authorization: Bearer throughride-demo`), so a requester can act as several
@@ -16,9 +22,10 @@ clients by switching tokens. /_sim needs no token.
 import json
 import re
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import parse_qs, urlsplit
+from urllib.parse import parse_qs, unquote, urlsplit
 
 from tds_conform.backpressure import BACKPRESSURE_CODES, retry_after_header
+from tds_conform.mailbox import AGENT_HEADER, SHA256_HEADER, sha256_hex
 from tds_conform.mock.network import Network
 from tds_conform.mock.provider import problem
 
@@ -71,11 +78,18 @@ def make_handler(network: Network) -> type[BaseHTTPRequestHandler]:
         def do_DELETE(self):
             self._dispatch("DELETE")
 
+        def do_PUT(self):
+            self._dispatch("PUT")
+
         def _dispatch(self, method: str) -> None:
             url = urlsplit(self.path)
             path, query = url.path.rstrip("/") or "/", parse_qs(url.query)
+            if path.startswith("/_sim/mailbox/"):
+                return self._send(*self._sim_mailbox(method, path))
             if path.startswith("/_sim"):
                 return self._send(*self._sim(method, path, query))
+            if path == "/mailbox" or path.startswith("/mailbox/"):
+                return self._mailbox(method, path.removeprefix("/mailbox"))
             provider = network.default
             if match := re.match(r"/p/(?P<pid>[^/]+)(?P<rest>/.*)?$", path):
                 provider = network.providers.get(match["pid"])
@@ -105,6 +119,79 @@ def make_handler(network: Network) -> type[BaseHTTPRequestHandler]:
                     return self._send(*error)
                 args.append(body)
             self._send(*getattr(provider, name)(*args))
+
+        def _mailbox(self, method: str, path: str) -> None:
+            """The relay mailbox (SPEC.md §9.4); the token names the provider's mailbox."""
+            auth = self.headers.get("Authorization", "")
+            mailbox = network.mailboxes.get(auth[7:].strip()) if auth.startswith("Bearer ") else None
+            route = re.fullmatch(r"/(?P<box>outbox|ack|inbox)(?:/(?P<name>[^/]+))?", path)
+            known = route and (route["box"], method, bool(route["name"])) in {
+                ("outbox", "GET", False),
+                ("outbox", "GET", True),
+                ("ack", "POST", True),
+                ("inbox", "PUT", True),
+            }
+            if mailbox is None:
+                self._discard_body()
+                return self._send(*problem(401, "UNAUTHORIZED", "Send Authorization: Bearer <mailbox token>."))
+            if not known:
+                self._discard_body()
+                return self._send(*problem(404, "NOT_FOUND", f"No mailbox route {method} {path or '/'}."))
+            if refused := mailbox.admit(self.headers.get(AGENT_HEADER, "")):
+                self._discard_body()
+                return self._send(*refused)
+            name = unquote(route["name"] or "")
+            if method == "GET" and not name:
+                return self._send(*mailbox.listing())
+            if method == "GET":
+                status, body = mailbox.download(name)
+                if isinstance(body, bytes):
+                    return self._send_bytes(status, body, "text/csv; charset=utf-8", {SHA256_HEADER: sha256_hex(body)})
+                return self._send(status, body)
+            if method == "POST":
+                self._discard_body()
+                return self._send(*mailbox.ack(name))
+            length = int(self.headers.get("Content-Length") or 0)
+            if length > mailbox.max_file_bytes:
+                self.close_connection = True  # the body is not read
+                return self._send(*mailbox.too_large())
+            return self._send(*mailbox.put(name, self.rfile.read(length)))
+
+        def _sim_mailbox(self, method: str, path: str):
+            match = re.fullmatch(r"/_sim/mailbox/(?P<pid>[^/]+)(?:/(?P<rest>[a-z]+))?", path)
+            mailbox = match and network.mailboxes.get(match["pid"])
+            if not mailbox:
+                return problem(404, "NOT_FOUND", f"No simulation route {method} {path}.")
+            body, error = self._body() if method == "POST" else (None, None)
+            if error:
+                return error
+            if method == "GET" and match["rest"] is None:
+                return mailbox.state()
+            if method == "POST" and match["rest"] == "outbox":
+                body = body or {}
+                content = body.get("content")
+                if content is not None and not isinstance(content, str):
+                    return problem(400, "INVALID_REQUEST", "content is the file's text.")
+                return mailbox.queue(content.encode() if content is not None else None, body.get("name"))
+            if method == "POST" and match["rest"] == "unavailable":
+                return mailbox.sim_unavailable(body)
+            return problem(404, "NOT_FOUND", f"No simulation route {method} {path}.")
+
+        def _discard_body(self) -> None:
+            length = int(self.headers.get("Content-Length") or 0)
+            if 0 < length <= 1 << 20:
+                self.rfile.read(length)
+            elif length:
+                self.close_connection = True
+
+        def _send_bytes(self, status: int, data: bytes, media: str, headers: dict[str, str]) -> None:
+            self.send_response(status)
+            self.send_header("Content-Type", media)
+            self.send_header("Content-Length", str(len(data)))
+            for name, value in headers.items():
+                self.send_header(name, value)
+            self.end_headers()
+            self.wfile.write(data)
 
         def _sim(self, method: str, path: str, query: dict):
             if method == "GET" and path == "/_sim/providers":

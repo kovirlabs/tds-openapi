@@ -1,0 +1,22 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/csv/mailbox-ack.yaml
+title: MailboxAck
+description: >-
+  Answer to POST /ack/{file_name} (SPEC.md §9.4): the request file has been
+  taken and no longer appears in the listing. Acknowledging again returns the
+  same answer, with the time of the first acknowledgement.
+x-profile: csv
+type: object
+required: [name, acked_at]
+properties:
+  name:
+    description: The acknowledged file's name.
+    type: string
+    minLength: 1
+  acked_at:
+    description: When the file was first acknowledged (RFC 3339). Later acknowledgements do not change it.
+    type: string
+    format: date-time
+examples:
+  - name: tds_requests_20261104T150000Z.csv
+    acked_at: "2026-11-04T15:04:10Z"

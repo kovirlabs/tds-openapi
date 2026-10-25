@@ -1,0 +1,7 @@
+{
+  "type": "about:blank",
+  "title": "File name taken",
+  "status": 409,
+  "detail": "tds_answers_20261104T204000Z.csv is already stored with other content; upload it under a new name.",
+  "code": "FILE_NAME_TAKEN"
+}

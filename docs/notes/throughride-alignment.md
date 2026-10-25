@@ -131,6 +131,32 @@ Append under *Open*, one heading per mismatch:
 - **Mismatch:** The profile says what goes in the files but not how they move, beyond "an encrypted, authenticated channel" such as SFTP. Schedulers that can only call out, behind an agency firewall or inside Google Apps Script (which cannot read request headers, set status codes or run an SFTP client), need the broker to hold a mailbox they poll. ThroughRide defined one; another broker would define its own, and an agent written for one would not work with the other.
 - **Why it matters:** The connector is meant to be broker-neutral so RideSheet's maintainers can take it in. That holds only if the mailbox is part of the binding.
 - **Suggested resolution:** change the spec (additive, CSV profile): a "relay mailbox" binding for §9.2 files, served by the requester side. Four operations, all idempotent: list un-acked request files (name, size, sha256, created_at); get one (bytes, `X-Relay-SHA256`); ack one (first ack time kept); put an answers or statuses file, write-once by name (201 stored, 200 same bytes again, 409 other bytes, 400 bad name or empty, 413 too large). Bearer or token auth naming one provider's mailbox; the provider is taken from the credential, never the request. `Retry-After` on 429/503 as for the API (v0.7.1). Optional: `/health` (or a mailbox info call) states the expected poll interval, so a broker can report a silent agent. An OpenAPI fragment, an example sequence and a `tds-mock` mailbox would let the kit check agents too.
+- **tds-openapi response (2026-10-25): agreed, applied in v0.9.0** as SPEC.md §9.4, a separate
+  OpenAPI document `spec/relay-mailbox.yaml` (the requester serves it, so it does not belong in
+  the provider API), with ThroughRide's four paths kept as they are (`GET /outbox`,
+  `GET /outbox/{file_name}`, `POST /ack/{file_name}`, `PUT /inbox/{file_name}`) relative to a
+  mailbox base URL. Write-once uploads, idempotent acks, `X-Relay-SHA256` and `X-Relay-Agent`
+  as ThroughRide has them. Where the binding differs from ThroughRide today:
+  - `Authorization: Bearer <token>` (HTTP bearer), not DRF's `Token <key>`.
+  - Errors are Problem Details (`application/problem+json`, `title`, `status`, `code`) with
+    UPPER_SNAKE codes: `INVALID_FILE_NAME`, `EMPTY_FILE`, `FILE_TOO_LARGE`, `FILE_NAME_TAKEN`,
+    `NOT_FOUND`, `UNAUTHORIZED`; 429/503 as in §7.2.
+  - The listing also carries `provider_id` and `poll_interval_s` (required) and
+    `max_file_bytes` (optional): the poll-interval hint lives there rather than on `/health`,
+    since the agent already calls it every poll.
+  - The upload receipt also carries `sha256` (required), `size` and `received_at`.
+  - Upload names: a mailbox MUST refuse anything that is not an answers or statuses name and
+    SHOULD refuse any name not exactly per §9.2, which needs the UTC time. To allow the RideSheet
+    connector's random suffix, §9.2's optional `_<n>` became `_<tag>` (1 to 40 letters, digits
+    or `-`).
+  - Agents are configured with the whole mailbox base URL, not a host to which they add
+    `/api/relay/`.
+  - No `Idempotency-Key` on the mailbox (every call repeats safely as it stands), so the
+    binding's lint rule for POST is switched off for this document.
+  - Kit: `tds-conform mailbox --url … --token … [--take-files]` (Relay mailbox level, a
+    requester's); `tds-mock` serves `/mailbox` with the provider id as token.
+  - Open for later (SPEC.md §16 #9): a way for the requester to report back on an uploaded
+    file's rows.
 
 ## v0.4.1 audit (2026-10-21)
 

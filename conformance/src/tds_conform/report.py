@@ -62,7 +62,7 @@ spec {escape(report["spec_version"])} · kit {escape(report["kit_version"])} · 
 
 
 def _level(profile: str) -> str:
-    return {"core": "Core", "transfer": "Core + Transfer"}.get(profile, profile)
+    return {"core": "Core", "transfer": "Core + Transfer", "relay-mailbox": "Relay mailbox"}.get(profile, profile)
 
 
 def _scenario_html(s: dict) -> str:

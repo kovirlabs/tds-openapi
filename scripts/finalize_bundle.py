@@ -12,7 +12,7 @@ examples taken from examples/, and examples/ is what the mock must serve.
 
 Source schemas keep all three; validate_examples.py checks them there.
 
-Usage: uv run scripts/finalize_bundle.py dist/openapi.yaml
+Usage: uv run scripts/finalize_bundle.py dist/openapi.yaml [dist/relay-mailbox.yaml ...]
 """
 
 import sys
@@ -36,4 +36,5 @@ def main(path: str) -> None:
 
 
 if __name__ == "__main__":
-    main(sys.argv[1])
+    for arg in sys.argv[1:]:
+        main(arg)

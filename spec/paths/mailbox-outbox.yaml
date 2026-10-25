@@ -1,0 +1,53 @@
+get:
+  operationId: listMailboxFiles
+  summary: List request files waiting
+  description: >-
+    Request files the agent has not acknowledged yet, oldest first, with each
+    file's size and SHA-256, the provider whose mailbox this is, and the poll
+    interval the requester expects (SPEC.md §9.4). Every authorised call counts
+    as a poll; an agent that has a file already (same name and SHA-256)
+    acknowledges it again instead of downloading it.
+  tags: [Mailbox]
+  parameters:
+    - $ref: ../components/parameters.yaml#/RelayAgent
+  responses:
+    "200":
+      description: The waiting files (possibly none).
+      content:
+        application/json:
+          schema:
+            $ref: ../../profiles/csv/mailbox-listing.yaml
+          examples:
+            one_waiting:
+              externalValue: ../../examples/relay-mailbox/01-list.response.json
+            none_waiting:
+              externalValue: ../../examples/relay-mailbox/04-list-after-ack.response.json
+    "401":
+      description: >-
+        Missing or invalid mailbox token (code UNAUTHORIZED). A requester MAY
+        answer 403 with the same code for a valid credential that is not a
+        mailbox token.
+      content:
+        application/problem+json:
+          schema:
+            $ref: ../../profiles/core/error.yaml
+          examples:
+            no_token:
+              externalValue: ../../examples/relay-mailbox/12-unauthorized.response.json
+    "429":
+      $ref: ../components/responses.yaml#/MailboxTooManyRequests
+    "503":
+      description: >-
+        Back-pressure (SPEC.md §7.2): the mailbox cannot take calls for now
+        (code TEMPORARILY_UNAVAILABLE). Poll again after the wait in
+        Retry-After / retry_after_s.
+      headers:
+        Retry-After:
+          $ref: ../components/headers.yaml#/RetryAfter
+      content:
+        application/problem+json:
+          schema:
+            $ref: ../../profiles/core/error.yaml
+          examples:
+            maintenance:
+              externalValue: ../../examples/relay-mailbox/13-unavailable.response.json

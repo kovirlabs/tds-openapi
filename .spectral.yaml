@@ -34,3 +34,9 @@ rules:
             properties:
               name: { const: Idempotency-Key }
               in: { const: header }
+overrides:
+  # The relay mailbox (SPEC.md §9.4) is idempotent by file name: acks repeat safely and
+  # uploads are write-once, so its POST takes no Idempotency-Key.
+  - files: ["dist/relay-mailbox.yaml"]
+    rules:
+      tds-mutations-require-idempotency-key: off

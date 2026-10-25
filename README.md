@@ -5,7 +5,7 @@ A machine-readable binding of the **Transactional Data Specification** (TDS, TCR
 TDS describes what a trip-booking exchange should contain. This project makes it implementable and testable:
 
 - **JSON Schema 2020-12** for the data model (`profiles/`)
-- **OpenAPI 3.1** for request/response operations (`spec/openapi.yaml`)
+- **OpenAPI 3.1** for request/response operations (`spec/openapi.yaml`), and for the requester-side relay mailbox for CSV files (`spec/relay-mailbox.yaml`)
 - **AsyncAPI 3.0** for status, milestone, ETA and custody events (`spec/asyncapi.yaml`)
 - A **conformance kit** (`tds-conform`) vendors can run and agencies can cite in RFPs ([docs/for-agencies.md](docs/for-agencies.md))
 - A **reference provider** (`tds-mock`) and a static example mock for building without a live partner
@@ -14,7 +14,7 @@ It is not a new standard and does not replace TDS, GTFS-Flex or GTFS-Realtime. S
 
 ## Status
 
-**v0.8 (draft).** Core and transfer profiles: trip booking (with `Retry-After` back-pressure hints on 429 and 503), plus tenders, hold requests, milestones, ETA bands and custody records for protected connections between providers, with signed webhook events (AsyncAPI, Standard Webhooks signatures, optional CloudEvents headers, secret rotation and subscription changes over the API) for every state change, and a CSV file format for providers that exchange trips in batches instead of calling an API. Draft paratransit and NEMT profiles, and a settlement split format for after-trip reconciliation. A conformance kit tests any endpoint at the Core, Core + Transfer, Core + Paratransit or Core + NEMT level and can fuzz it against the OpenAPI document, and a stateful reference mock runs several providers for development and demos ([docs/demo.md](docs/demo.md)). Field names are proposed and are being checked against TDS 2020 in [the crosswalk](mappings/tds-2020-crosswalk.md). Expect changes before 1.0.
+**v0.8 (draft).** Core and transfer profiles: trip booking (with `Retry-After` back-pressure hints on 429 and 503), plus tenders, hold requests, milestones, ETA bands and custody records for protected connections between providers, with signed webhook events (AsyncAPI, Standard Webhooks signatures, optional CloudEvents headers, secret rotation and subscription changes over the API) for every state change, and a CSV file format for providers that exchange trips in batches instead of calling an API, with an HTTPS relay mailbox for those that can only call out. Draft paratransit and NEMT profiles, and a settlement split format for after-trip reconciliation. A conformance kit tests any endpoint at the Core, Core + Transfer, Core + Paratransit or Core + NEMT level and can fuzz it against the OpenAPI document, and a stateful reference mock runs several providers for development and demos ([docs/demo.md](docs/demo.md)). Field names are proposed and are being checked against TDS 2020 in [the crosswalk](mappings/tds-2020-crosswalk.md). Expect changes before 1.0.
 
 | Version | Scope |
 |---|---|
@@ -28,7 +28,7 @@ It is not a new standard and does not replace TDS, GTFS-Flex or GTFS-Realtime. S
 
 ```
 profiles/        core/ and transfer/ JSON Schemas (one per file)
-spec/            openapi.yaml + paths/ + components/, asyncapi.yaml (reference profiles/)
+spec/            openapi.yaml, relay-mailbox.yaml + paths/ + components/, asyncapi.yaml (reference profiles/)
 conformance/     tds-conform package: kit (tds-conform), reference mock (tds-mock), demo (tds-demo)
 mock-server/     docker-compose running both mocks
 mappings/        crosswalks to TDS 2020 and borrowed vocabularies
@@ -43,7 +43,7 @@ Requires [uv](https://docs.astral.sh/uv/) (Python 3.12) and Node 20+.
 
 ```sh
 npm install                          # pinned Spectral + Redocly
-npm run bundle                       # single-file bundle at dist/openapi.yaml
+npm run bundle                       # single-file bundles at dist/openapi.yaml, dist/relay-mailbox.yaml
 npm run lint                         # bundle, then Spectral
 npm run mock:static                  # Prism serving examples/ on :4011
 uv run tds-mock --demo               # three reference providers on :4010 (see docs/demo.md)

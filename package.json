@@ -4,8 +4,8 @@
   "private": true,
   "license": "Apache-2.0",
   "scripts": {
-    "bundle": "REDOCLY_SUPPRESS_UPDATE_NOTICE=true redocly bundle spec/openapi.yaml -o dist/openapi.yaml && uv run scripts/finalize_bundle.py dist/openapi.yaml",
-    "lint": "npm run -s bundle && spectral lint --fail-severity=warn dist/openapi.yaml spec/asyncapi.yaml",
+    "bundle": "REDOCLY_SUPPRESS_UPDATE_NOTICE=true redocly bundle spec/openapi.yaml -o dist/openapi.yaml && REDOCLY_SUPPRESS_UPDATE_NOTICE=true redocly bundle spec/relay-mailbox.yaml -o dist/relay-mailbox.yaml && uv run scripts/finalize_bundle.py dist/openapi.yaml dist/relay-mailbox.yaml",
+    "lint": "npm run -s bundle && spectral lint --fail-severity=warn dist/openapi.yaml dist/relay-mailbox.yaml spec/asyncapi.yaml",
     "mock:static": "npm run -s bundle && prism mock -h 127.0.0.1 -p 4011 dist/openapi.yaml"
   },
   "devDependencies": {

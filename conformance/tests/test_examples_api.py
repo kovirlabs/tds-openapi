@@ -76,6 +76,7 @@ def test_binding_version_matches_every_version_declaration():
         "package.json": json.loads((REPO / "package.json").read_text())["version"],
         "spec/openapi.yaml": yaml.safe_load((REPO / "spec/openapi.yaml").read_text())["info"]["version"],
         "spec/asyncapi.yaml": yaml.safe_load((REPO / "spec/asyncapi.yaml").read_text())["info"]["version"],
+        "spec/relay-mailbox.yaml": yaml.safe_load((REPO / "spec/relay-mailbox.yaml").read_text())["info"]["version"],
     }
     assert set(versions.values()) == {binding_version()}, versions
 

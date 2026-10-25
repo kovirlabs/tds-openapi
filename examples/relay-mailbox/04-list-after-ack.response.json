@@ -1,0 +1,6 @@
+{
+  "provider_id": "county-dial-a-ride",
+  "poll_interval_s": 300,
+  "max_file_bytes": 10485760,
+  "files": []
+}

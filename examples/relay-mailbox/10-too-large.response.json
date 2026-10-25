@@ -1,0 +1,7 @@
+{
+  "type": "about:blank",
+  "title": "File too large",
+  "status": 413,
+  "detail": "Uploads are limited to 10485760 bytes; split the rows over several files.",
+  "code": "FILE_TOO_LARGE"
+}

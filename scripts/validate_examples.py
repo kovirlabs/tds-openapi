@@ -28,9 +28,11 @@ Checks:
      encoding, header, row schemas, the API objects rows stand for, milestone
      order); answer rows must answer a request row of the scenario, and a JSON
      entry with `row_of: <file>:<line>` must equal that row converted.
-  5. Manifest entries that name an `operation` are wired into spec/openapi.yaml at
-     that operation and status (so the mock serves them), the operation declares
-     the same schema, and every example the spec references has such an entry.
+  5. Manifest entries that name an `operation` are wired into spec/openapi.yaml (or
+     the relay mailbox document, spec/relay-mailbox.yaml) at that operation and
+     status (so the mock serves them), the operation declares the same schema, and
+     every example the spec references has such an entry. A relay mailbox listing
+     gives the size and SHA-256 of each listed file that its scenario holds (§9.4).
      Entries that name an `event` use the schema spec/asyncapi.yaml declares for
      that message.
   6. Every profiles/core property appears in mappings/tds-2020-crosswalk.md or
@@ -64,6 +66,9 @@ PROFILES = ROOT / "profiles"
 EXAMPLES = ROOT / "examples"
 OPENAPI = ROOT / "spec" / "openapi.yaml"
 ASYNCAPI = ROOT / "spec" / "asyncapi.yaml"
+MAILBOX = ROOT / "spec" / "relay-mailbox.yaml"
+# The OpenAPI documents: the provider API and the requester-side relay mailbox (SPEC.md §9.4).
+OPENAPI_DOCS = (OPENAPI, MAILBOX)
 HTTP_METHODS = ("get", "put", "post", "patch", "delete")
 CROSSWALK = ROOT / "mappings" / "tds-2020-crosswalk.md"
 ID_BASE = "https://tds-openapi.org/schemas/"
@@ -308,7 +313,27 @@ def check_examples(registry: Registry, examples_root: Path = EXAMPLES, events: d
                 results[json_path] = RULES[schema_id](instance)
             if not results[json_path] and "row_of" in entry:
                 results[json_path] = check_row_equivalent(scenario, entry, instance)
+            if not results[json_path] and schema_id == f"{ID_BASE}csv/mailbox-listing.yaml":
+                results[json_path] = mailbox_listing_problems(scenario, instance)
     return results
+
+
+def mailbox_listing_problems(scenario: Path, listing: dict) -> list[str]:
+    """A relay mailbox listing (SPEC.md §9.4) must give the real size and SHA-256 of each
+    listed file the scenario holds."""
+    import hashlib
+
+    errors = []
+    for entry in listing.get("files", []):
+        path = scenario / entry["name"]
+        if not path.is_file():
+            continue
+        data = path.read_bytes()
+        if entry["size"] != len(data):
+            errors.append(f"{entry['name']}: size {entry['size']}, file has {len(data)} bytes")
+        if entry["sha256"] != hashlib.sha256(data).hexdigest():
+            errors.append(f"{entry['name']}: sha256 does not match the file")
+    return errors
 
 
 def interchange_problems(interchange: dict, legs: list[dict]) -> list[str]:
@@ -449,21 +474,23 @@ def check_wiring(manifests: dict[Path, dict], wiring: dict[tuple[str, str], dict
                 results[path] = [f"spec has no {key[0]} {key[1]}"]
             elif path not in slot["examples"]:
                 results[path] = [f"not referenced as an example of {key[0]} {key[1]}"]
-            elif slot["schema"] != entry["schema"]:
-                results[path] = [f"{key[0]} {key[1]} declares {slot['schema']}, manifest says {entry['schema']}"]
+            elif slot["schema"] != entry.get("schema"):
+                results[path] = [f"{key[0]} {key[1]} declares {slot['schema']}, manifest says {entry.get('schema')}"]
     for key, slot in wiring.items():
         for path in slot["examples"] - {p for k, p in claimed if k == key}:
             results.setdefault(path, []).append(f"used by {key[0]} {key[1]} but no manifest entry says so")
     return results
 
 
-def check_backpressure(manifests: dict[Path, dict], openapi: Path = OPENAPI) -> list[str]:
+def check_backpressure(manifests: dict[Path, dict], openapi: Path | tuple[Path, ...] = OPENAPI_DOCS) -> list[str]:
     """SPEC.md §7.2: 429 and 503 are documented on every operation with Retry-After; examples show the hint."""
     from tds_conform.backpressure import BACKPRESSURE_CODES
 
     errors = []
-    spec = _resolve(yaml.safe_load(openapi.read_text()), openapi)
-    for route, item in spec.get("paths", {}).items():
+    paths = {}
+    for doc in (openapi,) if isinstance(openapi, Path) else openapi:
+        paths |= _resolve(yaml.safe_load(doc.read_text()), doc).get("paths", {})
+    for route, item in paths.items():
         for method in HTTP_METHODS:
             if method not in item:
                 continue
@@ -566,7 +593,8 @@ def main() -> int:
     for path, errors in check_examples(registry).items():
         report(path.relative_to(ROOT).as_posix(), errors)
     manifests = load_manifests()
-    for path, errors in check_wiring(manifests, spec_wiring()).items():
+    wiring = {key: slot for doc in OPENAPI_DOCS for key, slot in spec_wiring(doc).items()}
+    for path, errors in check_wiring(manifests, wiring).items():
         report(path.relative_to(ROOT).as_posix() + " (spec wiring)", errors)
     for path, errors in check_events(manifests, event_wiring()).items():
         report(path.relative_to(ROOT).as_posix() + " (event wiring)", errors)

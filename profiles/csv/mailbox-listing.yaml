@@ -1,0 +1,48 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/csv/mailbox-listing.yaml
+title: MailboxListing
+description: >-
+  Answer to GET /outbox (SPEC.md §9.4): the request files the agent has not
+  acknowledged yet, oldest first, and how often the requester expects the
+  agent to call. An empty `files` list is the normal answer when nothing is
+  waiting.
+x-profile: csv
+type: object
+required: [provider_id, poll_interval_s, files]
+properties:
+  provider_id:
+    description: >-
+      The provider whose mailbox this is, taken from the credential. The same
+      id the provider uses in the files' `provider_id` column.
+    type: string
+    minLength: 1
+  poll_interval_s:
+    description: >-
+      Seconds the requester expects between an agent's calls. Agents SHOULD
+      poll about this often and no more often, apart from retries; a requester
+      MAY report an agent as silent after three intervals without a call.
+    type: integer
+    minimum: 1
+  max_file_bytes:
+    description: >-
+      Largest upload, in bytes, PUT /inbox/{file_name} accepts; larger files
+      are refused with FILE_TOO_LARGE (413). At least 1000000 when given.
+    type: integer
+    minimum: 1000000
+  files:
+    description: Request files not yet acknowledged, oldest first (by created_at, then name).
+    type: array
+    items:
+      $ref: ./mailbox-file.yaml
+examples:
+  - provider_id: county-dial-a-ride
+    poll_interval_s: 300
+    max_file_bytes: 10485760
+    files:
+      - name: tds_requests_20261104T150000Z.csv
+        size: 1198
+        sha256: 57dd4befc5ddd8a97df0ab5cff0fd86282dccf3a5e3990db4d804cff57e3b673
+        created_at: "2026-11-04T15:00:00Z"
+  - provider_id: county-dial-a-ride
+    poll_interval_s: 300
+    files: []
