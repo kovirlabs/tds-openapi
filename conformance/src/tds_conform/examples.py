@@ -18,8 +18,9 @@ Manifest format (``examples/<scenario>/manifest.yaml``): ``description``, option
 and ``status`` (absent for a request body). Event logs have ``kind: event-stream`` and no
 ``schema``; one HTTP webhook delivery (``{method, url, headers, body}``, body as the raw
 string that was signed) has ``kind: webhook-delivery`` and names the subscription response
-holding its secret in ``subscription``. TDS CSV files (SPEC.md §9.2) have ``kind: csv`` and
-load as text; parse them with ``tds_conform.csvfile``. A JSON file with ``row_of:
+holding its secret in ``subscription``. TDS CSV files (SPEC.md §9.2) have ``kind: csv``, or
+``kind: csv-upload`` for an upload that may hold bad rows (SPEC.md §9.4), and load as text;
+parse them with ``tds_conform.csvfile``. A JSON file with ``row_of:
 <file>:<line>`` is what that CSV row stands for in the API. ``load_manifest`` always returns
 entries as dicts.
 """

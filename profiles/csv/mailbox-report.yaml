@@ -1,0 +1,93 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/csv/mailbox-report.yaml
+title: MailboxReport
+description: >-
+  Answer to GET /inbox/{file_name} (SPEC.md §9.4): what the requester did with
+  an uploaded answers or statuses file, so the provider's agent can show its
+  staff why a row did not land. RECEIVED: stored, not read yet. PROCESSED:
+  read; the counts add up to `row_count`, and `rows` lists every row not
+  applied (DUPLICATE or REJECTED), in file order. REFUSED: the file as a whole
+  could not be read (`refusal`), so no row was applied. A report holds row
+  numbers, column names and codes only, never cell contents.
+x-profile: csv
+type: object
+required: [name, sha256, received_at, status]
+properties:
+  name:
+    description: The uploaded file's name.
+    type: string
+    minLength: 1
+  sha256:
+    description: SHA-256 of the stored bytes, lowercase hex, as in the upload receipt.
+    type: string
+    pattern: '^[0-9a-f]{64}$'
+  received_at:
+    description: When the file was first stored (RFC 3339).
+    type: string
+    format: date-time
+  status:
+    description: RECEIVED (not read yet), PROCESSED (read row by row) or REFUSED (unreadable as a whole).
+    type: string
+    enum: [RECEIVED, PROCESSED, REFUSED]
+  processed_at:
+    description: When the requester read the file (RFC 3339). Present once PROCESSED or REFUSED.
+    type: string
+    format: date-time
+  refusal:
+    description: >-
+      Why a REFUSED file could not be read: INVALID_ENCODING (not UTF-8),
+      INVALID_HEADER (no header row, a duplicate or unnamed column, or a
+      required column missing), OTHER. Unknown values must be treated as OTHER.
+    type: string
+    enum: [INVALID_ENCODING, INVALID_HEADER, OTHER]
+  row_count:
+    description: Data rows read (the header and rows with no cells not counted).
+    type: integer
+    minimum: 0
+  applied_count:
+    description: Rows applied.
+    type: integer
+    minimum: 0
+  duplicate_count:
+    description: Rows that repeated a row already applied and changed nothing.
+    type: integer
+    minimum: 0
+  rejected_count:
+    description: Rows not applied; each is listed in `rows` with its code.
+    type: integer
+    minimum: 0
+  rows:
+    description: Every row not applied, in file order. Empty when every row was applied.
+    type: array
+    items:
+      $ref: ./mailbox-row-outcome.yaml
+allOf:
+  - if:
+      properties: {status: {const: PROCESSED}}
+    then:
+      required: [processed_at, row_count, applied_count, duplicate_count, rejected_count, rows]
+  - if:
+      properties: {status: {const: REFUSED}}
+    then:
+      required: [processed_at, refusal]
+    else:
+      not: {required: [refusal]}
+examples:
+  - name: tds_answers_20261104T211500Z.csv
+    sha256: 13751162071572e09e49f02cf629e372d88b65b703392ce5ea76c2be6d2a9ca1
+    received_at: "2026-11-04T21:15:05Z"
+    status: PROCESSED
+    processed_at: "2026-11-04T21:16:00Z"
+    row_count: 4
+    applied_count: 0
+    duplicate_count: 1
+    rejected_count: 3
+    rows:
+      - {row: 2, outcome: DUPLICATE}
+      - {row: 3, outcome: REJECTED, code: UNKNOWN_REQUEST, column: trip_id}
+      - {row: 4, outcome: REJECTED, code: WRONG_PROVIDER, column: provider_id}
+      - {row: 5, outcome: REJECTED, code: INVALID_VALUE, column: answered_at}
+  - name: tds_answers_20261104T204000Z.csv
+    sha256: eef2ac1723c655b97791b6abcf0e37944ccafe6e0d05bb9c104e52c36701e7cf
+    received_at: "2026-11-04T20:40:05Z"
+    status: RECEIVED

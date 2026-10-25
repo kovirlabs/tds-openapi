@@ -158,7 +158,9 @@ uv run tds-conform mailbox --url https://broker.example.org/api/relay --token <m
 ```
 
 `--take-files` lets the kit acknowledge the waiting file; leave it off on a mailbox a real agent
-uses. The upload scenario leaves one header-only answers file named `…_conform-<hex>.csv`.
+uses. After an upload, `GET /mailbox/inbox/<name>` reports what became of each row
+(`PROCESSED`, with a code and column for every row not applied); `Mailbox(process_delay_s=…)`
+keeps uploads `RECEIVED` for a while. The upload scenario leaves one header-only answers file named `…_conform-<hex>.csv`.
 
 ## Use tds-conform from another project
 

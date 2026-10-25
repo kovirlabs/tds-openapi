@@ -32,7 +32,11 @@ Checks:
      the relay mailbox document, spec/relay-mailbox.yaml) at that operation and
      status (so the mock serves them), the operation declares the same schema, and
      every example the spec references has such an entry. A relay mailbox listing
-     gives the size and SHA-256 of each listed file that its scenario holds (§9.4).
+     gives the size and SHA-256 of each listed file that its scenario holds (§9.4). An
+     upload report marked `report_of: <file>` must match what
+     tds_conform.mailbox.upload_report computes for that file, from the scenario's request
+     files and the uploads named in `processed_after`. A `kind: csv-upload` file is an
+     upload as an agent sent it (it may have bad rows) and is not checked as a CSV file.
      Entries that name an `event` use the schema spec/asyncapi.yaml declares for
      that message.
   6. Every profiles/core property appears in mappings/tds-2020-crosswalk.md or
@@ -296,6 +300,9 @@ def check_examples(registry: Registry, examples_root: Path = EXAMPLES, events: d
             if entry.get("kind") == "webhook-delivery":
                 results[json_path] = check_delivery(json_path, entry, registry, events or event_wiring())
                 continue
+            if entry.get("kind") == "csv-upload":
+                results[json_path] = []
+                continue
             if entry.get("kind") == "csv":
                 from tds_conform.csvfile import file_problems
 
@@ -315,6 +322,8 @@ def check_examples(registry: Registry, examples_root: Path = EXAMPLES, events: d
                 results[json_path] = check_row_equivalent(scenario, entry, instance)
             if not results[json_path] and schema_id == f"{ID_BASE}csv/mailbox-listing.yaml":
                 results[json_path] = mailbox_listing_problems(scenario, instance)
+            if not results[json_path] and "report_of" in entry:
+                results[json_path] = upload_report_problems(scenario, files, entry, instance)
     return results
 
 
@@ -333,6 +342,43 @@ def mailbox_listing_problems(scenario: Path, listing: dict) -> list[str]:
             errors.append(f"{entry['name']}: size {entry['size']}, file has {len(data)} bytes")
         if entry["sha256"] != hashlib.sha256(data).hexdigest():
             errors.append(f"{entry['name']}: sha256 does not match the file")
+    return errors
+
+
+def upload_report_problems(scenario: Path, files: dict, entry: dict, report: dict) -> list[str]:
+    """An upload report (SPEC.md §9.4) must name its file, carry its SHA-256 and, once
+    PROCESSED, give the counts and rows tds_conform.mailbox.upload_report computes."""
+    import hashlib
+
+    from tds_conform.csvfile import kind_from_name, read
+    from tds_conform.mailbox import upload_report
+
+    name = entry["report_of"]
+    path = scenario / name
+    if not path.is_file():
+        return [f"report_of {name}: no such file"]
+    errors = []
+    if report["name"] != name:
+        errors.append(f"name is {report['name']}, report_of says {name}")
+    if report["sha256"] != hashlib.sha256(path.read_bytes()).hexdigest():
+        errors.append(f"sha256 does not match {name}")
+    if report["status"] != "PROCESSED":
+        return errors
+    requests = []
+    for other, other_entry in files.items():
+        if other_entry.get("kind") == "csv" and kind_from_name(other) == "requests":
+            requests += read((scenario / other).read_bytes(), "requests")[0]
+    if not requests:
+        return [*errors, "no request file in the scenario to report against"]
+    parties = {"provider_id": requests[0]["provider_id"], "requester_id": requests[0]["requester_id"]}
+    applied: dict = {}
+    for earlier in entry.get("processed_after", []):
+        data = (scenario / earlier).read_bytes()
+        upload_report(data, kind_from_name(earlier), requests=requests, applied=applied, **parties)
+    expected = upload_report(path.read_bytes(), kind_from_name(name), requests=requests, applied=applied, **parties)
+    for field, value in expected.items():
+        if report.get(field) != value:
+            errors.append(f"{field} is {report.get(field)!r}; the file gives {value!r}")
     return errors
 
 

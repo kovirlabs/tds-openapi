@@ -22,6 +22,8 @@ get:
               externalValue: ../../examples/relay-mailbox/01-list.response.json
             none_waiting:
               externalValue: ../../examples/relay-mailbox/04-list-after-ack.response.json
+            with_upload_reports:
+              externalValue: ../../examples/relay-mailbox-report/01-list.response.json
     "401":
       description: >-
         Missing or invalid mailbox token (code UNAUTHORIZED). A requester MAY

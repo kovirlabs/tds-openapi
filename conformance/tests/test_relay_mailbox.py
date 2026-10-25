@@ -9,9 +9,9 @@ import pytest
 
 import tds_conform.scenarios  # noqa: F401 - registers the scenarios
 from tds_conform.cli import conform_main
-from tds_conform.csvfile import file_problems
+from tds_conform.csvfile import file_problems, read
 from tds_conform.data import data_root, example, schema_errors
-from tds_conform.mailbox import inbox_name_problem, sha256_hex
+from tds_conform.mailbox import inbox_name_problem, sha256_hex, upload_report
 from tds_conform.mock.mailbox import Mailbox, _utc
 from tds_conform.mock.network import Dispatcher, Network
 from tds_conform.mock.provider import Provider, ProviderConfig
@@ -308,6 +308,130 @@ def test_cli_mailbox_writes_a_report(serve_mailbox, tmp_path):
     argv = ["mailbox", "--url", f"{url}/mailbox", "--token", PID, "--report-dir", str(tmp_path)]
     assert conform_main([*argv, "--take-files"]) == 0
     report = json.loads((tmp_path / "report.json").read_text())
-    assert report["conformant"] and report["profile"] == "relay-mailbox" and report["summary"]["PASS"] == 2
+    assert report["conformant"] and report["profile"] == "relay-mailbox" and report["summary"]["PASS"] == 3
     assert "Conformant: Relay mailbox" in (tmp_path / "report.html").read_text()
     assert conform_main([*argv, "--token", "nobody"]) == 1
+
+
+# --- upload reports (SPEC.md §9.4) ----------------------------------------------------------
+
+REPORT = "relay-mailbox-report"
+UPLOAD = "tds_answers_20261104T211500Z.csv"
+
+
+def report_file(name: str) -> bytes:
+    return (data_root() / "examples" / REPORT / name).read_bytes()
+
+
+def test_upload_report_matches_the_example():
+    requests = read(report_file("tds_requests_20261104T150000Z.csv"), "requests")[0]
+    parties = {"provider_id": PID, "requester_id": "throughride-demo", "requests": requests, "applied": {}}
+    first = upload_report(report_file(ANSWERS), "answers", **parties)
+    assert first == {k: v for k, v in example(REPORT, "02-first-report.response.json").items() if k in first}
+    second = upload_report(report_file(UPLOAD), "answers", **parties)
+    assert second == {k: v for k, v in example(REPORT, "04-report.response.json").items() if k in second}
+
+
+def test_upload_report_statuses_and_refusals():
+    requests = read(report_file("tds_requests_20261104T150000Z.csv"), "requests")[0]
+    statuses = (data_root() / "examples" / "csv-batch" / "tds_statuses_20261105T150000Z.csv").read_bytes()
+    report = upload_report(statuses, "statuses", provider_id=PID, requests=requests[:1])
+    assert report["rejected_count"] > 0
+    assert {r["code"] for r in report["rows"]} == {"UNKNOWN_TRIP"}
+    assert upload_report(b"\xff\xfe", "answers", provider_id=PID) == {
+        "status": "REFUSED",
+        "refusal": "INVALID_ENCODING",
+    }
+    assert upload_report(b"provider_id\r\n", "answers", provider_id=PID)["refusal"] == "INVALID_HEADER"
+
+
+def test_mailbox_reports_in_upload_order_after_the_delay(clock):
+    box = Mailbox(PID, clock=clock, process_delay_s=60)
+    box.queue(report_file("tds_requests_20261104T150000Z.csv"), "tds_requests_20261104T150000Z.csv")
+    box.put(ANSWERS, report_file(ANSWERS))
+    box.put(UPLOAD, report_file(UPLOAD))
+    status, body = box.report(UPLOAD)
+    assert status == 200 and body["status"] == "RECEIVED" and schema_errors(body, "csv/mailbox-report") == []
+    clock.advance(61)
+    status, body = box.report(UPLOAD)
+    assert schema_errors(body, "csv/mailbox-report") == []
+    assert body["rows"] == example(REPORT, "04-report.response.json")["rows"]
+    assert box.report(ANSWERS)[1]["applied_count"] == 3
+    assert box.report("tds_answers_19990101T000000Z.csv")[1]["code"] == "NOT_FOUND"
+
+
+def test_mailbox_without_reports(clock):
+    box = Mailbox(PID, clock=clock, upload_reports=False)
+    box.put(ANSWERS, report_file(ANSWERS))
+    assert "upload_reports" not in box.listing()[1]
+    assert box.report(ANSWERS)[0] == 404
+
+
+def test_http_report_route(serve_mailbox, clock):
+    url, client = serve_mailbox(Mailbox(PID, clock=clock))
+    client.put(f"/mailbox/inbox/{ANSWERS}", headers=AUTH, content=report_file(ANSWERS))
+    resp = client.get(f"/mailbox/inbox/{ANSWERS}", headers=AUTH)
+    assert resp.status_code == 200 and resp.json()["status"] == "PROCESSED"
+    assert client.get(f"/_sim/mailbox/{PID}").json()["inbox"][0]["report"]["row_count"] == 3
+
+
+def test_report_scenario_passes_on_the_reference_mailbox(serve_mailbox):
+    url, _ = serve_mailbox(Mailbox(PID))
+    result = run(url, "relay_mailbox_report")
+    assert result.outcome == "PASS" and not result.note, failed_checks(result)
+    assert not [c for s in result.steps for c in s.checks if not c.passed]  # advisories too
+
+
+def test_report_scenario_without_reports_passes_with_a_note(serve_mailbox):
+    url, _ = serve_mailbox(Mailbox(PID, upload_reports=False))
+    result = run(url, "relay_mailbox_report")
+    assert result.outcome == "PASS" and "optional" in result.note
+
+
+def test_report_scenario_is_inconclusive_when_never_read(serve_mailbox):
+    url, _ = serve_mailbox(Mailbox(PID, process_delay_s=3600))
+    settings = Settings(url=f"{url}/mailbox", token=PID, requester_id="", provider_id="", trip_template={})
+    settings.max_wait_s = 0.5
+    with httpx.Client(base_url=settings.url, timeout=5) as client:
+        result = run_scenario("relay_mailbox_report", settings, client, 0)
+    assert result.outcome == "INCONCLUSIVE" and "--max-wait" in result.note
+
+
+class CountsAppliedMailbox(Mailbox):
+    def report(self, name):
+        status, body = super().report(name)
+        if body.get("status") == "PROCESSED":
+            body = body | {"applied_count": body["row_count"], "rejected_count": 0, "rows": []}
+        return status, body
+
+
+class VagueMailbox(Mailbox):
+    def report(self, name):
+        status, body = super().report(name)
+        rows = [r | {"code": "OTHER"} if r["outcome"] == "REJECTED" else r for r in body.get("rows", [])]
+        return status, body | ({"rows": rows} if "rows" in body else {})
+
+
+class RereadingMailbox(Mailbox):
+    def put(self, name, data):
+        status, body = super().put(name, data)
+        if status == 200:
+            self.inbox[name].processed_at = None  # a retry is read again
+            self._applied.clear()
+            self.inbox[name].content = data + data[data.index(b"\n") + 1 :]
+        return status, body
+
+
+@pytest.mark.parametrize(
+    ("faulty", "check"),
+    [
+        (CountsAppliedMailbox, "every row rejected"),
+        (VagueMailbox, "row 3 code is WRONG_PROVIDER"),
+        (RereadingMailbox, "the report is unchanged: a retried upload is not read twice"),
+    ],
+)
+def test_faulty_report_mailboxes_fail(serve_mailbox, faulty, check):
+    url, _ = serve_mailbox(faulty(PID))
+    result = run(url, "relay_mailbox_report")
+    assert result.outcome == "FAIL", result.note
+    assert check in failed_checks(result)

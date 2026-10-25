@@ -1,0 +1,8 @@
+{
+  "provider_id": "county-dial-a-ride",
+  "requester_id": "throughride-demo",
+  "poll_interval_s": 300,
+  "upload_reports": true,
+  "max_file_bytes": 10485760,
+  "files": []
+}

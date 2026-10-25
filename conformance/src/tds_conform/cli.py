@@ -71,6 +71,7 @@ def conform_main(argv: list[str] | None = None) -> int:
         help="acknowledge a waiting request file (use a test mailbox: the real agent would not see it)",
     )
     mbox.add_argument("--scenario", action="append", help="run only this scenario (repeatable)")
+    mbox.add_argument("--max-wait", type=float, default=120.0, help="seconds to wait for an upload's report")
     mbox.add_argument("--report-dir", type=Path, default=Path("tds-conform-report"), help="where to write reports")
     csv_check = sub.add_parser("check-csv", help="check TDS CSV batch files (SPEC.md §9.2)")
     csv_check.add_argument("files", type=Path, nargs="+", help="tds_<requests|answers|statuses>_<time>.csv files")
@@ -158,7 +159,9 @@ def _mailbox(args, parser) -> int:
     if unknown:
         parser.error(f"unknown scenario(s): {', '.join(sorted(unknown))}")
     url = args.url.rstrip("/")
-    settings = Settings(url=url, token=args.token, requester_id="", provider_id="", trip_template={})
+    settings = Settings(
+        url=url, token=args.token, requester_id="", provider_id="", trip_template={}, max_wait_s=args.max_wait
+    )
     settings.take_files = args.take_files
     started = datetime.now(UTC).isoformat(timespec="seconds")
     results = []

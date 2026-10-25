@@ -23,6 +23,9 @@ put:
         examples:
           answers_file:
             externalValue: ../../examples/relay-mailbox/tds_answers_20261104T204000Z.csv
+          with_row_problems:
+            summary: An upload whose report lists row problems
+            externalValue: ../../examples/relay-mailbox-report/tds_answers_20261104T211500Z.csv
   responses:
     "201":
       description: Stored; the requester will read it.
@@ -80,6 +83,54 @@ put:
           examples:
             too_large:
               externalValue: ../../examples/relay-mailbox/10-too-large.response.json
+    "429":
+      $ref: ../components/responses.yaml#/MailboxTooManyRequests
+    "503":
+      $ref: ../components/responses.yaml#/MailboxUnavailable
+get:
+  operationId: getMailboxReport
+  summary: Read what became of an uploaded file's rows
+  description: >-
+    The requester's report on an answers or statuses file this agent uploaded
+    (SPEC.md §9.4): RECEIVED until it is read, then PROCESSED with counts and
+    an entry for every row not applied (DUPLICATE, or REJECTED with a code and,
+    when one cell is at fault, its column), or REFUSED when the file could not
+    be read at all. Only for requesters whose listing says
+    `upload_reports: true`; others answer 404. Reports hold row numbers,
+    column names and codes, never cell contents, and are kept at least 7 days
+    after the file was read. Reading a report changes nothing.
+  tags: [Mailbox]
+  parameters:
+    - $ref: ../components/parameters.yaml#/RelayAgent
+  responses:
+    "200":
+      description: The report.
+      content:
+        application/json:
+          schema:
+            $ref: ../../profiles/csv/mailbox-report.yaml
+          examples:
+            all_applied:
+              externalValue: ../../examples/relay-mailbox-report/02-first-report.response.json
+            not_read_yet:
+              externalValue: ../../examples/relay-mailbox-report/03-received.response.json
+            row_problems:
+              externalValue: ../../examples/relay-mailbox-report/04-report.response.json
+            unreadable:
+              externalValue: ../../examples/relay-mailbox-report/05-refused.response.json
+    "401":
+      $ref: ../components/responses.yaml#/MailboxUnauthorized
+    "404":
+      description: >-
+        No upload with this name in this mailbox, its report has expired, or
+        the requester does not report on uploads (code NOT_FOUND).
+      content:
+        application/problem+json:
+          schema:
+            $ref: ../../profiles/core/error.yaml
+          examples:
+            unknown_upload:
+              externalValue: ../../examples/relay-mailbox-report/06-not-found.response.json
     "429":
       $ref: ../components/responses.yaml#/MailboxTooManyRequests
     "503":

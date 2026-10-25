@@ -4,6 +4,27 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+- Upload reports on the relay mailbox (SPEC.md §9.4, TQ-23), optional for requesters and
+  declared with `upload_reports: true` in the `GET /outbox` listing. `GET /inbox/{file_name}`
+  answers `csv/mailbox-report`: `RECEIVED`; `PROCESSED` with `row_count`, `applied_count`,
+  `duplicate_count`, `rejected_count` and `rows`, one `csv/mailbox-row-outcome` (`row`,
+  `outcome` `DUPLICATE` or `REJECTED`, `code`, `column`) for every row not applied; or
+  `REFUSED` with `refusal` (`INVALID_ENCODING`, `INVALID_HEADER`, `OTHER`). Row codes are
+  `csv/row-problem`: `MISSING_VALUE`, `INVALID_VALUE`, `WRONG_PROVIDER`, `WRONG_REQUESTER`,
+  `UNKNOWN_REQUEST`, `UNKNOWN_TRIP`, `KEY_REUSED`, `INVALID_STATE`, `OTHER`. No cell contents;
+  kept at least 7 days; 404 `NOT_FOUND` otherwise.
+- The listing may carry `requester_id` and `upload_reports`.
+- `tds_conform.mailbox.upload_report` computes a report for a file (used by `tds-mock` and the
+  example validator).
+- Example `relay-mailbox-report` (an upload with a duplicate, a reused key, an unknown request,
+  another provider's row and a bad time); the validator recomputes each report marked
+  `report_of`, and a new manifest kind `csv-upload` holds an upload that may have bad rows.
+- `tds-mock` reads uploads after `Mailbox(process_delay_s=…)` (default 0), in arrival order,
+  and serves their reports; `Mailbox(upload_reports=False)` turns them off.
+- Scenario `relay_mailbox_report` in the Relay mailbox level (`tds-conform mailbox`, new
+  `--max-wait`, default 120 s); passes with a note when the mailbox does not report.
+
 ## [0.9.0] - 2026-10-25
 
 A relay mailbox for CSV profile files (TQ-22), so an agent beside a scheduler that can only
