@@ -1,3 +1,39 @@
+get:
+  operationId: listSubscriptions
+  summary: List your subscriptions
+  description: >-
+    The authenticated requester's current subscriptions, oldest first, without
+    signing secrets (SPEC.md §9.3). Use it to find subscriptions to change or
+    end, e.g. duplicates made before PATCH was available. Optional for
+    providers: those that implement it declare `subscription_management: true`
+    on /health.
+  tags: [Events]
+  security:
+    - oauth2: [events:subscribe]
+  responses:
+    "200":
+      description: The requester's subscriptions; empty if it has none.
+      content:
+        application/json:
+          schema:
+            $ref: ../../profiles/core/subscription-list.yaml
+          examples:
+            one_subscription:
+              externalValue: ../../examples/subscription-changes/04-list.response.json
+    "401":
+      $ref: ../components/responses.yaml#/Unauthorized
+    "404":
+      description: >-
+        This endpoint does not list subscriptions over the API (it does not
+        declare subscription_management; code NOT_FOUND).
+      content:
+        application/problem+json:
+          schema:
+            $ref: ../../profiles/core/error.yaml
+    "429":
+      $ref: ../components/responses.yaml#/TooManyRequests
+    "503":
+      $ref: ../components/responses.yaml#/ServiceUnavailable
 post:
   operationId: createSubscription
   summary: Register a webhook
@@ -9,6 +45,10 @@ post:
     `ce-*` headers (SPEC.md §9.1). Providers that declare `secret_rotation:
     true` on /health also return `signing_secret_id` and mint later secrets
     with `POST /subscriptions/{subscription_id}/secrets` (SPEC.md §12.1).
+    Providers that declare `subscription_management: true` let the subscriber
+    change the event types or callback later with `PATCH
+    /subscriptions/{subscription_id}` instead of subscribing again (SPEC.md
+    §9.3).
   tags: [Events]
   security:
     - oauth2: [events:subscribe]
@@ -32,6 +72,9 @@ post:
           before_rotation:
             summary: A subscription whose secret is rotated later (SPEC.md §12.1)
             externalValue: ../../examples/secret-rotation/01-subscribe.request.json
+          before_change:
+            summary: A subscription whose event types are changed later (SPEC.md §9.3)
+            externalValue: ../../examples/subscription-changes/01-subscribe.request.json
   responses:
     "201":
       description: Subscription created.
@@ -48,6 +91,8 @@ post:
               externalValue: ../../examples/webhook-delivery/01-subscribe.response.json
             before_rotation:
               externalValue: ../../examples/secret-rotation/01-subscribe.response.json
+            before_change:
+              externalValue: ../../examples/subscription-changes/01-subscribe.response.json
     "400":
       $ref: ../components/responses.yaml#/BadRequest
     "401":

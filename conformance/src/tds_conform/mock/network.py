@@ -48,7 +48,8 @@ class Dispatcher:
 
     def submit(self, subscription: dict, event: dict, secrets: Callable[[], list[str]] | None = None) -> None:
         """Queue one delivery. `secrets` gives the active secrets, newest first, at each attempt
-        (SPEC.md §12.1); without it the subscription's `signing_secret` is used."""
+        (SPEC.md §12.1); without it the subscription's `signing_secret` is used. An empty list
+        means the subscription has ended (SPEC.md §9.3): the attempt is dropped, not retried."""
         body = json.dumps(event).encode()
         job = (time.monotonic(), next(self._seq), 1, subscription, body, event["event_id"], secrets)
         with self._cv:
@@ -64,7 +65,19 @@ class Dispatcher:
                     if self._stopped:
                         return
                     due, _, attempt, sub, body, event_id, secrets = heapq.heappop(self._queue)
-                outcome, hint = self._send(client, sub, body, secrets() if secrets else [sub["signing_secret"]])
+                signing = secrets() if secrets else [sub["signing_secret"]]
+                if not signing:  # the subscription has ended (SPEC.md §9.3): no further attempt
+                    self.log.append(
+                        {
+                            "event_id": event_id,
+                            "subscription_id": sub["subscription_id"],
+                            "attempt": attempt,
+                            "outcome": "dropped: subscription ended",
+                            "at": datetime.now(UTC).isoformat(timespec="seconds"),
+                        }
+                    )
+                    continue
+                outcome, hint = self._send(client, sub, body, signing)
                 entry = {
                     "event_id": event_id,
                     "subscription_id": sub["subscription_id"],

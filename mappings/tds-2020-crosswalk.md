@@ -164,6 +164,7 @@ cite; don't paste definitions (reuse terms not yet confirmed, see SPEC.md §16 Q
 | `health.booking_window_by_profile.nemt` | TODO(crosswalk) | | TODO | Protocol field; likely no TDS equivalent |
 | `health.booking_window_by_profile.transfer` | TODO(crosswalk) | | TODO | Protocol field; likely no TDS equivalent |
 | `health.secret_rotation` | TODO(crosswalk) | | TODO | Protocol field; likely no TDS equivalent. Declares support for the subscription secret operations (SPEC.md §12.1). |
+| `health.subscription_management` | TODO(crosswalk) | | TODO | Protocol field; likely no TDS equivalent. Declares support for reading, changing and ending subscriptions (SPEC.md §9.3). |
 
 ### Leg (`profiles/core/leg.yaml`)
 
@@ -236,6 +237,20 @@ cite; don't paste definitions (reuse terms not yet confirmed, see SPEC.md §16 Q
 | `subscription-request.event_types` | TODO(crosswalk) | | TODO | Protocol field; likely no TDS equivalent |
 | `subscription-request.cloudevents` | TODO(crosswalk) | | TODO | Protocol field; likely no TDS equivalent. Borrows the CloudEvents 1.0 HTTP binding (binary mode). |
 
+### SubscriptionList (`profiles/core/subscription-list.yaml`)
+
+| Field | TDS 2020 element | TDS section | Status | Notes |
+|---|---|---|---|---|
+| `subscription-list.subscriptions` | TODO(crosswalk) | | TODO | Protocol field; likely no TDS equivalent |
+
+### SubscriptionUpdate (`profiles/core/subscription-update.yaml`)
+
+| Field | TDS 2020 element | TDS section | Status | Notes |
+|---|---|---|---|---|
+| `subscription-update.callback_url` | TODO(crosswalk) | | TODO | Protocol field; likely no TDS equivalent |
+| `subscription-update.event_types` | TODO(crosswalk) | | TODO | Protocol field; likely no TDS equivalent |
+| `subscription-update.cloudevents` | TODO(crosswalk) | | TODO | Protocol field; likely no TDS equivalent. Borrows the CloudEvents 1.0 HTTP binding (binary mode). |
+
 ### SubscriptionSecretList (`profiles/core/subscription-secret-list.yaml`)
 
 | Field | TDS 2020 element | TDS section | Status | Notes |
@@ -263,6 +278,7 @@ cite; don't paste definitions (reuse terms not yet confirmed, see SPEC.md §16 Q
 | `subscription.signing_secret_id` | TODO(crosswalk) | | TODO | Protocol field; likely no TDS equivalent |
 | `subscription.cloudevents` | TODO(crosswalk) | | TODO | Protocol field; likely no TDS equivalent. Borrows the CloudEvents 1.0 HTTP binding (binary mode). |
 | `subscription.created_at` | TODO(crosswalk) | | TODO | Protocol field; likely no TDS equivalent |
+| `subscription.updated_at` | TODO(crosswalk) | | TODO | Protocol field; likely no TDS equivalent |
 
 ### TimeWindow (`profiles/core/time-window.yaml`)
 

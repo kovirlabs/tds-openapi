@@ -71,6 +71,9 @@ class ProviderConfig:
     default_overlap_s: int = 86400
     max_overlap_s: int = 7 * 86400
     max_active_secrets: int = 5
+    # Reading, changing and ending subscriptions (SPEC.md §9.3), declared on /health as
+    # subscription_management.
+    subscription_management: bool = True
     # Back-pressure (SPEC.md §7.2): {"requests": N, "per_s": S} lets each requester make N
     # authenticated calls per S seconds (sliding window); more get 429 RATE_LIMITED with
     # Retry-After. None: no limit. 503s are switched on with /_sim/<id>/unavailable.
@@ -161,6 +164,8 @@ class Provider(TransferMixin):
             body["booking_window_by_profile"] = copy.deepcopy(self.config.booking_window_by_profile)
         if self.config.secret_rotation:
             body["secret_rotation"] = True
+        if self.config.subscription_management:
+            body["subscription_management"] = True
         return 200, body
 
     def request_trip(self, requester: str, key: str | None, body) -> Response:
@@ -189,6 +194,37 @@ class Provider(TransferMixin):
     def subscribe(self, requester: str, key: str | None, body) -> Response:
         return self._idempotent(requester, key, "POST /subscriptions", body, lambda: self._subscribe(requester, body))
 
+    def list_subscriptions(self, requester: str) -> Response:
+        with self._lock:
+            if not self.config.subscription_management:
+                return _no_subscription_management()
+            subs = [_public(sub) for owner, sub in self._subscriptions.values() if owner == requester]
+            return 200, {"subscriptions": subs}
+
+    def get_subscription(self, requester: str, subscription_id: str) -> Response:
+        with self._lock:
+            if refusal := self._check_subscription_api(requester, subscription_id):
+                return refusal
+            return 200, _public(self._subscriptions[subscription_id][1])
+
+    def update_subscription(self, requester: str, key: str | None, subscription_id: str, body) -> Response:
+        return self._idempotent(
+            requester,
+            key,
+            f"PATCH /subscriptions/{subscription_id}",
+            body,
+            lambda: self._update_subscription(requester, subscription_id, body),
+        )
+
+    def delete_subscription(self, requester: str, key: str | None, subscription_id: str) -> Response:
+        return self._idempotent(
+            requester,
+            key,
+            f"DELETE /subscriptions/{subscription_id}",
+            None,
+            lambda: self._delete_subscription(requester, subscription_id),
+        )
+
     def rotate_secret(self, requester: str, key: str | None, subscription_id: str, body) -> Response:
         return self._idempotent(
             requester,
@@ -214,8 +250,11 @@ class Provider(TransferMixin):
         )
 
     def signing_secrets(self, subscription: dict) -> list[str]:
-        """Secrets to sign a delivery with now, newest first (SPEC.md §12, §12.1)."""
+        """Secrets to sign a delivery with now, newest first (SPEC.md §12, §12.1); empty once the
+        subscription has ended (SPEC.md §9.3), so no further attempt is made."""
         with self._lock:
+            if subscription["subscription_id"] not in self._subscriptions:
+                return []
             now = self.clock()
             older = self._secrets.get(subscription["subscription_id"], [])[1:]
             return [subscription["signing_secret"], *(s.value for s in older if s.active(now))]
@@ -422,6 +461,35 @@ class Provider(TransferMixin):
         self._secrets[sub["subscription_id"]] = [secret]
         return 201, copy.deepcopy(sub)
 
+    # --- reading, changing and ending subscriptions (SPEC.md §9.3) -------------------
+
+    def _check_subscription_api(self, requester: str, subscription_id: str) -> Response | None:
+        if not self.config.subscription_management:
+            return _no_subscription_management()
+        owned = self._subscriptions.get(subscription_id)
+        if not owned or owned[0] != requester:
+            return _not_found("subscription", subscription_id)
+        return None
+
+    def _update_subscription(self, requester: str, subscription_id: str, body) -> Response:
+        if errors := schema_errors(body, "subscription-update"):
+            return problem(400, "INVALID_REQUEST", "; ".join(errors))
+        if refusal := self._check_subscription_api(requester, subscription_id):
+            return refusal
+        sub = self._subscriptions[subscription_id][1]
+        # Changed in place: queued deliveries hold this dict, so their retries use the new
+        # callback_url; subscriptions_for() sees the new event_types for the next event.
+        sub.update(body)  # the reference provider supports the CloudEvents headers, so it echoes them
+        sub["updated_at"] = _ts(self.clock())
+        return 200, _public(sub)
+
+    def _delete_subscription(self, requester: str, subscription_id: str) -> Response:
+        if refusal := self._check_subscription_api(requester, subscription_id):
+            return refusal
+        _, sub = self._subscriptions.pop(subscription_id)
+        self._secrets.pop(subscription_id, None)
+        return 200, _public(sub)
+
     # --- subscription secrets (SPEC.md §12.1) ---------------------------------------
 
     def _check_secret_api(self, requester: str, subscription_id: str) -> Response | None:
@@ -591,3 +659,13 @@ class Provider(TransferMixin):
         self.events.append({"requester": owner, "event": event})
         self.sink(owner, event)
         return event
+
+
+def _public(subscription: dict) -> dict:
+    """A subscription as GET, PATCH and DELETE return it: never with its signing secret (SPEC.md §9.3)."""
+    return {k: copy.deepcopy(v) for k, v in subscription.items() if k != "signing_secret"}
+
+
+def _no_subscription_management() -> Response:
+    detail = "This endpoint does not read, change or end subscriptions over the API (subscription_management)."
+    return problem(404, "NOT_FOUND", detail)

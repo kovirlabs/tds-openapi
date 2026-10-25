@@ -62,6 +62,12 @@ old one keeps working until its `expires_at`, and deliveries carry a `webhook-si
 for each. `DELETE /subscriptions/<subscription_id>/secrets/<secret_id>` retires the old one
 early; `GET …/secrets` lists what is active. `examples/secret-rotation/` walks through it.
 
+To take another event type later (SPEC.md §9.3), `PATCH /subscriptions/<subscription_id>` with
+the full new list, e.g. `{"event_types": ["TRIP_STATUS_CHANGED", …, "ETA_UPDATE"]}` (and an
+`Idempotency-Key`): the subscription keeps its id and secret. `GET /subscriptions` lists yours
+(never with secrets) and `DELETE /subscriptions/<subscription_id>` stops deliveries to one.
+`examples/subscription-changes/` walks through it.
+
 ## The broker flow
 
 1. **Tender both legs** with the same `interchange` (`POST /tenders` at each provider).

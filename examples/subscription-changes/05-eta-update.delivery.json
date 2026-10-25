@@ -1,0 +1,13 @@
+{
+  "method": "POST",
+  "url": "https://broker.example.org/tds/events",
+  "headers": {
+    "Content-Type": "application/json",
+    "X-TDS-Signature": "sha256=9f611c56e3fdbb078e770b88db5bfdc24f0a044d79523b871f92a8fe86bbf265",
+    "X-TDS-Timestamp": "1794318002",
+    "webhook-id": "evt-0419",
+    "webhook-timestamp": "1794318002",
+    "webhook-signature": "v1,JXK7FdOf7zhKPkbA9Jr0J2+rjorbOZm10yLbVGoyZJk="
+  },
+  "body": "{\"event_id\":\"evt-0419\",\"event_type\":\"ETA_UPDATE\",\"occurred_at\":\"2026-11-10T08:40:00-05:00\",\"provider_id\":\"aaata-a-ride\",\"trip_id\":\"tr-20261110-0042\",\"leg_id\":\"leg-1\",\"schema_version\":\"0.8.0\",\"payload\":{\"eta\":{\"target\":\"DROPOFF\",\"earliest\":\"2026-11-10T09:02:00-05:00\",\"likely\":\"2026-11-10T09:06:00-05:00\",\"latest\":\"2026-11-10T09:12:00-05:00\",\"confidence\":0.85,\"computed_at\":\"2026-11-10T08:40:00-05:00\",\"source\":\"VEHICLE_POSITION\"}}}"
+}

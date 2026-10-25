@@ -1,0 +1,44 @@
+# Changing and ending a webhook subscription (SPEC.md §9.3). Hand-written; the signing secret is
+# published here only so the delivery's signatures can be checked (computed with tds_conform.events
+# and checked by scripts/validate_examples.py).
+description: >-
+  A broker subscribed to a transfer provider's core, tender, hold and milestone events and now
+  wants ETA bands too. It reads the subscription, sends the full new set of event types with
+  PATCH, and keeps the same subscription_id and signing secret: the next ETA_UPDATE delivery
+  verifies with the secret it received when it subscribed. Listing shows the one subscription.
+  When the broker stops working with the provider it ends the subscription; reading it then is
+  NOT_FOUND. No answer after the first carries the signing secret.
+files:
+  01-subscribe.request.json:
+    schema: https://tds-openapi.org/schemas/core/subscription-request.yaml
+    operation: POST /subscriptions
+  01-subscribe.response.json:
+    schema: https://tds-openapi.org/schemas/core/subscription.yaml
+    operation: POST /subscriptions
+    status: 201
+  02-read.response.json:
+    schema: https://tds-openapi.org/schemas/core/subscription.yaml
+    operation: GET /subscriptions/{subscription_id}
+    status: 200
+  03-add-eta-update.request.json:
+    schema: https://tds-openapi.org/schemas/core/subscription-update.yaml
+    operation: PATCH /subscriptions/{subscription_id}
+  03-add-eta-update.response.json:
+    schema: https://tds-openapi.org/schemas/core/subscription.yaml
+    operation: PATCH /subscriptions/{subscription_id}
+    status: 200
+  04-list.response.json:
+    schema: https://tds-openapi.org/schemas/core/subscription-list.yaml
+    operation: GET /subscriptions
+    status: 200
+  05-eta-update.delivery.json:
+    kind: webhook-delivery
+    subscription: 01-subscribe.response.json
+  06-end.response.json:
+    schema: https://tds-openapi.org/schemas/core/subscription.yaml
+    operation: DELETE /subscriptions/{subscription_id}
+    status: 200
+  07-read-ended.response.json:
+    schema: https://tds-openapi.org/schemas/core/error.yaml
+    operation: GET /subscriptions/{subscription_id}
+    status: 404

@@ -30,7 +30,11 @@ RESPONSE_SCHEMAS = {
     ("POST /tenders", 201): "transfer/tender",
     ("POST /tenders", 202): "transfer/tender",
     ("GET /tenders/{tender_id}", 200): "transfer/tender",
+    ("GET /subscriptions", 200): "core/subscription-list",
     ("POST /subscriptions", 201): "core/subscription",
+    ("GET /subscriptions/{subscription_id}", 200): "core/subscription",
+    ("PATCH /subscriptions/{subscription_id}", 200): "core/subscription",
+    ("DELETE /subscriptions/{subscription_id}", 200): "core/subscription",
     ("POST /subscriptions/{subscription_id}/secrets", 201): "core/subscription-secret-list",
     ("GET /subscriptions/{subscription_id}/secrets", 200): "core/subscription-secret-list",
     ("DELETE /subscriptions/{subscription_id}/secrets/{secret_id}", 200): "core/subscription-secret",
@@ -42,6 +46,7 @@ REQUEST_SCHEMAS = {
     "POST /trips/{trip_id}/hold": "transfer/hold-request",
     "POST /tenders": "transfer/tender-request",
     "POST /subscriptions": "core/subscription-request",
+    "PATCH /subscriptions/{subscription_id}": "core/subscription-update",
     "POST /subscriptions/{subscription_id}/secrets": "core/secret-rotation-request",
 }
 AUTO_KEY = object()

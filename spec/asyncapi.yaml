@@ -6,7 +6,10 @@ info:
     Events a provider delivers to a requester's webhook (SPEC.md §9, §12),
     and the exception events a broker delivers to its own subscribers. The
     requester registers a callback URL with `POST /subscriptions` (see
-    openapi.yaml) and receives the signing secret once.
+    openapi.yaml) and receives the signing secret once. Where the provider
+    supports it, the requester later changes the event types or callback with
+    `PATCH /subscriptions/{subscription_id}` (same secret) and ends delivery
+    with `DELETE /subscriptions/{subscription_id}` (SPEC.md §9.3).
 
 
     **Delivery.** Each event is an HTTPS POST of one JSON event to the callback

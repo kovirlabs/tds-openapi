@@ -1,0 +1,37 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/core/subscription-update.yaml
+title: SubscriptionUpdate
+description: >-
+  Body of `PATCH /subscriptions/{subscription_id}` (SPEC.md §9.3). Each field
+  present replaces the subscription's value; fields left out keep theirs. At
+  least one field is required. The signing secret is not changed (rotate it with
+  `POST /subscriptions/{subscription_id}/secrets`, SPEC.md §12.1).
+type: object
+properties:
+  callback_url:
+    description: >-
+      New HTTPS URL to POST events to, with the same rules as on
+      `POST /subscriptions` (plain http only for loopback addresses).
+    type: string
+    format: uri
+    pattern: "^(https://|http://(localhost|127\\.0\\.0\\.1)(:[0-9]+)?(/|$))"
+  event_types:
+    description: >-
+      The complete new set of event types to deliver. It replaces the current
+      set as a whole, so to add one type send the current types plus the new
+      one (read them with `GET /subscriptions/{subscription_id}`).
+    $ref: ./event-types.yaml
+  cloudevents:
+    description: >-
+      Ask for (true) or stop asking for (false) CloudEvents binary-mode `ce-*`
+      headers (SPEC.md §9.1). As on creation, a provider that cannot add them
+      still applies the rest of the change and answers `cloudevents: false`.
+    type: boolean
+anyOf:
+  - required: [callback_url]
+  - required: [event_types]
+  - required: [cloudevents]
+examples:
+  - event_types: [TRIP_STATUS_CHANGED, TRIP_SCHEDULED, TRIP_CANCELLED, MILESTONE, ETA_UPDATE]
+  - callback_url: "https://broker.example.org/tds/v2/events"
+  - cloudevents: true

@@ -508,3 +508,138 @@ def secret_rotation(ctx: Context) -> None:
                 and verify_standard(old, d.headers, d.body) is None
             ]
             step.check(not stale, "after retiring, no signature is made with the old secret", f"on {stale[:3]}")
+
+
+SUBSCRIPTION = "/subscriptions/{subscription_id}"
+
+
+@scenario(
+    "subscription_management",
+    "core",
+    "Subscriptions are read, changed and ended over the API, keeping their secret (when /health declares it)",
+)
+def subscription_management(ctx: Context) -> None:
+    import uuid
+
+    from tds_conform.events import verify
+
+    if not ctx.health:
+        step = ctx.call("health", "GET", "/health", expect=(200,), auth=False)
+        ctx.health = step.body if isinstance(step.body, dict) else {}
+    if ctx.health.get("subscription_management") is not True:
+        ctx.result.note = "subscription_management not declared on /health; nothing to check"
+        return
+    receiver = ctx.settings.receiver
+    tag = f"manage-{uuid.uuid4().hex[:12]}"
+    callback = f"{receiver.url}?subscription={tag}" if receiver else "http://127.0.0.1:9/tds-conform-unused"
+    step = ctx.call(
+        "subscribe",
+        "POST",
+        "/subscriptions",
+        body={"callback_url": callback, "event_types": ["TRIP_STATUS_CHANGED"]},
+        expect=(201,),
+    )
+    step.require(step.status == 201 and "signing_secret" in step.body, "subscription returns a signing_secret")
+    created = step.body
+    sub_id, secret = created["subscription_id"], created["signing_secret"]
+
+    def no_secret(step, what: str) -> None:
+        step.check(
+            isinstance(step.body, dict) and "signing_secret" not in step.body,
+            f"{what} carries no signing_secret",
+            "signing_secret returned",
+        )
+
+    step = ctx.call("read the subscription", "GET", SUBSCRIPTION, expect=(200,), subscription_id=sub_id)
+    no_secret(step, "reading")
+    if isinstance(step.body, dict):
+        for name in ("subscription_id", "callback_url", "event_types"):
+            step.check_equal(step.body.get(name), created.get(name), f"{name} as created")
+
+    step = ctx.call("list subscriptions", "GET", "/subscriptions", expect=(200,))
+    listed = step.body.get("subscriptions", []) if isinstance(step.body, dict) else []
+    step.check(any(s.get("subscription_id") == sub_id for s in listed), "the listing has the subscription", "missing")
+    step.check(all("signing_secret" not in s for s in listed), "a listing carries no signing_secret", "secret listed")
+
+    change, key = {"event_types": ["TRIP_CANCELLED"]}, f"conform-{uuid.uuid4()}"
+    step = ctx.call(
+        "change the event types", "PATCH", SUBSCRIPTION, body=change, key=key, expect=(200,), subscription_id=sub_id
+    )
+    step.require(step.status == 200 and isinstance(step.body, dict), "the change is applied")
+    changed = step.body
+    no_secret(step, "the change's answer")
+    step.check_equal(changed.get("subscription_id"), sub_id, "subscription_id unchanged")
+    step.check_equal(changed.get("event_types"), ["TRIP_CANCELLED"], "event_types replaced as a whole")
+    step.check_equal(changed.get("callback_url"), created.get("callback_url"), "callback_url left as it was")
+    step.check("updated_at" in changed, "the answer carries updated_at", "no updated_at")
+    if created.get("signing_secret_id"):
+        step.check_equal(changed.get("signing_secret_id"), created["signing_secret_id"], "signing_secret_id unchanged")
+    step = ctx.call(
+        "replay the change", "PATCH", SUBSCRIPTION, body=change, key=key, expect=(200,), subscription_id=sub_id
+    )
+    step.check_equal(step.body, changed, "a replay with the same Idempotency-Key returns the same answer")
+    step = ctx.call(
+        "reuse the key with another change",
+        "PATCH",
+        SUBSCRIPTION,
+        body={"cloudevents": False},
+        key=key,
+        expect=(409,),
+        subscription_id=sub_id,
+    )
+    step.check_equal(_code(step.body), "IDEMPOTENCY_KEY_REUSED", "refused with IDEMPOTENCY_KEY_REUSED")
+    step = ctx.call("change nothing", "PATCH", SUBSCRIPTION, body={}, expect=(400,), subscription_id=sub_id)
+    step.check_equal(_code(step.body), "INVALID_REQUEST", "an empty change is INVALID_REQUEST")
+    step = ctx.call("read after the change", "GET", SUBSCRIPTION, expect=(200,), subscription_id=sub_id)
+    step.check_equal(
+        step.body.get("event_types") if isinstance(step.body, dict) else None, ["TRIP_CANCELLED"], "new event_types"
+    )
+
+    if receiver:
+        deliveries = _trip_deliveries(ctx, receiver, f"conform-{uuid.uuid4().hex[:12]}", tag)
+        step = ctx.result.steps[-1]
+        dropped = [d.event.get("event_type") for d in deliveries if d.event.get("event_type") != "TRIP_CANCELLED"]
+        step.check(not dropped, "after the change, only the new event types are delivered", f"got {dropped[:3]}")
+        bad = [p for d in deliveries if (p := verify(secret, d.headers, d.body))]
+        step.check(not bad, "after the change, deliveries verify with the secret from subscribing", "; ".join(bad[:3]))
+
+    key = f"conform-{uuid.uuid4()}"
+    step = ctx.call("end the subscription", "DELETE", SUBSCRIPTION, key=key, expect=(200,), subscription_id=sub_id)
+    no_secret(step, "ending")
+    ended = step.body
+    step = ctx.call("replay the end", "DELETE", SUBSCRIPTION, key=key, expect=(200,), subscription_id=sub_id)
+    step.check_equal(step.body, ended, "a replay with the same Idempotency-Key returns the same answer")
+    for label, method, body in [
+        ("read the ended subscription", "GET", None),
+        ("change the ended subscription", "PATCH", change),
+        ("end it again", "DELETE", None),
+    ]:
+        step = ctx.call(label, method, SUBSCRIPTION, body=body, expect=(404,), subscription_id=sub_id)
+        step.check_equal(_code(step.body), "NOT_FOUND", "code is NOT_FOUND")
+    step = ctx.call("list after ending", "GET", "/subscriptions", expect=(200,))
+    listed = step.body.get("subscriptions", []) if isinstance(step.body, dict) else []
+    step.check(all(s.get("subscription_id") != sub_id for s in listed), "the ended one is not listed", "still listed")
+    ctx.call(
+        "read an unknown subscription",
+        "GET",
+        SUBSCRIPTION,
+        expect=(404,),
+        subscription_id=f"conform-missing-{uuid.uuid4().hex[:8]}",
+    )
+
+    if receiver:
+        # A second subscription shows when the next trip's events have gone out.
+        witness = f"manage-witness-{uuid.uuid4().hex[:12]}"
+        body = {"callback_url": f"{receiver.url}?subscription={witness}", "event_types": ["TRIP_CANCELLED"]}
+        step = ctx.call("subscribe a witness", "POST", "/subscriptions", body=body, expect=(201,))
+        witness_id = step.body.get("subscription_id") if isinstance(step.body, dict) else None
+        trip_id = f"conform-{uuid.uuid4().hex[:12]}"
+        _trip_deliveries(ctx, receiver, trip_id, witness)
+        late = [
+            d.event.get("event_type")
+            for d in receiver.deliveries
+            if tag in d.path and isinstance(d.event, dict) and d.event.get("trip_id") == trip_id
+        ]
+        ctx.result.steps[-1].check(not late, "nothing is delivered to an ended subscription", f"got {late[:3]}")
+        if witness_id:
+            ctx.call("end the witness", "DELETE", SUBSCRIPTION, expect=(200,), subscription_id=witness_id)

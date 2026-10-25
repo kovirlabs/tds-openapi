@@ -1,0 +1,133 @@
+parameters:
+  - $ref: ../components/parameters.yaml#/SubscriptionId
+get:
+  operationId: getSubscription
+  summary: Read a subscription
+  description: >-
+    The subscription's callback, event types and settings (SPEC.md §9.3),
+    without its signing secret. Optional for providers: those that implement it
+    declare `subscription_management: true` on /health.
+  tags: [Events]
+  security:
+    - oauth2: [events:subscribe]
+  responses:
+    "200":
+      description: The subscription, without signing_secret.
+      content:
+        application/json:
+          schema:
+            $ref: ../../profiles/core/subscription.yaml
+          examples:
+            core_and_transfer_events:
+              externalValue: ../../examples/subscription-changes/02-read.response.json
+    "401":
+      $ref: ../components/responses.yaml#/Unauthorized
+    "404":
+      description: >-
+        No such subscription for the authenticated requester, including one it
+        has ended (code NOT_FOUND).
+      content:
+        application/problem+json:
+          schema:
+            $ref: ../../profiles/core/error.yaml
+          examples:
+            ended:
+              externalValue: ../../examples/subscription-changes/07-read-ended.response.json
+    "429":
+      $ref: ../components/responses.yaml#/TooManyRequests
+    "503":
+      $ref: ../components/responses.yaml#/ServiceUnavailable
+patch:
+  operationId: updateSubscription
+  summary: Change a subscription
+  description: >-
+    Replace the subscription's event types, callback URL or CloudEvents setting
+    (SPEC.md §9.3); fields left out keep their values, and `event_types` is
+    replaced as a whole. The subscription_id, signing secrets and secret ids do
+    not change, so deliveries keep verifying with the secret the subscriber
+    already holds. Events raised after the response follow the new settings.
+    A retry with the same Idempotency-Key returns the same answer. Optional for
+    providers: those that implement it declare `subscription_management: true`
+    on /health.
+  tags: [Events]
+  security:
+    - oauth2: [events:subscribe]
+  parameters:
+    - $ref: ../components/parameters.yaml#/IdempotencyKey
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../profiles/core/subscription-update.yaml
+        examples:
+          add_eta_update:
+            summary: Add ETA_UPDATE to the event types
+            externalValue: ../../examples/subscription-changes/03-add-eta-update.request.json
+  responses:
+    "200":
+      description: The changed subscription, with updated_at and without signing_secret.
+      content:
+        application/json:
+          schema:
+            $ref: ../../profiles/core/subscription.yaml
+          examples:
+            add_eta_update:
+              externalValue: ../../examples/subscription-changes/03-add-eta-update.response.json
+    "400":
+      $ref: ../components/responses.yaml#/BadRequest
+    "401":
+      $ref: ../components/responses.yaml#/Unauthorized
+    "404":
+      $ref: ../components/responses.yaml#/SubscriptionNotFound
+    "409":
+      description: Idempotency-Key reused with a different body (code IDEMPOTENCY_KEY_REUSED).
+      content:
+        application/problem+json:
+          schema:
+            $ref: ../../profiles/core/error.yaml
+    "429":
+      $ref: ../components/responses.yaml#/TooManyRequests
+    "503":
+      $ref: ../components/responses.yaml#/ServiceUnavailable
+delete:
+  operationId: deleteSubscription
+  summary: End a subscription
+  description: >-
+    End the subscription (SPEC.md §9.3): no delivery attempt to it starts after
+    the response, retries of earlier events included, and its signing secrets
+    stop being used. Reading, changing or ending it again is NOT_FOUND; a retry
+    with the same Idempotency-Key returns the same answer. Optional for
+    providers: those that implement it declare `subscription_management: true`
+    on /health.
+  tags: [Events]
+  security:
+    - oauth2: [events:subscribe]
+  parameters:
+    - $ref: ../components/parameters.yaml#/IdempotencyKey
+  responses:
+    "200":
+      description: The subscription as it was when it ended, without signing_secret.
+      content:
+        application/json:
+          schema:
+            $ref: ../../profiles/core/subscription.yaml
+          examples:
+            ended:
+              externalValue: ../../examples/subscription-changes/06-end.response.json
+    "400":
+      $ref: ../components/responses.yaml#/BadRequest
+    "401":
+      $ref: ../components/responses.yaml#/Unauthorized
+    "404":
+      $ref: ../components/responses.yaml#/SubscriptionNotFound
+    "409":
+      description: Idempotency-Key reused with a different request (code IDEMPOTENCY_KEY_REUSED).
+      content:
+        application/problem+json:
+          schema:
+            $ref: ../../profiles/core/error.yaml
+    "429":
+      $ref: ../components/responses.yaml#/TooManyRequests
+    "503":
+      $ref: ../components/responses.yaml#/ServiceUnavailable
