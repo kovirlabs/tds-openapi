@@ -1,0 +1,11 @@
+{
+  "event_types": [
+    "TRIP_STATUS_CHANGED",
+    "TRIP_SCHEDULED",
+    "TRIP_CANCELLED",
+    "TENDER_RESPONSE",
+    "HOLD_RESPONSE",
+    "MILESTONE",
+    "ETA_UPDATE"
+  ]
+}

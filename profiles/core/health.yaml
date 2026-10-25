@@ -76,6 +76,14 @@ properties:
       Absent or false: a new secret is arranged out of band.
     type: boolean
     default: false
+  subscription_management:
+    description: >-
+      True if this endpoint implements reading, changing and ending webhook
+      subscriptions (`GET /subscriptions`, `GET`/`PATCH`/`DELETE
+      /subscriptions/{subscription_id}`, SPEC.md §9.3). Absent or false: a
+      subscription's event types or callback cannot be changed over the API.
+    type: boolean
+    default: false
 examples:
   - status: "OK"
     spec_versions: ["0.2.0"]
@@ -91,6 +99,12 @@ examples:
     profiles: [CORE]
     operated_via: "DIRECT"
     secret_rotation: true
+  - status: "OK"
+    spec_versions: ["0.8.0"]
+    profiles: [CORE, TRANSFER]
+    operated_via: "DIRECT"
+    secret_rotation: true
+    subscription_management: true
   - status: "OK"
     spec_versions: ["0.5.3"]
     profiles: [CORE, PARATRANSIT]

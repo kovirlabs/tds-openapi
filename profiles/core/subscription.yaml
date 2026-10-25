@@ -1,7 +1,9 @@
 $schema: https://json-schema.org/draft/2020-12/schema
 $id: https://tds-openapi.org/schemas/core/subscription.yaml
 title: Subscription
-description: A registered webhook subscription.
+description: >-
+  A registered webhook subscription. The answer to creating it carries the
+  signing secret; reading, changing or ending it (SPEC.md §9.3) never does.
 type: object
 required: [subscription_id, callback_url, event_types, created_at]
 properties:
@@ -18,7 +20,8 @@ properties:
   signing_secret:
     description: >-
       Shared secret for the webhook signatures (SPEC.md §12). Returned only in
-      the response that creates the subscription. Providers SHOULD issue it as
+      the response that creates the subscription (and its replay under the same
+      Idempotency-Key), never by GET, PATCH or DELETE (SPEC.md §9.3). Providers SHOULD issue it as
       a Standard Webhooks secret: `whsec_` followed by the standard base64 of
       24 to 64 random bytes. `webhook-signature` is keyed with those decoded
       bytes; the deprecated `X-TDS-Signature` is keyed with the UTF-8 bytes of
@@ -43,6 +46,13 @@ properties:
     default: false
   created_at:
     description: When the subscription was created, RFC 3339 with offset.
+    type: string
+    format: date-time
+  updated_at:
+    description: >-
+      When the subscription was last changed with `PATCH
+      /subscriptions/{subscription_id}` (SPEC.md §9.3), RFC 3339 with offset.
+      Absent if it has never been changed.
     type: string
     format: date-time
 examples:

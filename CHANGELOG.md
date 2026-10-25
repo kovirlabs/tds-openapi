@@ -4,6 +4,42 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+- Reading, changing and ending webhook subscriptions (SPEC.md §9.3), optional for providers,
+  declared with `subscription_management: true` on `/health` (TQ-21). A subscriber can take a
+  new event type such as `ETA_UPDATE` without a second subscription, callback and secret:
+  - `GET /subscriptions` lists the requester's own subscriptions, oldest first
+    (`subscription-list`); `GET /subscriptions/{subscription_id}` reads one. Neither returns
+    `signing_secret`.
+  - `PATCH /subscriptions/{subscription_id}` (`Idempotency-Key`; body `subscription-update`
+    with at least one of `event_types`, `callback_url`, `cloudevents`) replaces the fields it
+    carries; `event_types` is replaced as a whole. 200 with the subscription, `updated_at`
+    set, no `signing_secret`. The id, secrets and `signing_secret_id` stay the same, so
+    deliveries keep verifying with the secret the subscriber holds. Events raised after the
+    answer follow the new settings.
+  - `DELETE /subscriptions/{subscription_id}` (`Idempotency-Key`) ends it: 200 with the
+    subscription, no delivery attempt starts afterwards (retries included), and later calls
+    for it (including its secret operations) are `NOT_FOUND`.
+  - Scope `events:subscribe`; another requester's subscription is `NOT_FOUND`; replays with
+    the same key return the same answer.
+  - New core schemas `subscription-update`, `subscription-list`; `subscription.updated_at`;
+    `health.subscription_management`. Crosswalk rows (TODO, protocol fields).
+- Example `subscription-changes`: subscribe, read, add `ETA_UPDATE` with PATCH, list, an
+  `ETA_UPDATE` delivery that verifies with the secret from subscribing, end, read after the end
+  (404).
+- `tds-mock` implements the four operations (`ProviderConfig.subscription_management`,
+  default on). Its webhook sender drops queued attempts for an ended subscription (delivery
+  log outcome `dropped: subscription ended`; `Dispatcher.submit`'s `secrets` callable returns
+  an empty list for one).
+- Core scenario `subscription_management`: runs only when `/health` declares it (others pass
+  with a note), so existing providers stay conformant. With a webhook receiver it also checks
+  that after a change only the new event types arrive, signed with the original secret, and
+  that nothing arrives after the end.
+
+### Changed
+- `POST /subscriptions` and the `events:subscribe` scope descriptions mention the new
+  operations. SPEC.md §15: v0.8 is subscription management; settlement exchange moves to v0.9+.
+
 ## [0.7.1] - 2026-10-24
 
 Back-pressure: providers say how long to wait, so brokers back off instead of retrying on

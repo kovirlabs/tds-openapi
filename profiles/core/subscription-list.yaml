@@ -1,0 +1,24 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/core/subscription-list.yaml
+title: SubscriptionList
+description: >-
+  The authenticated requester's own webhook subscriptions, oldest first
+  (`GET /subscriptions`, SPEC.md §9.3). Ended subscriptions are left out and no
+  entry carries a signing secret.
+type: object
+required: [subscriptions]
+properties:
+  subscriptions:
+    description: The requester's current subscriptions, oldest first; empty if it has none.
+    type: array
+    items:
+      $ref: ./subscription.yaml
+examples:
+  - subscriptions:
+      - subscription_id: "sub-01"
+        callback_url: "https://broker.example.org/tds/events"
+        event_types: [TRIP_STATUS_CHANGED, ETA_UPDATE]
+        signing_secret_id: "sec-1"
+        created_at: "2026-10-30T13:00:00-04:00"
+        updated_at: "2026-11-02T09:00:00-05:00"
+  - subscriptions: []

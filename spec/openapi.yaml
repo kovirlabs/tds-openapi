@@ -28,7 +28,7 @@ tags:
   - name: Trips
     description: Request, confirm, modify, cancel and read trips.
   - name: Events
-    description: Webhook subscriptions and their signing secrets.
+    description: Webhook subscriptions (create, read, change, end) and their signing secrets.
   - name: Transfer
     description: "Transfer profile: tenders and hold requests for protected cross-provider connections."
   - name: Meta
@@ -52,6 +52,8 @@ paths:
     $ref: paths/tender.yaml
   /subscriptions:
     $ref: paths/subscriptions.yaml
+  /subscriptions/{subscription_id}:
+    $ref: paths/subscription.yaml
   /subscriptions/{subscription_id}/secrets:
     $ref: paths/subscription-secrets.yaml
   /subscriptions/{subscription_id}/secrets/{secret_id}:
@@ -72,5 +74,5 @@ components:
           scopes:
             trips:read: Read trips this client requested.
             trips:write: Request, confirm, modify and cancel trips.
-            events:subscribe: Register webhook subscriptions.
+            events:subscribe: Register, read, change and end webhook subscriptions and rotate their secrets.
             tenders:write: Send tenders (transfer profile).
