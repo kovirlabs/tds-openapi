@@ -1,12 +1,15 @@
 """Relay mailbox scenarios (SPEC.md §9.4), run against a requester's mailbox with `tds-conform mailbox`.
 
 `relay_mailbox_upload` leaves one header-only answers file (no rows, so nothing to apply) in the
-mailbox under a `conform-` name. `relay_mailbox_download` reads a waiting request file and, only
-with `--take-files`, acknowledges it: use a test mailbox for that, since an acknowledged file
+mailbox under a `conform-` name; `relay_mailbox_report` (only for mailboxes that declare
+`upload_reports`) one whose four rows are each wrong in a known way, so none is applied.
+`relay_mailbox_download` reads a waiting request file and, only with `--take-files`,
+acknowledges it: use a test mailbox for that, since an acknowledged file
 leaves the listing and the provider's real agent would not see it.
 """
 
 import secrets
+import time
 from datetime import UTC, datetime
 
 from tds_conform.csvfile import file_name, file_problems, write
@@ -159,3 +162,85 @@ def _moment(value: str) -> datetime:
         return datetime.fromisoformat(value.replace("Z", "+00:00"))
     except ValueError:
         return datetime.min.replace(tzinfo=UTC)
+
+
+@scenario("relay_mailbox_report", "csv", "Relay mailbox: row-by-row report on an uploaded file")
+def relay_mailbox_report(ctx: Context) -> None:
+    listing = _list(ctx, "list the outbox")
+    if listing.body.get("upload_reports") is not True:
+        ctx.result.note = "the mailbox does not report on uploads (upload_reports is optional); nothing to check"
+        return
+    requester = listing.body.get("requester_id") or "conform-requester"
+    provider = listing.body.get("provider_id", "")
+    run = f"conform-{secrets.token_hex(4)}"
+    base = {
+        "requester_id": requester,
+        "provider_id": provider,
+        "leg_id": "leg-1",
+        "action": "REQUEST",
+        "revision": 1,
+        "result": "REJECTED",
+        "status": "REJECTED",
+        "reason": "OUTSIDE_SERVICE_AREA",
+        "answered_at": datetime.now(UTC).isoformat(timespec="seconds"),
+    }
+    rows = [  # every row is wrong in one known way, so nothing is applied
+        base | {"trip_id": f"{run}-unknown"},
+        base | {"trip_id": f"{run}-provider", "provider_id": f"{run}-not-this-provider"},
+        base | {"trip_id": f"{run}-time", "answered_at": "yesterday"},
+        base | {"trip_id": f"{run}-missing", "result": None},
+    ]
+    expected = [
+        (2, ("UNKNOWN_REQUEST", "WRONG_REQUESTER"), None),
+        (3, ("WRONG_PROVIDER",), "provider_id"),
+        (4, ("INVALID_VALUE",), "answered_at"),
+        (5, ("MISSING_VALUE",), "result"),
+    ]
+    data = write(rows, "answers")
+    name = file_name("answers", datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ"), run)
+    _put(ctx, "upload an answers file with four bad rows", name, data, (201,))
+
+    report = _wait_for_report(ctx, name)
+    report.check_equal(report.body.get("sha256"), sha256_hex(data), "the report's sha256 is the upload's")
+    status = report.body.get("status")
+    if status == "RECEIVED":
+        _stop_without_verdict(ctx, f"the upload was not read within {ctx.max_wait_s:.0f} s; rerun with --max-wait")
+    report.require(status == "PROCESSED", "the file is PROCESSED", f"got {status}")
+    body = report.body
+    report.check_equal(body.get("row_count"), 4, "row_count is 4")
+    report.check_equal(body.get("applied_count"), 0, "no row applied")
+    report.check_equal(body.get("rejected_count"), 4, "every row rejected")
+    counts = sum(body.get(k, 0) for k in ("applied_count", "duplicate_count", "rejected_count"))
+    report.check_equal(counts, body.get("row_count"), "the counts add up to row_count")
+    listed = {r.get("row"): r for r in body.get("rows", [])}
+    report.check_equal(sorted(listed), [2, 3, 4, 5], "every row not applied is listed, by row number")
+    for row, codes, column in expected:
+        entry = listed.get(row, {})
+        report.check_equal(entry.get("outcome"), "REJECTED", f"row {row} is REJECTED")
+        report.check(entry.get("code") in codes, f"row {row} code is {' or '.join(codes)}", f"got {entry.get('code')}")
+        if column:
+            report.advise(
+                entry.get("column") == column, f"row {row} names column {column} (SHOULD)", f"got {entry.get('column')}"
+            )
+
+    _put(ctx, "upload the same bytes again (a retry)", name, data, (200,))
+    again = ctx.call("read the report again", "GET", "/inbox/{file_name}", expect=(200,), file_name=name)
+    if again.status == 200:
+        again.check_equal(
+            {k: v for k, v in again.body.items()}, body, "the report is unchanged: a retried upload is not read twice"
+        )
+    unknown = file_name("answers", "19990101T000000Z", run)
+    missing = ctx.call("report on a file never uploaded", "GET", "/inbox/{file_name}", expect=(404,), file_name=unknown)
+    if missing.status == 404:
+        _code(missing, "NOT_FOUND")
+
+
+def _wait_for_report(ctx: Context, name: str) -> Step:
+    """GET the report until it leaves RECEIVED or the wait runs out; the last step."""
+    deadline = time.monotonic() + ctx.max_wait_s
+    while True:
+        step = ctx.call("read the upload's report", "GET", "/inbox/{file_name}", expect=(200,), file_name=name)
+        step.require(step.status == 200 and isinstance(step.body, dict), "the upload has a report")
+        if step.body.get("status") != "RECEIVED" or time.monotonic() > deadline:
+            return step
+        time.sleep(1.0)

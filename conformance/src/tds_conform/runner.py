@@ -45,6 +45,7 @@ MAILBOX_RESPONSE_SCHEMAS = {
     ("POST /ack/{file_name}", 200): "csv/mailbox-ack",
     ("PUT /inbox/{file_name}", 201): "csv/mailbox-receipt",
     ("PUT /inbox/{file_name}", 200): "csv/mailbox-receipt",
+    ("GET /inbox/{file_name}", 200): "csv/mailbox-report",
 }
 REQUEST_SCHEMAS = {
     "POST /trips": "core/trip-request",

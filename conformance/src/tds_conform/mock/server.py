@@ -8,7 +8,7 @@ URLs:
                             answer 503 for a while (POST /_sim/<id>/unavailable {"for_s": 30});
                             read the event log
   /mailbox/...              a requester-side relay mailbox for CSV profile files (SPEC.md §9.4):
-                            GET outbox, GET outbox/<name>, POST ack/<name>, PUT inbox/<name>;
+                            GET outbox, GET outbox/<name>, POST ack/<name>, PUT and GET inbox/<name>;
                             the bearer token is the provider id whose mailbox it is
   /_sim/mailbox/<id>        GET: what the agent did (last poll, acks, uploads with their text);
                             POST .../outbox {"content"?, "name"?} queues a request file;
@@ -130,6 +130,7 @@ def make_handler(network: Network) -> type[BaseHTTPRequestHandler]:
                 ("outbox", "GET", True),
                 ("ack", "POST", True),
                 ("inbox", "PUT", True),
+                ("inbox", "GET", True),
             }
             if mailbox is None:
                 self._discard_body()
@@ -143,6 +144,8 @@ def make_handler(network: Network) -> type[BaseHTTPRequestHandler]:
             name = unquote(route["name"] or "")
             if method == "GET" and not name:
                 return self._send(*mailbox.listing())
+            if method == "GET" and route["box"] == "inbox":
+                return self._send(*mailbox.report(name))
             if method == "GET":
                 status, body = mailbox.download(name)
                 if isinstance(body, bytes):

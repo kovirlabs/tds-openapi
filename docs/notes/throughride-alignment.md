@@ -156,7 +156,8 @@ Append under *Open*, one heading per mismatch:
   - Kit: `tds-conform mailbox --url … --token … [--take-files]` (Relay mailbox level, a
     requester's); `tds-mock` serves `/mailbox` with the provider id as token.
   - Open for later (SPEC.md §16 #9): a way for the requester to report back on an uploaded
-    file's rows.
+    file's rows. **Done in v0.10.0** (TQ-23): optional `GET /inbox/{file_name}` upload reports;
+    see the v0.10.0 release notes below.
 
 ## v0.4.1 audit (2026-10-21)
 

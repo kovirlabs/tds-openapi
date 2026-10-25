@@ -1,0 +1,18 @@
+{
+  "name": "tds_answers_20261104T211500Z.csv",
+  "sha256": "13751162071572e09e49f02cf629e372d88b65b703392ce5ea76c2be6d2a9ca1",
+  "received_at": "2026-11-04T21:15:05Z",
+  "status": "PROCESSED",
+  "processed_at": "2026-11-04T21:16:00Z",
+  "row_count": 5,
+  "applied_count": 0,
+  "duplicate_count": 1,
+  "rejected_count": 4,
+  "rows": [
+    {"row": 2, "outcome": "DUPLICATE"},
+    {"row": 3, "outcome": "REJECTED", "code": "KEY_REUSED"},
+    {"row": 4, "outcome": "REJECTED", "code": "UNKNOWN_REQUEST", "column": "trip_id"},
+    {"row": 5, "outcome": "REJECTED", "code": "WRONG_PROVIDER", "column": "provider_id"},
+    {"row": 6, "outcome": "REJECTED", "code": "INVALID_VALUE", "column": "answered_at"}
+  ]
+}

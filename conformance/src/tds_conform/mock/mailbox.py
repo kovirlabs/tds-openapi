@@ -2,17 +2,20 @@
 
 tds-mock plays the requester here: request files are queued with `/_sim/mailbox/<id>/outbox`
 (or `queue()`), the agent under test lists, downloads, acknowledges and uploads, and what it
-uploaded is read back with `GET /_sim/mailbox/<id>`. Methods return (status, body); a
-successful download returns the file's bytes as the body.
+uploaded is read back with `GET /_sim/mailbox/<id>`. Uploads are read `process_delay_s` after
+they arrive (lazily, in the order they arrived) and reported by `GET /inbox/{file_name}` with
+`tds_conform.mailbox.upload_report`. Methods return (status, body); a successful download
+returns the file's bytes as the body.
 """
 
 import threading
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 
+from tds_conform.csvfile import CsvError, kind_from_name, read
 from tds_conform.data import data_root
-from tds_conform.mailbox import inbox_name_problem, is_outbox_name, sha256_hex
+from tds_conform.mailbox import inbox_name_problem, is_outbox_name, sha256_hex, upload_report
 from tds_conform.mock.common import _ts, backpressure, problem
 
 DEFAULT_REQUESTS = "examples/relay-mailbox/tds_requests_20261104T150000Z.csv"
@@ -24,6 +27,9 @@ class StoredFile:
     content: bytes
     created_at: datetime
     acked_at: datetime | None = None
+    # Inbox: when it was read, and the report's outcome fields (SPEC.md §9.4).
+    processed_at: datetime | None = None
+    outcome: dict = field(default_factory=dict)
 
     @property
     def sha256(self) -> str:
@@ -49,9 +55,14 @@ class Mailbox:
         *,
         poll_interval_s: int = 300,
         max_file_bytes: int = 10 * 1024 * 1024,
+        requester_id: str = "throughride-demo",
+        upload_reports: bool = True,
+        process_delay_s: float = 0.0,
         clock: Callable[[], datetime] = lambda: datetime.now(UTC),
     ):
         self.provider_id, self.poll_interval_s, self.max_file_bytes = provider_id, poll_interval_s, max_file_bytes
+        self.requester_id, self.upload_reports, self.process_delay_s = requester_id, upload_reports, process_delay_s
+        self._applied: dict = {}  # row key → row, for every row applied so far
         self.clock = clock
         self.outbox: dict[str, StoredFile] = {}
         self.inbox: dict[str, StoredFile] = {}
@@ -78,7 +89,13 @@ class Mailbox:
                 (f for f in self.outbox.values() if f.acked_at is None), key=lambda f: (f.created_at, f.name)
             )
             files = [f.entry() for f in waiting]
-        body = {"provider_id": self.provider_id, "poll_interval_s": self.poll_interval_s}
+        body = {
+            "provider_id": self.provider_id,
+            "requester_id": self.requester_id,
+            "poll_interval_s": self.poll_interval_s,
+        }
+        if self.upload_reports:
+            body["upload_reports"] = True
         return 200, body | {"max_file_bytes": self.max_file_bytes, "files": files}
 
     def download(self, name: str) -> tuple[int, dict | bytes]:
@@ -114,6 +131,45 @@ class Mailbox:
         receipt = {"name": name, "stored": created, "sha256": stored.sha256, "size": len(data)}
         return (201 if created else 200), receipt | {"received_at": _utc(stored.created_at)}
 
+    def report(self, name: str) -> tuple[int, dict]:
+        """What became of an uploaded file's rows (SPEC.md §9.4)."""
+        stored = self.inbox.get(name) if self.upload_reports else None
+        if stored is None:
+            return problem(404, "NOT_FOUND", f"No uploaded file {name} in this mailbox.")
+        self.process_due()
+        body = {"name": name, "sha256": stored.sha256, "received_at": _utc(stored.created_at)}
+        if stored.processed_at is None:
+            return 200, body | {"status": "RECEIVED"}
+        return 200, body | {"processed_at": _utc(stored.processed_at)} | stored.outcome
+
+    def process_due(self) -> None:
+        """Read every upload whose delay has passed, in the order they arrived."""
+        with self._lock:
+            now = self.clock()
+            for stored in self.inbox.values():
+                if stored.processed_at is not None:
+                    continue
+                if (now - stored.created_at).total_seconds() < self.process_delay_s:
+                    break  # later uploads wait for this one
+                stored.outcome = upload_report(
+                    stored.content,
+                    kind_from_name(stored.name),
+                    provider_id=self.provider_id,
+                    requester_id=self.requester_id,
+                    requests=self._requests(),
+                    applied=self._applied,
+                )
+                stored.processed_at = now
+
+    def _requests(self) -> list[dict]:
+        rows = []
+        for sent in self.outbox.values():
+            try:
+                rows += read(sent.content, "requests")[0]
+            except CsvError:
+                continue
+        return rows
+
     def too_large(self) -> tuple[int, dict]:
         return problem(
             413, "FILE_TOO_LARGE", f"Uploads are limited to {self.max_file_bytes} bytes; split the rows over files."
@@ -144,7 +200,9 @@ class Mailbox:
         """What the agent did: last poll, acknowledgements, and uploaded files with their text."""
         outbox = [f.entry() | {"acked_at": f.acked_at and _utc(f.acked_at)} for f in self.outbox.values()]
         inbox = [
-            f.entry() | {"received_at": _utc(f.created_at), "content": f.content.decode("utf-8", "replace")}
+            f.entry()
+            | {"received_at": _utc(f.created_at), "content": f.content.decode("utf-8", "replace")}
+            | ({"report": f.outcome} if f.processed_at else {})
             for f in self.inbox.values()
         ]
         for entry in inbox:

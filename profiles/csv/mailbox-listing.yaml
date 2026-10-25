@@ -23,6 +23,18 @@ properties:
       MAY report an agent as silent after three intervals without a call.
     type: integer
     minimum: 1
+  requester_id:
+    description: >-
+      The requester serving the mailbox, as it appears in the files'
+      `requester_id` column. Lets an agent check its answers before uploading.
+    type: string
+    minLength: 1
+  upload_reports:
+    description: >-
+      True when GET /inbox/{file_name} reports what became of each uploaded
+      file's rows (SPEC.md §9.4). Absent or false: the requester does not
+      report, and that call is 404.
+    type: boolean
   max_file_bytes:
     description: >-
       Largest upload, in bytes, PUT /inbox/{file_name} accepts; larger files
@@ -36,7 +48,9 @@ properties:
       $ref: ./mailbox-file.yaml
 examples:
   - provider_id: county-dial-a-ride
+    requester_id: throughride-demo
     poll_interval_s: 300
+    upload_reports: true
     max_file_bytes: 10485760
     files:
       - name: tds_requests_20261104T150000Z.csv

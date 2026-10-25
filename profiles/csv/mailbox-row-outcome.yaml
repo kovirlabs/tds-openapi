@@ -1,0 +1,49 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/csv/mailbox-row-outcome.yaml
+title: MailboxRowOutcome
+description: >-
+  What the requester did with one row of an uploaded file (SPEC.md §9.4). A
+  report lists every row that was not applied; rows it does not list were
+  applied. Never carries cell contents: only the row number, the column name
+  and a code.
+x-profile: csv
+type: object
+required: [row, outcome]
+properties:
+  row:
+    description: >-
+      The row's position in the file: the header is row 1 and the first data
+      row is 2. Records are counted, not physical lines (a quoted line break
+      does not start a new row), and rows with no cells at all are skipped.
+    type: integer
+    minimum: 2
+  outcome:
+    description: >-
+      DUPLICATE: the same row (same key and content) was already applied, from
+      this file or an earlier one, so it changed nothing (§9.2). REJECTED: the
+      row was not applied; `code` says why. APPLIED rows are not listed.
+    type: string
+    enum: [DUPLICATE, REJECTED]
+  code:
+    description: Why a REJECTED row was not applied. Required for REJECTED, absent for DUPLICATE.
+    $ref: ./row-problem.yaml
+  column:
+    description: >-
+      The column at fault, by header name, when one cell is the cause (e.g.
+      `answered_at` for INVALID_VALUE, `provider_id` for WRONG_PROVIDER).
+    type: string
+    minLength: 1
+allOf:
+  - if:
+      properties: {outcome: {const: REJECTED}}
+    then:
+      required: [code]
+    else:
+      not: {required: [code]}
+examples:
+  - row: 3
+    outcome: REJECTED
+    code: UNKNOWN_REQUEST
+    column: trip_id
+  - row: 2
+    outcome: DUPLICATE

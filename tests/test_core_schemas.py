@@ -200,6 +200,18 @@ def test_mailbox_listing_must_match_the_files_it_names(tmp_path: Path):
     assert any("size 1" in p for p in problems) and any("sha256" in p for p in problems)
 
 
+def test_upload_report_examples_are_recomputed():
+    scenario = ve.EXAMPLES / "relay-mailbox-report"
+    files = ve.load_manifests()[scenario]
+    entry = files["04-report.response.json"]
+    report = json.loads((scenario / "04-report.response.json").read_text())
+    assert ve.upload_report_problems(scenario, files, entry, report) == []
+    report["rows"][1]["code"] = "OTHER"
+    assert any(p.startswith("rows is") for p in ve.upload_report_problems(scenario, files, entry, report))
+    without_history = {k: v for k, v in entry.items() if k != "processed_after"}
+    assert any("duplicate_count" in p for p in ve.upload_report_problems(scenario, files, without_history, report))
+
+
 @pytest.mark.parametrize(
     ("name", "kind"),
     [

@@ -1,0 +1,54 @@
+# Upload reports from a relay mailbox (SPEC.md §9.4). Hand-written; scripts/validate_examples.py
+# recomputes every report marked `report_of` with tds_conform.mailbox.upload_report, from the
+# request file here and the uploads processed before it.
+description: >-
+  A provider's agent uploads two answers files and reads back what the requester did with each
+  row. The first answers all three request rows and is applied in full. The second, exported
+  later by a scheduler with problems, is reported row by row: a resent answer that changes
+  nothing (DUPLICATE), a resent answer with a different booking number (KEY_REUSED), an answer
+  to a trip never requested, a row naming another provider, and a time that is not RFC 3339.
+  The agent can show each code, with its row and column, beside the row in the provider's sheet.
+narrative:
+  - "01-list.response.json: the listing says the mailbox reports on uploads (upload_reports: true)."
+  - "tds_requests_20261104T150000Z.csv: the request rows the requester sent (three REQUESTs)."
+  - "tds_answers_20261104T204000Z.csv, 02-first-report.response.json: all three rows applied; nothing listed."
+  - "tds_answers_20261104T211500Z.csv: the second upload. 03-received.response.json: stored, not read yet."
+  - "04-report.response.json: the second upload's report, one entry per row not applied."
+  - "05-refused.response.json: a statuses file that could not be read at all (INVALID_HEADER)."
+  - "06-not-found.response.json: a name never uploaded, or whose report has expired."
+files:
+  01-list.response.json:
+    schema: https://tds-openapi.org/schemas/csv/mailbox-listing.yaml
+    operation: GET /outbox
+    status: 200
+  tds_requests_20261104T150000Z.csv:
+    kind: csv
+  tds_answers_20261104T204000Z.csv:
+    kind: csv
+  tds_answers_20261104T211500Z.csv:
+    kind: csv-upload
+    operation: PUT /inbox/{file_name}
+  02-first-report.response.json:
+    schema: https://tds-openapi.org/schemas/csv/mailbox-report.yaml
+    operation: GET /inbox/{file_name}
+    status: 200
+    report_of: tds_answers_20261104T204000Z.csv
+  03-received.response.json:
+    schema: https://tds-openapi.org/schemas/csv/mailbox-report.yaml
+    operation: GET /inbox/{file_name}
+    status: 200
+    report_of: tds_answers_20261104T211500Z.csv
+  04-report.response.json:
+    schema: https://tds-openapi.org/schemas/csv/mailbox-report.yaml
+    operation: GET /inbox/{file_name}
+    status: 200
+    report_of: tds_answers_20261104T211500Z.csv
+    processed_after: [tds_answers_20261104T204000Z.csv]
+  05-refused.response.json:
+    schema: https://tds-openapi.org/schemas/csv/mailbox-report.yaml
+    operation: GET /inbox/{file_name}
+    status: 200
+  06-not-found.response.json:
+    schema: https://tds-openapi.org/schemas/core/error.yaml
+    operation: GET /inbox/{file_name}
+    status: 404
