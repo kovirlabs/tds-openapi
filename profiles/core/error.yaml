@@ -34,7 +34,10 @@ properties:
       reused tender_id or hold_id. RATE_LIMITED (429) and
       TEMPORARILY_UNAVAILABLE (503) are back-pressure (SPEC.md §7.2): the
       request was not processed and may be retried with the same
-      Idempotency-Key after retry_after_s.
+      Idempotency-Key after retry_after_s. INVALID_FILE_NAME, EMPTY_FILE,
+      FILE_TOO_LARGE and FILE_NAME_TAKEN are a relay mailbox's refusals of an
+      upload (SPEC.md §9.4); NOT_FOUND there means no such file in this
+      mailbox.
       Unknown values must be treated as a generic failure.
     anyOf:
       - type: string
@@ -47,6 +50,10 @@ properties:
           - TRIP_ID_IN_USE
           - RATE_LIMITED
           - TEMPORARILY_UNAVAILABLE
+          - INVALID_FILE_NAME
+          - EMPTY_FILE
+          - FILE_TOO_LARGE
+          - FILE_NAME_TAKEN
       - $ref: ./refusal-reason.yaml
   bookable_from:
     description: >-
@@ -85,3 +92,8 @@ examples:
     detail: "More than 60 requests in a minute from this client."
     code: "RATE_LIMITED"
     retry_after_s: 20
+  - type: "about:blank"
+    title: "File name taken"
+    status: 409
+    detail: "tds_answers_20261104T204000Z.csv is already stored with other content; upload it under a new name."
+    code: "FILE_NAME_TAKEN"

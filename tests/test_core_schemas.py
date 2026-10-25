@@ -1,6 +1,7 @@
 """Behavioural rules of the core schemas (SPEC.md §6) and the repo validator's own checks."""
 
 import copy
+import json
 from pathlib import Path
 
 import pytest
@@ -174,6 +175,47 @@ def test_kit_response_schemas_match_spec():
         if slot != "request" and (schema := wired["schema"]) and not slot.startswith(("4", "5"))
     }
     assert RESPONSE_SCHEMAS == declared
+
+
+def test_kit_mailbox_response_schemas_match_spec():
+    from tds_conform.runner import MAILBOX_RESPONSE_SCHEMAS
+
+    declared = {
+        (op, int(slot)): schema.split("/schemas/")[1].removesuffix(".yaml")
+        for (op, slot), wired in ve.spec_wiring(ve.MAILBOX).items()
+        if slot != "request" and (schema := wired["schema"]) and not slot.startswith(("4", "5"))
+    }
+    assert MAILBOX_RESPONSE_SCHEMAS == declared
+
+
+def test_mailbox_listing_must_match_the_files_it_names(tmp_path: Path):
+    import shutil
+
+    scenario = tmp_path / "relay-mailbox"
+    shutil.copytree(ve.EXAMPLES / "relay-mailbox", scenario)
+    listing = json.loads((scenario / "01-list.response.json").read_text())
+    assert ve.mailbox_listing_problems(scenario, listing) == []
+    listing["files"][0] |= {"size": 1, "sha256": "0" * 64}
+    problems = ve.mailbox_listing_problems(scenario, listing)
+    assert any("size 1" in p for p in problems) and any("sha256" in p for p in problems)
+
+
+@pytest.mark.parametrize(
+    ("name", "kind"),
+    [
+        ("tds_answers_20261104T204000Z.csv", "answers"),
+        ("tds_answers_20261104T204000Z_2.csv", "answers"),
+        ("tds_statuses_20261104T204000Z_1a2b3c4d.csv", "statuses"),
+        ("tds_requests_20261104T204000Z_conform-ab12.csv", "requests"),
+        ("tds_answers_batch42.csv", None),
+        ("tds_answers_20261104T204000Z_.csv", None),
+        ("tds_answers_20261104T204000Z_a.b.csv", None),
+    ],
+)
+def test_csv_file_names_take_an_optional_tag(name, kind):
+    from tds_conform.csvfile import kind_from_name
+
+    assert kind_from_name(name) == kind
 
 
 def test_event_coverage_reports_missing_states():

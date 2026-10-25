@@ -1,0 +1,7 @@
+{
+  "type": "about:blank",
+  "title": "Empty file",
+  "status": 400,
+  "detail": "The upload has no bytes; a file needs at least its header row.",
+  "code": "EMPTY_FILE"
+}

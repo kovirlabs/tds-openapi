@@ -1,0 +1,76 @@
+# Relay mailbox (SPEC.md §9.4): a provider's agent swaps CSV profile files with a requester
+# over HTTPS, calling out only. Hand-written; checked by scripts/validate_examples.py, and the
+# listing's sizes and hashes must match the CSV files here.
+description: >-
+  A dial-a-ride provider's scheduler sits behind a firewall, so a small agent beside it polls
+  the requester's relay mailbox. It lists the waiting request files, downloads one and checks
+  its SHA-256, acknowledges it, and later uploads the scheduler's answers file. A retried
+  upload of the same bytes is answered 200 and applied once; other bytes under the same name,
+  a bad name, an empty file and an oversized one are refused; an unknown file is NOT_FOUND.
+narrative:
+  - "01-list.response.json: GET /outbox lists one request file, with the mailbox's poll interval and upload limit."
+  - "tds_requests_20261104T150000Z.csv: GET /outbox/{file_name} returns the file's bytes (text/csv) with X-Relay-SHA256."
+  - "03-ack.response.json: POST /ack/{file_name}; a second ack returns the same acked_at."
+  - "04-list-after-ack.response.json: the acknowledged file is no longer listed."
+  - "tds_answers_20261104T204000Z.csv: PUT /inbox/{file_name} uploads the scheduler's answers."
+  - "05-put.response.json: 201, stored. 06-put-again.response.json: the same bytes again, 200, not stored twice."
+  - "07-put-other-bytes.response.json: other bytes under that name, 409 FILE_NAME_TAKEN."
+  - "08-bad-name.response.json, 09-empty.response.json, 10-too-large.response.json: refused uploads."
+  - "11-unknown-file.response.json: GET or ack of a file the mailbox does not hold, 404 NOT_FOUND."
+  - "12-unauthorized.response.json: no mailbox token, 401. 13-unavailable.response.json: 503 with retry_after_s."
+files:
+  01-list.response.json:
+    schema: https://tds-openapi.org/schemas/csv/mailbox-listing.yaml
+    operation: GET /outbox
+    status: 200
+  tds_requests_20261104T150000Z.csv:
+    kind: csv
+    operation: GET /outbox/{file_name}
+    status: 200
+  03-ack.response.json:
+    schema: https://tds-openapi.org/schemas/csv/mailbox-ack.yaml
+    operation: POST /ack/{file_name}
+    status: 200
+  04-list-after-ack.response.json:
+    schema: https://tds-openapi.org/schemas/csv/mailbox-listing.yaml
+    operation: GET /outbox
+    status: 200
+  tds_answers_20261104T204000Z.csv:
+    kind: csv
+    operation: PUT /inbox/{file_name}
+  05-put.response.json:
+    schema: https://tds-openapi.org/schemas/csv/mailbox-receipt.yaml
+    operation: PUT /inbox/{file_name}
+    status: 201
+  06-put-again.response.json:
+    schema: https://tds-openapi.org/schemas/csv/mailbox-receipt.yaml
+    operation: PUT /inbox/{file_name}
+    status: 200
+  07-put-other-bytes.response.json:
+    schema: https://tds-openapi.org/schemas/core/error.yaml
+    operation: PUT /inbox/{file_name}
+    status: 409
+  08-bad-name.response.json:
+    schema: https://tds-openapi.org/schemas/core/error.yaml
+    operation: PUT /inbox/{file_name}
+    status: 400
+  09-empty.response.json:
+    schema: https://tds-openapi.org/schemas/core/error.yaml
+    operation: PUT /inbox/{file_name}
+    status: 400
+  10-too-large.response.json:
+    schema: https://tds-openapi.org/schemas/core/error.yaml
+    operation: PUT /inbox/{file_name}
+    status: 413
+  11-unknown-file.response.json:
+    schema: https://tds-openapi.org/schemas/core/error.yaml
+    operation: GET /outbox/{file_name}
+    status: 404
+  12-unauthorized.response.json:
+    schema: https://tds-openapi.org/schemas/core/error.yaml
+    operation: GET /outbox
+    status: 401
+  13-unavailable.response.json:
+    schema: https://tds-openapi.org/schemas/core/error.yaml
+    operation: GET /outbox
+    status: 503

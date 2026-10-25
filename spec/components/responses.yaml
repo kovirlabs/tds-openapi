@@ -47,3 +47,37 @@ ServiceUnavailable:
     application/problem+json:
       schema:
         $ref: ../../profiles/core/error.yaml
+MailboxUnauthorized:
+  description: >-
+    Missing or invalid mailbox token, or a credential that names no relay
+    mailbox (code UNAUTHORIZED). A requester MAY answer 403 with the same code
+    for a valid credential that is not a mailbox token; agents treat both the
+    same way: stop and ask a person to fix the settings.
+  content:
+    application/problem+json:
+      schema:
+        $ref: ../../profiles/core/error.yaml
+MailboxTooManyRequests:
+  description: >-
+    Back-pressure (SPEC.md §7.2): the agent is calling too often (code
+    RATE_LIMITED). Nothing was processed. Repeat the same call after the wait
+    in Retry-After / retry_after_s.
+  headers:
+    Retry-After:
+      $ref: ./headers.yaml#/RetryAfter
+  content:
+    application/problem+json:
+      schema:
+        $ref: ../../profiles/core/error.yaml
+MailboxUnavailable:
+  description: >-
+    Back-pressure (SPEC.md §7.2): the mailbox cannot take calls for now (code
+    TEMPORARILY_UNAVAILABLE). Nothing was processed. Repeat the same call after
+    the wait in Retry-After / retry_after_s.
+  headers:
+    Retry-After:
+      $ref: ./headers.yaml#/RetryAfter
+  content:
+    application/problem+json:
+      schema:
+        $ref: ../../profiles/core/error.yaml

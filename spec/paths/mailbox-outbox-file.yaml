@@ -1,0 +1,42 @@
+parameters:
+  - $ref: ../components/parameters.yaml#/MailboxFileName
+get:
+  operationId: getMailboxFile
+  summary: Download a request file
+  description: >-
+    One request file's bytes (SPEC.md §9.4). The agent checks X-Relay-SHA256
+    (and the listing's sha256) against the bytes before saving the file, and
+    acknowledges it only after it is safely stored. A file stays downloadable
+    after its acknowledgement until the requester deletes it under its
+    retention rules. Reading a file changes nothing.
+  tags: [Mailbox]
+  parameters:
+    - $ref: ../components/parameters.yaml#/RelayAgent
+  responses:
+    "200":
+      description: The file, unchanged, as UTF-8 CSV (SPEC.md §9.2).
+      headers:
+        X-Relay-SHA256:
+          $ref: ../components/headers.yaml#/RelaySHA256
+      content:
+        text/csv:
+          schema:
+            type: string
+          examples:
+            requests_file:
+              externalValue: ../../examples/relay-mailbox/tds_requests_20261104T150000Z.csv
+    "401":
+      $ref: ../components/responses.yaml#/MailboxUnauthorized
+    "404":
+      description: No request file with this name in this mailbox, including one already deleted (code NOT_FOUND).
+      content:
+        application/problem+json:
+          schema:
+            $ref: ../../profiles/core/error.yaml
+          examples:
+            unknown_file:
+              externalValue: ../../examples/relay-mailbox/11-unknown-file.response.json
+    "429":
+      $ref: ../components/responses.yaml#/MailboxTooManyRequests
+    "503":
+      $ref: ../components/responses.yaml#/MailboxUnavailable

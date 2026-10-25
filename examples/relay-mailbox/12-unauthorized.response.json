@@ -1,0 +1,7 @@
+{
+  "type": "about:blank",
+  "title": "Unauthorized",
+  "status": 401,
+  "detail": "Send Authorization: Bearer <mailbox token>.",
+  "code": "UNAUTHORIZED"
+}

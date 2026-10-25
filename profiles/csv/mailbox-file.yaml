@@ -1,0 +1,35 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://tds-openapi.org/schemas/csv/mailbox-file.yaml
+title: MailboxFile
+description: >-
+  One request file waiting in a relay mailbox (SPEC.md §9.4): its name, size
+  and SHA-256, so an agent can fetch it, check it and skip a file it already
+  has. The bytes themselves come from GET /outbox/{file_name}.
+x-profile: csv
+type: object
+required: [name, size, sha256, created_at]
+properties:
+  name:
+    description: >-
+      File name, following SPEC.md §9.2 for a requests file
+      (`tds_requests_<YYYYMMDDTHHMMSSZ>[_<tag>].csv`). Unique within the
+      mailbox; never reused for other bytes.
+    type: string
+    pattern: '^tds_requests_[0-9]{8}T[0-9]{6}Z(_[A-Za-z0-9-]{1,40})?\.csv$'
+  size:
+    description: Length of the file in bytes.
+    type: integer
+    minimum: 1
+  sha256:
+    description: SHA-256 of the file's bytes, lowercase hex. Same value as the X-Relay-SHA256 header on download.
+    type: string
+    pattern: '^[0-9a-f]{64}$'
+  created_at:
+    description: When the requester put the file in the mailbox (RFC 3339).
+    type: string
+    format: date-time
+examples:
+  - name: tds_requests_20261104T150000Z.csv
+    size: 1198
+    sha256: 57dd4befc5ddd8a97df0ab5cff0fd86282dccf3a5e3990db4d804cff57e3b673
+    created_at: "2026-11-04T15:00:00Z"

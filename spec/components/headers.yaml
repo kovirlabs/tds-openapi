@@ -10,3 +10,12 @@ RetryAfter:
     type: string
     pattern: '^([0-9]+|(Mon|Tue|Wed|Thu|Fri|Sat|Sun), [0-9]{2} (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) [0-9]{4} [0-9]{2}:[0-9]{2}:[0-9]{2} GMT)$'
   example: "20"
+RelaySHA256:
+  description: >-
+    SHA-256 of the response body, lowercase hex (SPEC.md §9.4). Equals the
+    `sha256` the listing gave for the file; an agent that computes another
+    value discards the download and fetches it again on its next poll.
+  schema:
+    type: string
+    pattern: '^[0-9a-f]{64}$'
+  example: 57dd4befc5ddd8a97df0ab5cff0fd86282dccf3a5e3990db4d804cff57e3b673

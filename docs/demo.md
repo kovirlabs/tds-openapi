@@ -135,6 +135,31 @@ It checks each file's name, encoding, columns and rows, what each row stands for
 and that every answer row answers a request row. `tds_conform.csvfile` reads, writes and
 converts rows (`row_to_json`, `json_to_row`).
 
+## Relay mailbox
+
+A provider whose scheduler cannot accept connections swaps those files through the
+requester's relay mailbox (SPEC.md §9.4, `spec/relay-mailbox.yaml`): its agent polls
+`GET /outbox`, downloads and acknowledges request files, and uploads answers and statuses with
+`PUT /inbox/{file_name}`. `tds-mock` serves one per provider at `/mailbox`; the token is the
+provider id. To develop an agent against it:
+
+```sh
+uv run tds-mock --provider county-dial-a-ride
+curl -X POST localhost:4010/_sim/mailbox/county-dial-a-ride/outbox -d '{}'   # queue a request file
+curl -H 'Authorization: Bearer county-dial-a-ride' localhost:4010/mailbox/outbox
+curl localhost:4010/_sim/mailbox/county-dial-a-ride        # last poll, acks, what was uploaded
+```
+
+To check a requester's mailbox (yours, or a test deployment's), queue a request file for a test
+provider and run:
+
+```sh
+uv run tds-conform mailbox --url https://broker.example.org/api/relay --token <mailbox token> --take-files
+```
+
+`--take-files` lets the kit acknowledge the waiting file; leave it off on a mailbox a real agent
+uses. The upload scenario leaves one header-only answers file named `…_conform-<hex>.csv`.
+
 ## Use tds-conform from another project
 
 Brokers can depend on the kit instead of copying it, for test fakes that replay

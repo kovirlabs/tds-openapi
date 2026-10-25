@@ -1,0 +1,7 @@
+{
+  "type": "about:blank",
+  "title": "Invalid file name",
+  "status": 400,
+  "detail": "Upload answers or statuses files named as in SPEC.md §9.2, e.g. tds_answers_20261104T204000Z.csv.",
+  "code": "INVALID_FILE_NAME"
+}

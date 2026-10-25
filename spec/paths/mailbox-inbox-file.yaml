@@ -1,0 +1,86 @@
+parameters:
+  - $ref: ../components/parameters.yaml#/MailboxFileName
+put:
+  operationId: putMailboxFile
+  summary: Upload an answers or statuses file
+  description: >-
+    Store an answers or statuses file (SPEC.md §9.2) for the requester to read,
+    write-once by name (SPEC.md §9.4). The body is the file's raw bytes. A new
+    name is stored (201); the same bytes under a stored name are a retry (200,
+    applied once); other bytes under a stored name are refused (409
+    FILE_NAME_TAKEN) and never overwrite the stored file, so new content needs
+    a new name. Names MUST follow SPEC.md §9.2 for answers or statuses files.
+    No Idempotency-Key: the name is the key.
+  tags: [Mailbox]
+  parameters:
+    - $ref: ../components/parameters.yaml#/RelayAgent
+  requestBody:
+    required: true
+    content:
+      text/csv:
+        schema:
+          type: string
+        examples:
+          answers_file:
+            externalValue: ../../examples/relay-mailbox/tds_answers_20261104T204000Z.csv
+  responses:
+    "201":
+      description: Stored; the requester will read it.
+      content:
+        application/json:
+          schema:
+            $ref: ../../profiles/csv/mailbox-receipt.yaml
+          examples:
+            stored:
+              externalValue: ../../examples/relay-mailbox/05-put.response.json
+    "200":
+      description: The same bytes were already stored under this name; nothing changed.
+      content:
+        application/json:
+          schema:
+            $ref: ../../profiles/csv/mailbox-receipt.yaml
+          examples:
+            retry:
+              externalValue: ../../examples/relay-mailbox/06-put-again.response.json
+    "400":
+      description: >-
+        The name is not an answers or statuses file name per SPEC.md §9.2 (code
+        INVALID_FILE_NAME), or the body is empty (code EMPTY_FILE). The agent
+        sets the file aside; repeating the call will not help.
+      content:
+        application/problem+json:
+          schema:
+            $ref: ../../profiles/core/error.yaml
+          examples:
+            bad_name:
+              externalValue: ../../examples/relay-mailbox/08-bad-name.response.json
+            empty:
+              externalValue: ../../examples/relay-mailbox/09-empty.response.json
+    "401":
+      $ref: ../components/responses.yaml#/MailboxUnauthorized
+    "409":
+      description: >-
+        This name already holds other bytes (code FILE_NAME_TAKEN). The stored
+        file is unchanged; export the new content under a new name.
+      content:
+        application/problem+json:
+          schema:
+            $ref: ../../profiles/core/error.yaml
+          examples:
+            other_bytes:
+              externalValue: ../../examples/relay-mailbox/07-put-other-bytes.response.json
+    "413":
+      description: >-
+        Larger than the mailbox's max_file_bytes (code FILE_TOO_LARGE). Split
+        the rows over several files.
+      content:
+        application/problem+json:
+          schema:
+            $ref: ../../profiles/core/error.yaml
+          examples:
+            too_large:
+              externalValue: ../../examples/relay-mailbox/10-too-large.response.json
+    "429":
+      $ref: ../components/responses.yaml#/MailboxTooManyRequests
+    "503":
+      $ref: ../components/responses.yaml#/MailboxUnavailable

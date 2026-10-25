@@ -14,6 +14,7 @@ import httpx
 from tds_conform.backpressure import BACKPRESSURE_CODES, retry_after_s
 from tds_conform.cloudevents import cloudevents_headers
 from tds_conform.events import sign, sign_standard
+from tds_conform.mock.mailbox import Mailbox
 from tds_conform.mock.provider import Provider, ProviderConfig
 
 
@@ -120,7 +121,10 @@ class Dispatcher:
 
 
 class Network:
-    """Providers keyed by provider_id; the first is the default for un-prefixed URLs."""
+    """Providers keyed by provider_id; the first is the default for un-prefixed URLs.
+
+    Each provider also has a requester-side relay mailbox (SPEC.md §9.4) at /mailbox, keyed
+    by the token that names it (the provider id); pass `mailboxes` to use others."""
 
     def __init__(
         self,
@@ -128,6 +132,7 @@ class Network:
         clock: Callable[[], datetime] | None = None,
         tick_s: float = 0.25,
         dispatcher: Dispatcher | None = None,
+        mailboxes: list[Mailbox] | None = None,
     ):
         self.dispatcher = dispatcher or Dispatcher()
         self.tick_s = tick_s
@@ -138,9 +143,16 @@ class Network:
             self.providers[provider.provider_id] = provider
         self.default = next(iter(self.providers.values()))
         self._stop = threading.Event()
+        self._add_mailboxes(mailboxes, clock)
 
     @classmethod
-    def of(cls, *providers: Provider, tick_s: float = 0.25, dispatcher: Dispatcher | None = None) -> "Network":
+    def of(
+        cls,
+        *providers: Provider,
+        tick_s: float = 0.25,
+        dispatcher: Dispatcher | None = None,
+        mailboxes: list[Mailbox] | None = None,
+    ) -> "Network":
         """Wrap already-built providers (e.g. ones with a fake clock or a fault injected)."""
         network = cls.__new__(cls)
         network.dispatcher, network.tick_s, network._stop = dispatcher or Dispatcher(), tick_s, threading.Event()
@@ -149,7 +161,13 @@ class Network:
             provider.sink = network._sink_for(provider)
             network.providers[provider.provider_id] = provider
         network.default = providers[0]
+        network._add_mailboxes(mailboxes, providers[0].clock)
         return network
+
+    def _add_mailboxes(self, mailboxes: list[Mailbox] | None, clock: Callable[[], datetime] | None) -> None:
+        if mailboxes is None:
+            mailboxes = [Mailbox(pid) if clock is None else Mailbox(pid, clock=clock) for pid in self.providers]
+        self.mailboxes: dict[str, Mailbox] = {m.provider_id: m for m in mailboxes}
 
     def _sink_for(self, provider: Provider):
         def sink(requester: str, event: dict) -> None:

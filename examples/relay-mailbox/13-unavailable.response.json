@@ -1,0 +1,8 @@
+{
+  "type": "about:blank",
+  "title": "Temporarily unavailable",
+  "status": 503,
+  "detail": "The mailbox is down for maintenance.",
+  "code": "TEMPORARILY_UNAVAILABLE",
+  "retry_after_s": 120
+}

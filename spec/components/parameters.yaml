@@ -48,3 +48,27 @@ SecretId:
   description: The provider-assigned secret_id of one of the subscription's signing secrets.
   schema:
     type: string
+MailboxFileName:
+  name: file_name
+  in: path
+  required: true
+  description: >-
+    A file name in the relay mailbox (SPEC.md §9.4): letters, digits, `_`, `-`
+    and `.` only, as the CSV profile names files (SPEC.md §9.2). Scoped to the
+    mailbox the credential names.
+  schema:
+    type: string
+    minLength: 1
+    maxLength: 128
+RelayAgent:
+  name: X-Relay-Agent
+  in: header
+  required: false
+  description: >-
+    Optional `<agent name>/<version>` of the calling agent (e.g.
+    `ridesheet-tds-connector/0.1.0`), shown to the requester's operators. A
+    header of its own because some agent platforms (Google Apps Script) cannot
+    set User-Agent. Carries no rider data.
+  schema:
+    type: string
+    maxLength: 80

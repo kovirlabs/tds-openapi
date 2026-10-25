@@ -1,0 +1,55 @@
+openapi: 3.1.0
+jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
+info:
+  title: TDS relay mailbox
+  version: 0.8.0
+  summary: HTTPS mailbox for TDS CSV profile files, for providers that can only call out.
+  description: >-
+    The relay mailbox (SPEC.md §9.4) moves CSV profile files (SPEC.md §9.2)
+    between a requester and a provider whose scheduler cannot accept
+    connections: behind an agency firewall, or inside a platform such as Google
+    Apps Script. Unlike spec/openapi.yaml, it is served by the **requester**
+    (broker or coordinator tool), and the provider's agent is the client. The
+    agent lists the request files waiting, downloads each one, acknowledges it
+    once it is safely stored, and uploads answers and statuses files. Every
+    call is safe to repeat: acknowledgements are idempotent and uploads are
+    write-once by name, so no Idempotency-Key is used. The credential names one
+    provider's mailbox; the provider is never taken from the request.
+  contact:
+    name: tds-openapi maintainers
+    url: https://github.com/kovirlabs/tds-openapi
+  license:
+    name: Apache-2.0
+    identifier: Apache-2.0
+servers:
+  - url: https://broker.example.org/api/relay
+    description: >-
+      A requester's mailbox base URL. Each requester publishes its own; agents
+      are configured with the whole base URL, not a host name.
+  - url: http://localhost:4010/mailbox
+    description: Reference mailbox in tds-mock (uv run tds-mock); the token is the provider id
+security:
+  - mailboxToken: []
+tags:
+  - name: Mailbox
+    description: Relay mailbox for CSV profile files (SPEC.md §9.4).
+paths:
+  /outbox:
+    $ref: paths/mailbox-outbox.yaml
+  /outbox/{file_name}:
+    $ref: paths/mailbox-outbox-file.yaml
+  /ack/{file_name}:
+    $ref: paths/mailbox-ack.yaml
+  /inbox/{file_name}:
+    $ref: paths/mailbox-inbox-file.yaml
+components:
+  securitySchemes:
+    mailboxToken:
+      type: http
+      scheme: bearer
+      description: >-
+        A token the requester issues for one provider's mailbox and hands to the
+        provider's staff out of band (SPEC.md §9.4, §12). It reaches that
+        mailbox only. Agents keep it out of configuration files that others can
+        read and out of logs. A requester MAY accept an OAuth 2.0 access token
+        here instead; the agent sends it the same way.
