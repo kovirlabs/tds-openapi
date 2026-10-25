@@ -629,3 +629,56 @@ behaviour kept. Endpoint shapes, relative to the mailbox base URL:
   rather than appending `/api/relay/`, and read `poll_interval_s` (at least warn when the
   trigger interval differs). Its `_<8 hex>` file-name suffix is valid §9.2 as of this release.
 
+
+## v0.10.0 released (2026-10-25, local tag `v0.10.0`)
+
+Answers queue item TQ-23 (feedback on an uploaded CSV file's rows). Re-vendor from tag
+`v0.10.0` (`binding_version()` = `0.10.0`; generated event streams change only in
+`schema_version`). New example folder `relay-mailbox-report/`; new manifest kind `csv-upload`.
+
+**Upload reports (SPEC.md §9.4).** Optional for requesters:
+- The `GET /outbox` listing says `upload_reports: true` (and may give `requester_id`).
+- `GET /inbox/{file_name}` → 200 `{"name", "sha256", "received_at", "status"}` with `status`
+  `RECEIVED` | `PROCESSED` | `REFUSED`. `PROCESSED` adds `processed_at`, `row_count`,
+  `applied_count`, `duplicate_count`, `rejected_count` and `rows`: one `{"row", "outcome",
+  "code"?, "column"?}` per row **not** applied (`DUPLICATE`, or `REJECTED` with a code). Rows
+  not listed were applied. `REFUSED` adds `processed_at` and `refusal` (`INVALID_ENCODING`,
+  `INVALID_HEADER`, `OTHER`). 404 `NOT_FOUND` for an unknown name, an expired report, or a
+  requester without reports.
+- `row` counts records with the header as row 1, skipping rows with no cells, which is what
+  `apps/providers/files.py` `read_file` does today (`enumerate(rows, start=2)`).
+- Codes are UPPER_SNAKE (`csv/row-problem`), one per row, the first that applies in this
+  order: `MISSING_VALUE`, `INVALID_VALUE`, `WRONG_PROVIDER`, `WRONG_REQUESTER`,
+  `UNKNOWN_REQUEST`, `UNKNOWN_TRIP`, `KEY_REUSED`, `INVALID_STATE`, `OTHER`.
+- No cell contents. Reports are kept at least 7 days after the file was read. A retried upload
+  (200) is not read again.
+- **For ThroughRide.** The report can be built from what is stored today: `RelayFile` (inbox:
+  `sha256`, `created_at`, `applied_at`) plus `FileInbound` (same provider and name: `rows`,
+  `problems`, `processed_at`). No new table is needed. Changes:
+  1. `FileInbound.problems` also records duplicates (`{"row", "outcome": "duplicate"}`) and a
+     `column` on each problem, so `applied_count` = `rows` − duplicates − rejected.
+  2. Map `RowError` codes: `wrong_provider` → `WRONG_PROVIDER` (`provider_id`),
+     `wrong_requester` → `WRONG_REQUESTER` (`requester_id`), `unknown_leg` and
+     `unknown_request` → `UNKNOWN_REQUEST` (`trip_id`), `bad_revision` → `INVALID_VALUE`
+     (`revision`), `bad_occurred_at` → `INVALID_VALUE` (`occurred_at`).
+  3. Status-row outcome `unknown_trip` is recorded as `ok` today; report it as `REJECTED`
+     `UNKNOWN_TRIP` (`trip_id`). `awaiting_answer` and other applied outcomes count as applied.
+  4. `apply_answer` returns `duplicate` for any second answer to a request. The binding calls
+     it `DUPLICATE` only when the content is the same. Other content under the same key is
+     `REJECTED` `KEY_REUSED` (§9.2). Compare at least `result`, `status`,
+     `provider_trip_id`, `scheduled_pickup` and `scheduled_dropoff`.
+  5. A file that cannot be decoded, or has a bad header, is recorded as `REFUSED` with
+     `INVALID_ENCODING` or `INVALID_HEADER` (a file-level marker in `FileInbound.problems`)
+     instead of failing the exchange.
+  6. Add `GET /api/relay/inbox/<name>` → `RECEIVED` while `applied_at` is null, else the
+     report from `FileInbound`. It answers from `FileInbound` even after the nightly purge has
+     deleted the `RelayFile` bytes; keep `sha256` and `received_at` there or on the audit.
+     Add `upload_reports: true` and `requester_id` to the listing.
+  7. `relay_agent`: for each file in `outbox/sent/` without a final report, `GET` it each
+     cycle. Write `<name>.report.json` beside it and log each rejected row's row number, code
+     and column (no contents). Stop after `PROCESSED`/`REFUSED` or a 404.
+- **For the RideSheet TDS Connector:** remember each upload's rows (sheet row ↔ file row). On
+  later runs, read the report until it is final, then mark the sheet rows with the code and
+  column in plain language. A `DUPLICATE` needs no action; `KEY_REUSED` needs the dispatcher
+  to fix the earlier answer by phone.
+
