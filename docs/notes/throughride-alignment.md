@@ -582,3 +582,49 @@ additive:
     secret kept, no attempts after delete).
   - The TDS fake (`tests/fakes/tds.py`) can replay `subscription-changes/` for these paths
     (`05-eta-update.delivery.json` verifies with the secret in `01-subscribe.response.json`).
+
+
+## v0.9.0 released (2026-10-25, local tag `v0.9.0`)
+
+Answers queue item TQ-22 (relay mailbox for CSV profile files). Re-vendor from tag `v0.9.0`
+(`binding_version()` = `0.9.0`; generated event streams change only in `schema_version`). New
+example folder `relay-mailbox/` (JSON bodies plus the two CSV files it moves), new OpenAPI
+document `spec/relay-mailbox.yaml`, SPEC.md §9.4.
+
+**Relay mailbox (SPEC.md §9.4).** Agreed, with ThroughRide's paths and write-once, idempotent
+behaviour kept. Endpoint shapes, relative to the mailbox base URL:
+- `GET /outbox` → 200 `{"provider_id", "poll_interval_s", "max_file_bytes"?, "files": [{"name",
+  "size", "sha256", "created_at"}]}`, un-acked request files, oldest first.
+- `GET /outbox/{file_name}` → 200 `text/csv` with `X-Relay-SHA256`; 404 `NOT_FOUND`.
+- `POST /ack/{file_name}` → 200 `{"name", "acked_at"}` (first ack time kept); 404 `NOT_FOUND`.
+- `PUT /inbox/{file_name}` → 201 `{"name", "stored": true, "sha256", "size", "received_at"}`;
+  200 the same with `stored: false` for the same bytes; 409 `FILE_NAME_TAKEN`; 400
+  `INVALID_FILE_NAME` / `EMPTY_FILE`; 413 `FILE_TOO_LARGE`.
+- Every error is Problem Details (`application/problem+json`); 401 `UNAUTHORIZED` (403 allowed
+  for a valid non-mailbox credential); 429/503 with `Retry-After` and `retry_after_s`.
+- **For ThroughRide** (`apps/providers/relay_api.py`, `relay.py`, `docs/relay-agent.md`,
+  `relay_agent/`):
+  1. Accept `Authorization: Bearer <key>` on `/api/relay/` (keep `Token <key>` as a deprecated
+     alias for agents already installed); `relay_agent` sends `Bearer`.
+  2. Answer every mailbox error as Problem Details with the binding's codes: `bad_file_name` →
+     `INVALID_FILE_NAME`, `empty_file` → `EMPTY_FILE`, `file_too_large` → `FILE_TOO_LARGE`,
+     `name_taken` → `FILE_NAME_TAKEN`, `not_found` → `NOT_FOUND` (including the empty-bodied 404
+     from `GET outbox/<name>`), DRF's 401/403 `{"detail": …}` → `UNAUTHORIZED`.
+  3. Listing: add `provider_id` (the adapter's `provider_id` setting), `poll_interval_s` (the
+     adapter's, default 300) and `max_file_bytes` (`RELAY_MAX_FILE_BYTES`).
+  4. Upload receipt: add `sha256`, and `size` and `received_at` (the stored file's
+     `created_at`), on both 201 and 200.
+  5. Inbox names: tighten `INBOX_NAME` to §9.2 (`tds_(answers|statuses)_<YYYYMMDDTHHMMSSZ>`
+     plus an optional `_<1-40 letters, digits or ->` tag, `.csv`). Today's looser pattern only
+     gets a kit warning (SHOULD); the agent's `UPLOAD_NAME` filter can match it so a misnamed
+     export is set aside locally with a clear log line instead of a 400.
+  6. Agent: use the listing's `poll_interval_s` (the config value only as a fallback), honour
+     `Retry-After` / `retry_after_s` on 429/503, and take the whole mailbox base URL (keep
+     appending `/api/relay/` when `base_url` has no path, so existing `relay.ini` files work).
+  7. Tests: run `tds-conform mailbox --url <live test server>/api/relay --token <dispatcher
+     token> --take-files` (or its scenarios in-process) against the relay endpoints; the
+     agent's tests can use `tds-mock`'s `/mailbox` instead of a hand-written fake.
+- **For the RideSheet TDS Connector** (sister repo): send `Bearer`, take the full mailbox URL
+  rather than appending `/api/relay/`, and read `poll_interval_s` (at least warn when the
+  trigger interval differs). Its `_<8 hex>` file-name suffix is valid §9.2 as of this release.
+

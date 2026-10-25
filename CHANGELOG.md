@@ -4,6 +4,14 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-10-25
+
+A relay mailbox for CSV profile files (TQ-22), so an agent beside a scheduler that can only
+call out works with any requester: the RideSheet TDS Connector and ThroughRide's relay agent
+become broker-neutral. Additive: a new, separate OpenAPI document served by requesters, new
+error codes, and a looser CSV file-name tag. Generated event streams change only in
+`schema_version`.
+
 ### Added
 - Relay mailbox for CSV profile files (SPEC.md §9.4, TQ-22), for providers whose scheduler
   can only call out (behind a firewall, or in Google Apps Script). A new OpenAPI document,
