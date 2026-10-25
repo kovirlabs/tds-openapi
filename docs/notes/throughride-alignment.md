@@ -126,6 +126,12 @@ Append under *Open*, one heading per mismatch:
     broker from adding a person's name to it. Closing it (as `nemt` is) would be a breaking
     change; worth an RFP before 1.0.
 
+### No transport for CSV files when the provider cannot accept connections
+- **Where:** SPEC.md §9.2 (CSV profile: files, naming, encoding; the channel is left to the parties)  ↔  ThroughRide relay mailbox (`docs/relay-agent.md`: `GET /api/relay/outbox`, `GET outbox/<name>`, `POST ack/<name>`, `PUT inbox/<name>`), used by ThroughRide's `relay_agent/` and by the RideSheet TDS Connector (Apps Script, MIT)
+- **Mismatch:** The profile says what goes in the files but not how they move, beyond "an encrypted, authenticated channel" such as SFTP. Schedulers that can only call out, behind an agency firewall or inside Google Apps Script (which cannot read request headers, set status codes or run an SFTP client), need the broker to hold a mailbox they poll. ThroughRide defined one; another broker would define its own, and an agent written for one would not work with the other.
+- **Why it matters:** The connector is meant to be broker-neutral so RideSheet's maintainers can take it in. That holds only if the mailbox is part of the binding.
+- **Suggested resolution:** change the spec (additive, CSV profile): a "relay mailbox" binding for §9.2 files, served by the requester side. Four operations, all idempotent: list un-acked request files (name, size, sha256, created_at); get one (bytes, `X-Relay-SHA256`); ack one (first ack time kept); put an answers or statuses file, write-once by name (201 stored, 200 same bytes again, 409 other bytes, 400 bad name or empty, 413 too large). Bearer or token auth naming one provider's mailbox; the provider is taken from the credential, never the request. `Retry-After` on 429/503 as for the API (v0.7.1). Optional: `/health` (or a mailbox info call) states the expected poll interval, so a broker can report a silent agent. An OpenAPI fragment, an example sequence and a `tds-mock` mailbox would let the kit check agents too.
+
 ## v0.4.1 audit (2026-10-21)
 
 Each agreed item checked against `profiles/`, `spec/`, `examples/`, `tds-mock` and the kit.
