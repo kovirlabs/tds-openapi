@@ -4,6 +4,13 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-10-25
+
+Upload reports on the relay mailbox (TQ-23): a provider's agent can read back what became of
+each row it uploaded. Minor version because it adds an operation to `spec/relay-mailbox.yaml`;
+optional for requesters, so v0.9.0 mailboxes stay conformant. Generated event streams change
+only in `schema_version`.
+
 ### Added
 - Upload reports on the relay mailbox (SPEC.md §9.4, TQ-23), optional for requesters and
   declared with `upload_reports: true` in the `GET /outbox` listing. `GET /inbox/{file_name}`

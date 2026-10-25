@@ -2,7 +2,7 @@ openapi: 3.1.0
 jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
 info:
   title: TDS relay mailbox
-  version: 0.9.0
+  version: 0.10.0
   summary: HTTPS mailbox for TDS CSV profile files, for providers that can only call out.
   description: >-
     The relay mailbox (SPEC.md §9.4) moves CSV profile files (SPEC.md §9.2)
