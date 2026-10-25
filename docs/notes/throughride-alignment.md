@@ -497,3 +497,56 @@ only in `schema_version`). New example files `errors/rate-limited.json` (429) an
     `Retry-After` when overloaded.
   - Fakes (`tests/fakes/tds.py`): replay the two new error examples with a `Retry-After`
     header equal to their `retry_after_s` (examples hold bodies only).
+
+
+## v0.8.0 released (2026-10-25, local tag `v0.8.0`)
+
+Answers queue item TQ-21 (change a subscription's event types, or end it, without a second
+subscription and secret). Re-vendor from tag `v0.8.0` (`binding_version()` = `0.8.0`; generated
+event streams change only in `schema_version`). New example folder `subscription-changes/`.
+
+**Subscription management (SPEC.md §9.3).** Agreed as proposed, optional for providers and
+additive:
+- A provider that supports it says `subscription_management: true` on `/health`.
+- `GET /subscriptions/{subscription_id}` → 200 `subscription` without `signing_secret`.
+  `GET /subscriptions` → 200 `{"subscriptions": [...]}`, the requester's own, oldest first, no
+  secrets (added beyond the proposal: it finds subscriptions whose ids were lost and duplicates
+  made as a workaround).
+- `PATCH /subscriptions/{subscription_id}` (`Idempotency-Key`; body with at least one of
+  `event_types`, `callback_url`, `cloudevents`) → 200 `subscription` with `updated_at` and no
+  `signing_secret`. Fields present replace the stored ones; **`event_types` is replaced as a
+  whole**, so to add `ETA_UPDATE` send the full list including it. The `subscription_id`, the
+  secrets and `signing_secret_id` stay the same; the signing secret only changes by rotation
+  (§12.1). Events raised after the answer follow the new settings; an earlier event's delivery
+  (or retry) may still use the old ones.
+- `DELETE /subscriptions/{subscription_id}` (`Idempotency-Key`) → 200 `subscription` (no
+  secret). No delivery attempt starts after the answer, retries included; afterwards GET, PATCH,
+  DELETE and the secret operations for it are 404 `NOT_FOUND`.
+- Scope `events:subscribe`; another requester's subscription is `NOT_FOUND`; a replay with the
+  same key returns the same answer; a reused key with a different body is 409
+  `IDEMPOTENCY_KEY_REUSED`; an empty or invalid PATCH is 400 `INVALID_REQUEST`. A provider
+  without the capability answers these routes 404.
+- `tds-mock` implements them (`ProviderConfig.subscription_management`, default on); core
+  scenario `subscription_management` checks providers that declare it.
+- **For ThroughRide:**
+  - `adapters/tds.py` / `apps/providers` (ThroughRide subscribed to providers): when the event
+    types ThroughRide wants for a provider (core + transfer, now with `ETA_UPDATE`) differ from
+    the stored subscription's, and the provider's `/health` says
+    `subscription_management: true`, send `PATCH /subscriptions/{subscription_id}` with the
+    full wanted list and an Idempotency-Key per (subscription, wanted set), store the returned
+    `event_types` and `updated_at`, and keep the stored secret(s). Make it an idempotent task
+    (e.g. run at startup and after a provider's adapter config changes), never a new
+    `POST /subscriptions`. Providers without the capability keep the current path (a new
+    subscription, arranged with the provider).
+  - Duplicates from the workaround: `GET /subscriptions` and `DELETE` every subscription to
+    ThroughRide's callback that is not the stored one, so events stop arriving twice.
+  - When a provider is removed or its TDS adapter disabled, `DELETE` its subscription, then
+    discard its secrets.
+  - spec.md §8.1 "ETA bands": replace "Providers subscribed before this need a new
+    subscription …; the binding has no way to add an event type to one (TQ-21)" with the PATCH
+    path above.
+  - Outbound (`apps/webhooks`, ThroughRide as sender): if partners manage endpoints over an
+    API, the same four operations apply to `WebhookEndpoint` (event filter replaced as a whole,
+    secret kept, no attempts after delete).
+  - The TDS fake (`tests/fakes/tds.py`) can replay `subscription-changes/` for these paths
+    (`05-eta-update.delivery.json` verifies with the secret in `01-subscribe.response.json`).

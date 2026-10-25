@@ -4,6 +4,13 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-10-25
+
+Change or end a webhook subscription over the API, so a broker can take a new event type
+(such as `ETA_UPDATE`) without a second subscription, callback and signing secret (TQ-21).
+Additive and optional for providers (declared on `/health`); minor version because it adds
+operations. Generated event streams change only in `schema_version`.
+
 ### Added
 - Reading, changing and ending webhook subscriptions (SPEC.md §9.3), optional for providers,
   declared with `subscription_management: true` on `/health` (TQ-21). A subscriber can take a
