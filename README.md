@@ -10,6 +10,8 @@ TDS describes what a trip-booking exchange should contain. This project makes it
 - A **conformance kit** (`tds-conform`) vendors can run and agencies can cite in RFPs ([docs/for-agencies.md](docs/for-agencies.md))
 - A **reference provider** (`tds-mock`) and a static example mock for building without a live partner
 
+**Docs:** https://kovirlabs.github.io/tds-openapi/ (API reference, events, relay mailbox).
+
 It is not a new standard and does not replace TDS, GTFS-Flex or GTFS-Realtime. See [SPEC.md](SPEC.md) for scope and design.
 
 ## Status
@@ -45,6 +47,7 @@ Requires [uv](https://docs.astral.sh/uv/) (Python 3.12) and Node 20+.
 npm install                          # pinned Spectral + Redocly
 npm run bundle                       # single-file bundles at dist/openapi.yaml, dist/relay-mailbox.yaml
 npm run lint                         # bundle, then Spectral
+npm run site                         # docs site → _site/ (GitHub Pages)
 npm run mock:static                  # Prism serving examples/ on :4011
 uv run tds-mock --demo               # three reference providers on :4010 (see docs/demo.md)
 uv run tds-demo run                  # narrate the six demo scenarios against it

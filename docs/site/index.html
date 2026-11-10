@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TDS OpenAPI binding</title>
+<meta name="description" content="OpenAPI 3.1, AsyncAPI 3.0 and JSON Schema binding of the Transactional Data Specification (TCRP Report 210) for booking demand-response transit trips across providers, with a conformance kit and reference mock.">
+<link rel="stylesheet" href="assets/tagbrush.min.css">
+<link rel="stylesheet" href="assets/theme.css">
+<script src="assets/tagaction.min.js" defer></script>
+</head>
+<body>
+<header>
+  <nav>
+    <strong>TDS OpenAPI binding</strong>
+    <ul>
+      <li><a href="api/">Trips API</a></li>
+      <li><a href="events/">Events</a></li>
+      <li><a href="relay-mailbox/">Relay mailbox</a></li>
+      <li><a href="https://github.com/kovirlabs/tds-openapi">GitHub</a></li>
+    </ul>
+  </nav>
+  <hgroup>
+    <p>v__VERSION__ · Draft, expect changes before 1.0</p>
+    <h1>Book demand-response trips across providers, with an API you can test</h1>
+    <p>A machine-readable binding of the Transactional Data Specification (TDS, TCRP Report 210, 2020): OpenAPI 3.1 for booking calls, AsyncAPI 3.0 for webhook events, JSON Schema for the data, plus a conformance kit and a reference mock. It is not a new standard; it makes TDS implementable and testable.</p>
+  </hgroup>
+  <div role="group">
+    <a class="button" href="api/">Trips API reference</a>
+    <a class="button outline" href="events/">Events (webhooks)</a>
+    <a class="button outline" href="https://github.com/kovirlabs/tds-openapi">Source on GitHub</a>
+  </div>
+</header>
+
+<main>
+  <section>
+    <h2>Reference documentation</h2>
+    <article>
+      <h3><a href="api/">Trips API</a></h3>
+      <p>Requester to provider calls: request, confirm, modify, cancel and read trips; webhook subscriptions; transfer-profile tenders and holds; health and capabilities.</p>
+      <p><a href="openapi.yaml" download>openapi.yaml</a></p>
+    </article>
+    <article>
+      <h3><a href="events/">Events</a></h3>
+      <p>Signed webhooks a provider sends for every change: trip status, milestones, ETA bands, custody hand-offs and exceptions. Standard Webhooks signatures, optional CloudEvents headers.</p>
+      <p><a href="asyncapi.yaml" download>asyncapi.yaml</a></p>
+    </article>
+    <article>
+      <h3><a href="relay-mailbox/">Relay mailbox</a></h3>
+      <p>An HTTPS mailbox, served by the requester, that moves CSV trip files for providers whose scheduler can only call out (behind a firewall, or in a spreadsheet platform).</p>
+      <p><a href="relay-mailbox.yaml" download>relay-mailbox.yaml</a></p>
+    </article>
+  </section>
+
+  <section>
+    <h2>Who it's for</h2>
+    <article>
+      <h3>Transit agencies</h3>
+      <p>Name a conformance level in an RFP and ask vendors for the self-contained report the kit produces.</p>
+      <p><a href="https://github.com/kovirlabs/tds-openapi/blob/main/docs/for-agencies.md">Guidance for agencies</a></p>
+    </article>
+    <article>
+      <h3>Scheduling vendors (providers)</h3>
+      <p>Implement the Trips API and events, then point <code>tds-conform</code> at your endpoint to check it at the Core, Transfer, Paratransit or NEMT level.</p>
+      <p><a href="https://github.com/kovirlabs/tds-openapi#testing-your-own-endpoint">Test your endpoint</a></p>
+    </article>
+    <article>
+      <h3>Brokers and coordinator tools</h3>
+      <p>Build against <code>tds-mock</code>, a stateful set of reference providers with signed webhooks and a simulated clock, before you have a live partner.</p>
+      <p><a href="https://github.com/kovirlabs/tds-openapi/blob/main/docs/demo.md">Run the demo providers</a></p>
+    </article>
+  </section>
+
+  <section>
+    <h2>Profiles</h2>
+    <figure>
+      <table data-tagaction="off">
+        <thead><tr><th>Profile</th><th>What it adds</th></tr></thead>
+        <tbody>
+          <tr><td><code>core</code></td><td>One leg per provider trip, close to TDS 2020: trips, locations, time windows, rider references, fares and funding, errors.</td></tr>
+          <tr><td><code>transfer</code></td><td>Protected connections between providers: tenders, hold requests, milestones, ETA bands, exceptions, custody records and settlement split.</td></tr>
+          <tr><td><code>csv</code></td><td>The same exchange as batch files, for providers that trade trips in spreadsheets rather than over an API.</td></tr>
+          <tr><td><code>paratransit</code>, <code>nemt</code></td><td>Draft profiles for ADA paratransit and non-emergency medical transportation.</td></tr>
+        </tbody>
+      </table>
+    </figure>
+    <p>Rider data is minimal by design: accessibility needs are service requirements (such as <code>WHEELCHAIR_LIFT</code>), never health conditions.</p>
+  </section>
+
+  <section>
+    <h2>Try it locally</h2>
+    <p>Needs <a href="https://docs.astral.sh/uv/">uv</a> (Python 3.12) and Node 20+.</p>
+    <pre><code>git clone https://github.com/kovirlabs/tds-openapi &amp;&amp; cd tds-openapi
+npm install &amp;&amp; npm run bundle
+uv run tds-mock --demo                 # reference providers on :4010
+uv run tds-demo run                    # narrated transfer scenarios
+uv run tds-conform run --url http://localhost:4010 --profile transfer</code></pre>
+  </section>
+
+  <section>
+    <h2>Status</h2>
+    <p>Draft. Field names are proposed and are being checked against TDS 2020 in the <a href="https://github.com/kovirlabs/tds-openapi/blob/main/mappings/tds-2020-crosswalk.md">crosswalk</a>; vocabulary is borrowed from GTFS, GTFS-Flex, NeTEx and EDI 214 where it fits. Read <a href="https://github.com/kovirlabs/tds-openapi/blob/main/SPEC.md">SPEC.md</a> for scope and design, and the <a href="https://github.com/kovirlabs/tds-openapi/blob/main/CHANGELOG.md">changelog</a> for what changed. The project is intended for donation to a neutral steward.</p>
+  </section>
+</main>
+
+<footer>
+  <p>Specs, schemas and code: Apache-2.0. Prose and documentation: CC-BY-4.0. Not affiliated with or endorsed by TCRP or the Transportation Research Board.</p>
+  <p>Built with <a href="https://kovirlabs.github.io/tagstack/">the Tag family</a>: TagBrush.css and TagAction.</p>
+</footer>
+</body>
+</html>

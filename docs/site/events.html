@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TDS events: AsyncAPI reference</title>
+  <meta name="description" content="Webhook events (trip status, milestones, ETA bands, custody, exceptions) in the TDS OpenAPI binding, v__VERSION__.">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@asyncapi/react-component@3.2.2/styles/default.min.css" integrity="sha384-oo9RoQcacP++XdMX6CjTucTvASEORHX3chFik0/V2kHcsHiVboGyWZztGeq/0bum" crossorigin="anonymous">
+  <link rel="stylesheet" href="../assets/tagbrush.scoped.min.css">
+  <link rel="stylesheet" href="../assets/theme.css">
+  <link rel="stylesheet" href="../assets/asyncapi-theme.css">
+  <style>
+    body { margin: 0; background: #ffffff; }
+    /* The bar is light only, like the AsyncAPI page under it. */
+    body > header.tagbrush { color-scheme: light; padding: 0.625rem 1.25rem; border-bottom: 1px solid #e5e8e8; }
+  </style>
+</head>
+<body>
+  <header class="tagbrush" data-theme="light">
+    <nav aria-label="Site">
+      <strong><a href="../">TDS OpenAPI binding</a></strong>
+      <ul>
+        <li><a href="../api/">Trips API</a></li>
+        <li><a href="../events/" aria-current="page">Events</a></li>
+        <li><a href="../relay-mailbox/">Relay mailbox</a></li>
+        <li><a href="https://github.com/kovirlabs/tds-openapi">GitHub</a></li>
+      </ul>
+    </nav>
+  </header>
+  <main id="asyncapi"></main>
+  <script src="https://cdn.jsdelivr.net/npm/@asyncapi/react-component@3.2.2/browser/standalone/index.js" integrity="sha384-/OTzBCE2fCs+wXFZecqj96eHeOnof8fcoSA2OVEHTmV/BeGnpOpolyhDGduFU9xE" crossorigin="anonymous"></script>
+  <script>
+    AsyncApiStandalone.render(
+      { schema: __ASYNCAPI_JSON__, config: { show: { sidebar: true, errors: true } } },
+      document.getElementById("asyncapi")
+    );
+  </script>
+</body>
+</html>

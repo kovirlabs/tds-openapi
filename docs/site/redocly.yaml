@@ -1,0 +1,123 @@
+# Redoc theme for the TDS OpenAPI binding docs (redocly build-docs --config).
+#
+# Matches docs/site/theme.css, the TagBrush.css theme of the landing page.
+# Redoc can't read CSS variables, so these are TagBrush.css's computed values
+# for --color-primary: #0e7490 (light scheme for the middle column, dark scheme
+# for the right-hand code panel). Change theme.css, redocly.yaml and
+# asyncapi-theme.css together.
+openapi:
+  expandResponses: "200,201,202"
+  jsonSamplesExpandLevel: 3
+  pathInMiddlePanel: true
+  theme:
+    spacing:
+      unit: 5
+      sectionHorizontal: 40
+      sectionVertical: 32
+    breakpoints:
+      small: 50rem
+      medium: 75rem
+      large: 105rem
+    colors:
+      tonalOffset: 0.2
+      primary:
+        main: "#0e7490"
+      success:
+        main: "#16a34a"
+      warning:
+        main: "#d97706"
+      error:
+        main: "#dc2626"
+      text:
+        primary: "#222a2d"
+        secondary: "#676c6e"
+      border:
+        dark: "#d3d8d9"
+        light: "#e5e8e8"
+      responses:
+        success:
+          color: "#15803d"
+          backgroundColor: "#16a34a14"
+          tabTextColor: "#4ade80"
+        error:
+          color: "#b91c1c"
+          backgroundColor: "#dc262614"
+          tabTextColor: "#f87171"
+        redirect:
+          color: "#b45309"
+          backgroundColor: "#d9770614"
+          tabTextColor: "#fbbf24"
+        info:
+          color: "#1d4ed8"
+          backgroundColor: "#1d4ed814"
+          tabTextColor: "#93c5fd"
+      http:
+        get: "#0e7490"
+        post: "#15803d"
+        put: "#b45309"
+        patch: "#7c3aed"
+        delete: "#b91c1c"
+        options: "#676c6e"
+        head: "#676c6e"
+        basic: "#676c6e"
+        link: "#006e8a"
+    schema:
+      linesColor: "#c4d8dd"
+      defaultDetailsWidth: 75%
+      typeNameColor: "#676c6e"
+      typeTitleColor: "#222a2d"
+      requireLabelColor: "#dc2626"
+      labelsTextSize: 0.85em
+      nestingSpacing: 1em
+      nestedBackground: "#f3f4f5"
+    typography:
+      fontSize: 16px
+      lineHeight: "1.6"
+      fontWeightRegular: "400"
+      fontWeightBold: "600"
+      fontWeightLight: "400"
+      fontFamily: >-
+        system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+        Arial, sans-serif
+      smoothing: antialiased
+      optimizeSpeed: true
+      headings:
+        fontFamily: >-
+          system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+          Arial, sans-serif
+        fontWeight: "700"
+        lineHeight: "1.2"
+      code:
+        fontSize: 13.5px
+        fontFamily: >-
+          ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+          "Courier New", monospace
+        lineHeight: "1.5"
+        fontWeight: "400"
+        color: "#0b5c73"
+        backgroundColor: "#f3f4f5"
+        wrap: true
+      links:
+        color: "#006e8a"
+        visited: "#006e8a"
+        hover: "#0e7490"
+        textDecoration: underline
+        hoverTextDecoration: none
+    sidebar:
+      width: 270px
+      backgroundColor: "#f3f4f5"
+      textColor: "#222a2d"
+      activeTextColor: "#006e8a"
+      groupItems:
+        textTransform: uppercase
+    logo:
+      gutter: 16px
+    rightPanel:
+      backgroundColor: "#111a1d"
+      width: 40%
+      textColor: "#f3f4f5"
+    codeBlock:
+      backgroundColor: "#222a2d"
+    fab:
+      backgroundColor: "#0e7490"
+      color: "#ffffff"

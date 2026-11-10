@@ -12,3 +12,5 @@ reference/
 build/
 *.egg-info/
 .mypy_cache/
+_site/
+.playwright-mcp/

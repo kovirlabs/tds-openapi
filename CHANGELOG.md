@@ -4,6 +4,20 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+- Documentation site for GitHub Pages (https://kovirlabs.github.io/tds-openapi/): a landing
+  page, Redoc references for `dist/openapi.yaml` and `dist/relay-mailbox.yaml`, and an AsyncAPI
+  reference for `spec/asyncapi.yaml`, with the bundles to download. `npm run site` builds it into
+  `_site/` (`scripts/build_site.py`, sources in `docs/site/`); `.github/workflows/pages.yml`
+  deploys it on every push to `main`.
+- The site is built with the Tag family: the landing page is semantic HTML styled by TagBrush.css
+  with TagAction behaviours (copy buttons on code), themed by `docs/site/theme.css` (TagBrush.css
+  variables only, primary `#0e7490`) and checked by TagCheck in CI. A Redoc theme
+  (`docs/site/redocly.yaml`) and page template (`docs/site/redoc.hbs`), and an AsyncAPI theme
+  (`docs/site/asyncapi-theme.css`), repeat the same palette, with a TagBrush.css top bar on every
+  reference page. TagBrush.css 1.2.0, TagAction 0.1.0 and TagCheck 0.1.1 are pinned dev
+  dependencies and served from the site (no CDN).
+
 ## [0.10.0] - 2026-10-25
 
 Upload reports on the relay mailbox (TQ-23): a provider's agent can read back what became of

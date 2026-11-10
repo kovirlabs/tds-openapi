@@ -6,11 +6,15 @@
   "scripts": {
     "bundle": "REDOCLY_SUPPRESS_UPDATE_NOTICE=true redocly bundle spec/openapi.yaml -o dist/openapi.yaml && REDOCLY_SUPPRESS_UPDATE_NOTICE=true redocly bundle spec/relay-mailbox.yaml -o dist/relay-mailbox.yaml && uv run scripts/finalize_bundle.py dist/openapi.yaml dist/relay-mailbox.yaml",
     "lint": "npm run -s bundle && spectral lint --fail-severity=warn dist/openapi.yaml dist/relay-mailbox.yaml spec/asyncapi.yaml",
-    "mock:static": "npm run -s bundle && prism mock -h 127.0.0.1 -p 4011 dist/openapi.yaml"
+    "mock:static": "npm run -s bundle && prism mock -h 127.0.0.1 -p 4011 dist/openapi.yaml",
+    "site": "npm run -s bundle && uv run scripts/build_site.py"
   },
   "devDependencies": {
+    "@kovirlabs/tagcheck": "0.1.1",
     "@redocly/cli": "2.57.0",
     "@stoplight/prism-cli": "5.16.0",
-    "@stoplight/spectral-cli": "6.17.0"
+    "@stoplight/spectral-cli": "6.17.0",
+    "tagaction": "0.1.0",
+    "tagbrush": "1.2.0"
   }
 }
