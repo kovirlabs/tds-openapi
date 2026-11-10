@@ -1,6 +1,8 @@
-# tds-openapi
+# tds-openapi: an open API for booking demand-response transit trips
 
-A machine-readable binding of the **Transactional Data Specification** (TDS, TCRP G-16 / Report 210, 2020) for booking demand-response and microtransit trips across providers.
+A machine-readable binding of the **Transactional Data Specification** (TDS, TCRP G-16 / Report 210, 2020) for booking demand-response, microtransit, paratransit and NEMT (non-emergency medical transportation) trips across providers: transit agencies, scheduling software vendors, brokers and coordinator tools.
+
+[![Docs](https://img.shields.io/badge/docs-API%20reference-0e7490)](https://kovirlabs.github.io/tds-openapi/) [![OpenAPI 3.1](https://img.shields.io/badge/OpenAPI-3.1-0e7490)](https://kovirlabs.github.io/tds-openapi/api/) [![AsyncAPI 3.0](https://img.shields.io/badge/AsyncAPI-3.0-0e7490)](https://kovirlabs.github.io/tds-openapi/events/) [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
 TDS describes what a trip-booking exchange should contain. This project makes it implementable and testable:
 
@@ -10,13 +12,13 @@ TDS describes what a trip-booking exchange should contain. This project makes it
 - A **conformance kit** (`tds-conform`) vendors can run and agencies can cite in RFPs ([docs/for-agencies.md](docs/for-agencies.md))
 - A **reference provider** (`tds-mock`) and a static example mock for building without a live partner
 
-**Docs:** https://kovirlabs.github.io/tds-openapi/ (API reference, events, relay mailbox).
+**Docs:** https://kovirlabs.github.io/tds-openapi/ ([Trip booking API](https://kovirlabs.github.io/tds-openapi/api/), [webhook events](https://kovirlabs.github.io/tds-openapi/events/), [relay mailbox](https://kovirlabs.github.io/tds-openapi/relay-mailbox/)).
 
 It is not a new standard and does not replace TDS, GTFS-Flex or GTFS-Realtime. See [SPEC.md](SPEC.md) for scope and design.
 
 ## Status
 
-**v0.8 (draft).** Core and transfer profiles: trip booking (with `Retry-After` back-pressure hints on 429 and 503), plus tenders, hold requests, milestones, ETA bands and custody records for protected connections between providers, with signed webhook events (AsyncAPI, Standard Webhooks signatures, optional CloudEvents headers, secret rotation and subscription changes over the API) for every state change, and a CSV file format for providers that exchange trips in batches instead of calling an API, with an HTTPS relay mailbox for those that can only call out. Draft paratransit and NEMT profiles, and a settlement split format for after-trip reconciliation. A conformance kit tests any endpoint at the Core, Core + Transfer, Core + Paratransit or Core + NEMT level and can fuzz it against the OpenAPI document, and a stateful reference mock runs several providers for development and demos ([docs/demo.md](docs/demo.md)). Field names are proposed and are being checked against TDS 2020 in [the crosswalk](mappings/tds-2020-crosswalk.md). Expect changes before 1.0.
+**v0.10 (draft).** Core and transfer profiles: trip booking (with `Retry-After` back-pressure hints on 429 and 503), plus tenders, hold requests, milestones, ETA bands and custody records for protected connections between providers, with signed webhook events (AsyncAPI, Standard Webhooks signatures, optional CloudEvents headers, secret rotation and subscription changes over the API) for every state change, and a CSV file format for providers that exchange trips in batches instead of calling an API, with an HTTPS relay mailbox for those that can only call out. Draft paratransit and NEMT profiles, and a settlement split format for after-trip reconciliation. A conformance kit tests any endpoint at the Core, Core + Transfer, Core + Paratransit or Core + NEMT level and can fuzz it against the OpenAPI document, and a stateful reference mock runs several providers for development and demos ([docs/demo.md](docs/demo.md)). Field names are proposed and are being checked against TDS 2020 in [the crosswalk](mappings/tds-2020-crosswalk.md). Expect changes before 1.0.
 
 | Version | Scope |
 |---|---|

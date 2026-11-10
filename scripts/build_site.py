@@ -7,7 +7,12 @@ Run `npm run bundle` first; `npm run site` does both. Produces:
     _site/relay-mailbox/index.html   Redoc reference for dist/relay-mailbox.yaml
     _site/events/index.html          AsyncAPI reference for spec/asyncapi.yaml
     _site/openapi.yaml, relay-mailbox.yaml, asyncapi.yaml   downloadable bundles
-    _site/assets/                    TagBrush.css, TagAction (from node_modules) and the themes
+    _site/assets/                    TagBrush.css, TagAction (from node_modules), the themes,
+                                     favicon.svg and og-image.png (social preview)
+    _site/sitemap.xml                the four pages, for search engines
+
+Pages carry a canonical URL, Open Graph tags and (landing page) schema.org JSON-LD, all
+built from SITE_URL. og-image.png is rendered from docs/site/og-image.html.
 
 The landing page is plain semantic HTML styled by TagBrush.css with docs/site/theme.css;
 the Redoc pages use docs/site/redocly.yaml (Redoc theme) and docs/site/redoc.hbs (page
@@ -30,6 +35,7 @@ from pathlib import Path
 
 import yaml
 
+SITE_URL = "https://kovirlabs.github.io/tds-openapi/"
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "docs" / "site"
 NODE = ROOT / "node_modules"
@@ -39,6 +45,25 @@ ASSETS = [
     NODE / "tagaction" / "tagaction.min.js",
     SRC / "theme.css",
     SRC / "asyncapi-theme.css",
+    SRC / "favicon.svg",
+    SRC / "og-image.png",
+]
+# Reference pages built by Redoc: (bundle, path under the site, title, meta description).
+REDOC_PAGES = [
+    (
+        "openapi.yaml",
+        "api/",
+        "TDS Trip Booking API Reference (OpenAPI 3.1)",
+        "OpenAPI 3.1 reference for booking demand-response transit trips across providers: "
+        "request, confirm, modify and cancel trips, webhook subscriptions, tenders and holds.",
+    ),
+    (
+        "relay-mailbox.yaml",
+        "relay-mailbox/",
+        "TDS Relay Mailbox API Reference (OpenAPI 3.1)",
+        "OpenAPI 3.1 reference for the TDS relay mailbox: an HTTPS mailbox that moves CSV trip "
+        "files for transit providers whose scheduler can only call out.",
+    ),
 ]
 ENV = {**os.environ, "REDOCLY_SUPPRESS_UPDATE_NOTICE": "true", "REDOCLY_TELEMETRY": "off"}
 
@@ -47,7 +72,7 @@ def redocly(*args: str) -> None:
     subprocess.run(["npx", "--no-install", "redocly", *args], check=True, cwd=ROOT, env=ENV)
 
 
-def build_docs(spec: Path, out: Path, title: str) -> None:
+def build_docs(spec: Path, out: Path, title: str, url: str, description: str) -> None:
     out.parent.mkdir(parents=True, exist_ok=True)
     redocly(
         "build-docs",
@@ -61,7 +86,26 @@ def build_docs(spec: Path, out: Path, title: str) -> None:
         "--template",
         str(SRC / "redoc.hbs"),
         "--disableGoogleFont",
+        "--templateOptions.url",
+        url,
+        "--templateOptions.description",
+        description,
+        "--templateOptions.image",
+        SITE_URL + "assets/og-image.png",
     )
+
+
+def sitemap(paths: list[str]) -> str:
+    urls = "".join(f"  <url><loc>{SITE_URL}{p}</loc></url>\n" for p in paths)
+    return (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        f"{urls}</urlset>\n"
+    )
+
+
+def fill(text: str, version: str) -> str:
+    return text.replace("__VERSION__", version).replace("__SITE_URL__", SITE_URL)
 
 
 def asyncapi_bundle(out: Path) -> dict:
@@ -92,18 +136,19 @@ def main(out: Path) -> None:
 
     for b in bundles:
         shutil.copy(b, out / b.name)
-    build_docs(bundles[0], out / "api" / "index.html", "TDS OpenAPI binding: API reference")
-    build_docs(bundles[1], out / "relay-mailbox" / "index.html", "TDS relay mailbox: API reference")
+    for bundle, path, title, description in REDOC_PAGES:
+        page = out / path / "index.html"
+        build_docs(ROOT / "dist" / bundle, page, title, SITE_URL + path, description)
 
     doc = asyncapi_bundle(out)
     # Inline the document so the page works without a fetch; `</` must not end the script.
     payload = json.dumps(doc, ensure_ascii=False).replace("</", "<\\/")
-    events = (SRC / "events.html").read_text().replace("__ASYNCAPI_JSON__", payload)
+    events = fill((SRC / "events.html").read_text(), version)
     (out / "events").mkdir()
-    (out / "events" / "index.html").write_text(events.replace("__VERSION__", version))
+    (out / "events" / "index.html").write_text(events.replace("__ASYNCAPI_JSON__", payload))
 
-    index = (SRC / "index.html").read_text().replace("__VERSION__", version)
-    (out / "index.html").write_text(index)
+    (out / "index.html").write_text(fill((SRC / "index.html").read_text(), version))
+    (out / "sitemap.xml").write_text(sitemap(["", "api/", "events/", "relay-mailbox/"]))
     (out / ".nojekyll").write_text("")
     print(f"site v{version} built in {out.relative_to(ROOT) if out.is_relative_to(ROOT) else out}")
 
