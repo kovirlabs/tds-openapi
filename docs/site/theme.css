@@ -1,0 +1,14 @@
+/*
+ * TDS OpenAPI binding: a TagBrush.css theme (variables only).
+ *
+ * Link it after TagBrush.css. Redoc and AsyncAPI pages can't read CSS
+ * variables, so docs/site/redocly.yaml and docs/site/asyncapi-theme.css
+ * repeat these values as plain colors: change all three together.
+ */
+/* .tagbrush: the scoped build's top bar on the Redoc and AsyncAPI pages. */
+:root,
+.tagbrush {
+  --color-primary: #0e7490;
+  --font-weight-heading: 700;
+  --border-radius: 0.5rem;
+}
