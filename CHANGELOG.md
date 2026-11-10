@@ -17,6 +17,11 @@ All notable changes to this project are documented here. The format follows [Kee
   (`docs/site/asyncapi-theme.css`), repeat the same palette, with a TagBrush.css top bar on every
   reference page. TagBrush.css 1.2.0, TagAction 0.1.0 and TagCheck 0.1.1 are pinned dev
   dependencies and served from the site (no CDN).
+- Search and sharing for the docs site: keyword titles and meta descriptions on every page, canonical
+  URLs, Open Graph and Twitter card tags with a 1200x630 preview (`docs/site/og-image.png`, from
+  `og-image.html`), schema.org `WebSite` and `SoftwareSourceCode` JSON-LD, a favicon, `sitemap.xml`,
+  and a Questions section on the landing page (what TDS is, how it relates to GTFS-Flex).
+- README: a descriptive title, badges linking the docs, and the status line updated from v0.8 to v0.10.
 
 ## [0.10.0] - 2026-10-25
 
