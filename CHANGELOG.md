@@ -22,6 +22,7 @@ All notable changes to this project are documented here. The format follows [Kee
   `og-image.html`), schema.org `WebSite` and `SoftwareSourceCode` JSON-LD, a favicon, `sitemap.xml`,
   and a Questions section on the landing page (what TDS is, how it relates to GTFS-Flex).
 - README: a descriptive title, badges linking the docs, and the status line updated from v0.8 to v0.10.
+- CONTRIBUTING: the Kovir Labs ethos and the principles contributions are weighed against.
 
 ## [0.10.0] - 2026-10-25
 

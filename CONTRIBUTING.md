@@ -2,6 +2,16 @@
 
 Thanks for helping. Issues and pull requests are welcome from agencies, vendors and anyone implementing TDS.
 
+## The Kovir Labs ethos
+
+TDS OpenAPI is a [Kovir Labs](https://github.com/kovirlabs) project. Kovir Labs exists to fill in the gaps others overlook, and every contribution is weighed against these principles:
+
+- **Write once, benefit all.** Build tools that can serve almost anyone in a field, not one client. Keep a generic core and put anything specific to an organization into configuration instead of custom code.
+- **Focus on the underserved.** That means organizations and sectors that need help and development, and technology that needs help and development.
+- **Find the efficiencies nobody has built yet.** Look for the gains that haven't been made in a sector or a software stack, and make them.
+
+The principles stay firm. Ideas, features and approaches are open to anyone, as long as they respect the principles. They are also the filter for choosing which work to take on, whether it's our idea or a contributor's.
+
 ## Sign your commits (DCO)
 
 This project uses the [Developer Certificate of Origin](https://developercertificate.org/) instead of a CLA. Every commit must carry a sign-off certifying you have the right to submit it under the project's licences:
